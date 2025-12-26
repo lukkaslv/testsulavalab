@@ -72,6 +72,13 @@ export const AdminPanel = memo<AdminPanelProps>(({ t, onExit, result, history, o
                 </div>
              </div>
 
+             <button 
+                onClick={() => onSetView('compatibility')}
+                className="w-full py-4 bg-indigo-600/10 border border-indigo-500/30 text-indigo-400 rounded-xl text-[9px] font-black uppercase hover:bg-indigo-600/20 transition-all flex items-center justify-center gap-2"
+             >
+                <span>📟</span> ACCESS_CLINICAL_TERMINAL
+             </button>
+
              <section className="bg-slate-900/40 p-6 rounded-2xl border border-white/5 space-y-4">
                 <h4 className="text-[8px] font-black text-indigo-400 uppercase tracking-widest">Master_Overrides</h4>
                 <button onClick={onUnlockAll} className="w-full py-4 bg-emerald-600/10 border border-emerald-500/30 text-emerald-400 rounded-xl text-[9px] font-black uppercase hover:bg-emerald-600/20 transition-all">

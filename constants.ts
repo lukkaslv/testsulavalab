@@ -14,9 +14,9 @@ export const STORAGE_KEYS = {
 
 // SYSTEM VERSIONING & OVERSIGHT
 export const SYSTEM_METADATA = {
-    VERSION: '9.8.0-SLC-LOOP',
+    VERSION: '9.8.1-SLC-HEALTH',
     LAST_UPDATED: '2024-12-26',
-    CODENAME: 'A/B Evolution Core',
+    CODENAME: 'Healthy Core Integration',
     LANG_HEALTH: {
         ru: { status: 'VERIFIED', reliability: 0.98, notes: 'A/B Testing Active.' },
         ka: { status: 'LEARNING', reliability: 0.72, notes: 'Telemetry collecting for variant comparison.' }
@@ -27,7 +27,6 @@ export const SYSTEM_METADATA = {
         MIN_SAMPLES: 5,
         AB_ENABLED: true
     },
-    // A/B EXPERIMENTS DEFINITION
     EXPERIMENTS: {
         "CORE_WEIGHTS_V2": {
             active: true,
@@ -45,8 +44,8 @@ export const SYSTEM_METADATA = {
     } as Record<string, number>,
     
     CHANGELOG: [
-        { v: '9.8.0', note: 'Implemented Deterministic A/B Framework. Clinical Feedback loop active.' },
-        { v: '9.7.0', note: 'Implemented Self-Learning Core (SLC). Telemetry active.' }
+        { v: '9.8.1', note: 'Integrity fix: reachability for all 24 beliefs established.' },
+        { v: '9.8.0', note: 'Implemented Deterministic A/B Framework.' }
     ]
 };
 
@@ -100,25 +99,28 @@ interface NodeConfig {
   choices: { idSuffix: string; beliefKey: BeliefKey; position: number }[];
 }
 
-// INTEGRITY FIX: All 24 beliefs are now reachable across domains
+// FULL COVERAGE: Distributing all 24 beliefs to satisfy CORE_INTEGRITY
 export const NODE_CONFIGS: Record<string, NodeConfig> = {
-  // FOUNDATION
+  // FOUNDATION (15 nodes)
   "foundation_0": { intensity: 3, choices: [{ idSuffix: "c1", beliefKey: "family_loyalty", position: 0 }, { idSuffix: "c2", beliefKey: "autopilot_mode", position: 1 }, { idSuffix: "c3", beliefKey: "self_permission", position: 2 }] },
   "foundation_1": { intensity: 4, choices: [{ idSuffix: "c1", beliefKey: "fear_of_punishment", position: 0 }, { idSuffix: "c2", beliefKey: "hard_work_only", position: 1 }, { idSuffix: "c3", beliefKey: "capacity_expansion", position: 2 }] },
   "foundation_2": { intensity: 5, choices: [{ idSuffix: "c1", beliefKey: "scarcity_mindset", position: 0 }, { idSuffix: "c2", beliefKey: "boundary_collapse", position: 1 }, { idSuffix: "c3", beliefKey: "capacity_expansion", position: 2 }] },
   "foundation_3": { intensity: 3, choices: [{ idSuffix: "c1", beliefKey: "fear_of_conflict", position: 0 }, { idSuffix: "c2", beliefKey: "latency_resistance", position: 1 }, { idSuffix: "c3", beliefKey: "money_is_tool", position: 2 }] },
   "foundation_4": { intensity: 4, choices: [{ idSuffix: "c1", beliefKey: "betrayal_trauma", position: 0 }, { idSuffix: "c2", beliefKey: "unconscious_fear", position: 1 }, { idSuffix: "c3", beliefKey: "self_permission", position: 2 }] },
+  "foundation_5": { intensity: 3, choices: [{ idSuffix: "c1", beliefKey: "body_mind_conflict", position: 0 }, { idSuffix: "c2", beliefKey: "autopilot_mode", position: 1 }, { idSuffix: "c3", beliefKey: "capacity_expansion", position: 2 }] },
   
-  // MONEY
+  // MONEY (10 nodes)
   "money_0": { intensity: 5, choices: [{ idSuffix: "c1", beliefKey: "money_is_danger", position: 0 }, { idSuffix: "c2", beliefKey: "poverty_is_virtue", position: 1 }, { idSuffix: "c3", beliefKey: "money_is_tool", position: 2 }] },
   "money_1": { intensity: 4, choices: [{ idSuffix: "c1", beliefKey: "impulse_spend", position: 0 }, { idSuffix: "c2", beliefKey: "scarcity_mindset", position: 1 }, { idSuffix: "c3", beliefKey: "resource_toxicity", position: 2 }] },
   "money_2": { intensity: 3, choices: [{ idSuffix: "c1", beliefKey: "shame_of_success", position: 0 }, { idSuffix: "c2", beliefKey: "hard_work_only", position: 1 }, { idSuffix: "c3", beliefKey: "money_is_tool", position: 2 }] },
   "money_3": { intensity: 5, choices: [{ idSuffix: "c1", beliefKey: "resource_toxicity", position: 0 }, { idSuffix: "c2", beliefKey: "short_term_bias", position: 1 }, { idSuffix: "c3", beliefKey: "capacity_expansion", position: 2 }] },
+  "money_4": { intensity: 4, choices: [{ idSuffix: "c1", beliefKey: "golden_cage", position: 0 }, { idSuffix: "c2", beliefKey: "scarcity_mindset", position: 1 }, { idSuffix: "c3", beliefKey: "money_is_tool", position: 2 }] },
   
-  // AGENCY
+  // AGENCY (10 nodes)
   "agency_0": { intensity: 4, choices: [{ idSuffix: "c1", beliefKey: "imposter_syndrome", position: 0 }, { idSuffix: "c2", beliefKey: "autopilot_mode", position: 1 }, { idSuffix: "c3", beliefKey: "self_permission", position: 2 }] },
   "agency_1": { intensity: 5, choices: [{ idSuffix: "c1", beliefKey: "ambivalence_loop", position: 0 }, { idSuffix: "c2", beliefKey: "hero_martyr", position: 1 }, { idSuffix: "c3", beliefKey: "capacity_expansion", position: 2 }] },
   "agency_2": { intensity: 3, choices: [{ idSuffix: "c1", beliefKey: "golden_cage", position: 0 }, { idSuffix: "c2", beliefKey: "body_mind_conflict", position: 1 }, { idSuffix: "c3", beliefKey: "self_permission", position: 2 }] },
+  "agency_3": { intensity: 4, choices: [{ idSuffix: "c1", beliefKey: "imposter_syndrome", position: 0 }, { idSuffix: "c2", beliefKey: "short_term_bias", position: 1 }, { idSuffix: "c3", beliefKey: "capacity_expansion", position: 2 }] },
 };
 
 const DEFAULT_NODE_CONFIG: NodeConfig = {
