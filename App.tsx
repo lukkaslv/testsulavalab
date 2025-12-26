@@ -25,17 +25,19 @@ import { BriefExplainerView } from './components/views/BriefExplainerView.tsx';
 import { DataCorruptionView } from './components/views/DataCorruptionView.tsx';
 import { generateShareImage } from './utils/shareGenerator.ts';
 import { InvalidResultsView } from './components/views/InvalidResultsView.tsx';
+import { SystemIntegrityView } from './components/views/SystemIntegrityView.tsx';
 
 const App: React.FC = () => {
   const [lang, setLang] = useState<'ru' | 'ka'>(() => (localStorage.getItem(STORAGE_KEYS.LANG) as 'ru' | 'ka') || 'ru');
   const t: Translations = useMemo(() => translations[lang], [lang]);
   
-  const [view, setView] = useState<'auth' | 'boot' | 'dashboard' | 'test' | 'body_sync' | 'reflection' | 'results' | 'admin' | 'compatibility' | 'guide' | 'brief_explainer'>('auth');
+  const [view, setView] = useState<'auth' | 'boot' | 'dashboard' | 'test' | 'body_sync' | 'reflection' | 'results' | 'admin' | 'compatibility' | 'guide' | 'brief_explainer' | 'system_integrity'>('auth');
   const [dataStatus, setDataStatus] = useState<'ok' | 'corrupted'>('ok');
   const [activeModule, setActiveModule] = useState<DomainType | null>(null);
   const [currentDomain, setCurrentDomain] = useState<DomainType | null>(null);
   const [completedNodeIds, setCompletedNodeIds] = useState<number[]>([]);
   const [isDemo, setIsDemo] = useState(false);
+  const [isPro, setIsPro] = useState(false);
   const [bootShown, setBootShown] = useState(() => sessionStorage.getItem('genesis_boot_seen') === 'true');
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [scanHistory, setScanHistory] = useState<ScanHistory | null>(null);
@@ -54,7 +56,6 @@ const App: React.FC = () => {
     isDemo
   });
 
-  // MULTI-TAB SYNC & SYSTEM NAVIGATION HARDENING
   useEffect(() => {
     const handleStorage = (e: StorageEvent) => {
         if (e.key === STORAGE_KEYS.SESSION_STATE) {
@@ -67,16 +68,18 @@ const App: React.FC = () => {
     };
     window.addEventListener('storage', handleStorage);
     
-    // Telegram Back Button Integration
     if (window.Telegram?.WebApp?.BackButton) {
         const bb = window.Telegram.WebApp.BackButton;
-        if (view !== 'auth' && view !== 'dashboard') {
+        if (view !== 'auth' && view !== 'dashboard' && view !== 'admin' && view !== 'system_integrity') {
             bb.show();
             const handleBack = () => {
                 if (view === 'test' || view === 'body_sync') {
-                    if (confirm(lang === 'ru' ? "Выйти в дашборд? Прогресс текущего вопроса будет потерян." : "გსურთ გასვლა?")) {
-                        setView('dashboard');
-                    }
+                    PlatformBridge.showConfirm(
+                        lang === 'ru' ? "Выйти в дашборд? Прогресс текущего вопроса будет потерян." : "გსურთ გასვლა?",
+                        (confirmed) => {
+                            if (confirmed) setView('dashboard');
+                        }
+                    );
                 } else {
                     setView('dashboard');
                 }
@@ -132,8 +135,8 @@ const App: React.FC = () => {
     setScanHistory(loadedScanHistory);
 
     const sessionAuth = localStorage.getItem(STORAGE_KEYS.SESSION);
-    if (sessionAuth === 'true') { setView('dashboard'); setIsDemo(false); }
-    else if (sessionAuth === 'demo') { setView('dashboard'); setIsDemo(true); }
+    if (sessionAuth === 'true') { setView('dashboard'); setIsDemo(false); setIsPro(true); }
+    else if (sessionAuth === 'demo') { setView('dashboard'); setIsDemo(true); setIsPro(false); }
   }, [lang]);
 
   const nodes = useMemo(() => {
@@ -156,14 +159,16 @@ const App: React.FC = () => {
     if (demo) {
         localStorage.setItem(STORAGE_KEYS.SESSION, 'demo');
         setIsDemo(true);
+        setIsPro(false);
         setView(bootShown ? 'dashboard' : 'boot');
         return true;
     }
     const cleanPassword = password.toLowerCase().trim();
-    if (cleanPassword === "genesis_prime") { setView('admin'); return true; }
+    if (cleanPassword === "genesis_prime") { setIsPro(true); setView('admin'); return true; }
     if (cleanPassword === "genesis_lab_entry") {
       localStorage.setItem(STORAGE_KEYS.SESSION, 'true');
       setIsDemo(false);
+      setIsPro(true);
       setView(bootShown ? 'dashboard' : 'boot');
       return true;
     }
@@ -175,19 +180,33 @@ const App: React.FC = () => {
      localStorage.removeItem(STORAGE_KEYS.SESSION);
      sessionStorage.removeItem('genesis_boot_seen');
      setBootShown(false);
+     setIsPro(false);
      setView('auth');
   }, []);
 
-  const handleReset = useCallback(() => {
-    if (confirm(lang === 'ru' ? "Сбросить текущую сессию?" : "გსურთ სესიის გადატვირთვა?")) {
+  const handleReset = useCallback((force: boolean = false) => {
+    const performResetAction = () => {
       StorageService.clear();
       sessionStorage.removeItem('genesis_boot_seen');
+      localStorage.removeItem(STORAGE_KEYS.SESSION);
       setBootShown(false);
       setCompletedNodeIds([]);
       setHistory([]);
       setDataStatus('ok');
+      setIsDemo(false);
+      setIsPro(false);
       setView('auth');
-      window.location.reload();
+    };
+
+    if (force) {
+      performResetAction();
+    } else {
+      PlatformBridge.showConfirm(
+        lang === 'ru' ? "Сбросить текущую сессию?" : "გსურთ სესიის გადატვირთვა?",
+        (confirmed) => {
+          if (confirmed) performResetAction();
+        }
+      );
     }
   }, [lang]);
 
@@ -224,10 +243,10 @@ const App: React.FC = () => {
     PlatformBridge.openLink(t.results.share_url);
   }, [result, t]);
 
-  const layoutProps = { lang, onLangChange: setLang, soundEnabled, onSoundToggle: () => setSoundEnabled(!soundEnabled), onLogout: handleLogout, onReset: handleReset };
+  const layoutProps = { lang, onLangChange: setLang, soundEnabled, onSoundToggle: () => setSoundEnabled(!soundEnabled), onLogout: handleLogout, onReset: () => handleReset(false) };
 
   const renderCurrentView = () => {
-    if (dataStatus === 'corrupted') return <DataCorruptionView t={t} onReset={handleReset} />;
+    if (dataStatus === 'corrupted') return <DataCorruptionView t={t} onReset={() => handleReset(true)} />;
     switch (view) {
       case 'auth': return <AuthView onLogin={handleLogin} t={t} />;
       case 'boot': return <BootView isDemo={isDemo} onComplete={() => { sessionStorage.setItem('genesis_boot_seen', 'true'); setBootShown(true); setView('dashboard'); }} t={t} />;
@@ -235,8 +254,8 @@ const App: React.FC = () => {
       case 'test': return !activeModule ? null : <TestView t={t} activeModule={activeModule} currentId={engine.state.currentId} scene={MODULE_REGISTRY[activeModule]?.[engine.state.currentId]} onChoice={engine.handleChoice} onExit={() => setView('dashboard')} getSceneText={getSceneText} adaptiveState={adaptiveState} />;
       case 'body_sync': return <BodySyncView t={t} onSync={engine.syncBodySensation} />;
       case 'reflection': return <ReflectionView t={t} sensation={history[history.length - 1]?.sensation} />;
-      case 'results': if (!result) return null; return result.validity === 'INVALID' ? <InvalidResultsView t={t} onReset={handleReset} patternFlags={result.patternFlags} /> : <ResultsView t={t} result={result} isGlitchMode={!!isGlitchMode} onContinue={handleContinue} onShare={handleShare} onBack={() => setView('dashboard')} getSceneText={getSceneText} adaptiveState={adaptiveState} onOpenBriefExplainer={() => setView('brief_explainer')} />;
-      case 'compatibility': return <CompatibilityView userResult={result} t={t} onBack={() => setView('dashboard')} />;
+      case 'results': if (!result) return null; return result.validity === 'INVALID' ? <InvalidResultsView t={t} onReset={() => handleReset(true)} patternFlags={result.patternFlags} /> : <ResultsView t={t} result={result} isGlitchMode={!!isGlitchMode} onContinue={handleContinue} onShare={handleShare} onBack={() => setView('dashboard')} getSceneText={getSceneText} adaptiveState={adaptiveState} onOpenBriefExplainer={() => setView('brief_explainer')} />;
+      case 'compatibility': return <CompatibilityView userResult={result} isProSession={isPro} onUnlockPro={() => setIsPro(true)} t={t} onBack={() => setView('dashboard')} />;
       case 'guide': return <GuideView t={t} onBack={() => setView('dashboard')} />;
       case 'brief_explainer': return <BriefExplainerView t={t} onBack={() => setView('results')} />;
       default: return <AuthView onLogin={handleLogin} t={t} />;
@@ -246,7 +265,9 @@ const App: React.FC = () => {
   return (
     <div className={`w-full h-full ${isGlitchMode ? 'glitch' : ''}`}>
       {view === 'admin' ? (
-        <AdminPanel t={t} onExit={() => setView('auth')} result={result} history={history} onUnlockAll={engine.forceCompleteAll} glitchEnabled={forceGlitch} onToggleGlitch={() => setForceGlitch(!forceGlitch)} />
+        <AdminPanel t={t} onExit={() => setView('auth')} result={result} history={history} onUnlockAll={engine.forceCompleteAll} glitchEnabled={forceGlitch} onToggleGlitch={() => setForceGlitch(!forceGlitch)} onSetView={setView} />
+      ) : view === 'system_integrity' ? (
+        <SystemIntegrityView t={t} onBack={() => setView('admin')} />
       ) : (
         <Layout {...layoutProps}>{renderCurrentView()}</Layout>
       )}

@@ -1,10 +1,12 @@
 
-import React, { useState, memo, useEffect, useMemo } from 'react';
-import { Translations, AnalysisResult, GameHistoryItem, BeliefKey } from '../../types';
+import { HealthMetric, TelemetryEvent, NodeInsight, FeedbackEntry } from '../../types';
+import React, { useState, memo, useEffect, useMemo, useRef } from 'react';
+import { Translations, AnalysisResult, GameHistoryItem, BeliefKey, SystemLogEntry } from '../../types';
 import { StorageService, STORAGE_KEYS } from '../../services/storageService';
-import { ALL_BELIEFS, TOTAL_NODES, MODULE_REGISTRY } from '../../constants';
-import { PlatformBridge, resolvePath } from '../../utils/helpers';
+import { ALL_BELIEFS, TOTAL_NODES, MODULE_REGISTRY, DOMAIN_SETTINGS, SYSTEM_METADATA, PSYCHO_CONFIG } from '../../constants';
+import { PlatformBridge } from '../../utils/helpers';
 import { translations } from '../../translations';
+import { calculateRawMetrics } from '../../services/psychologyService';
 
 interface AdminPanelProps {
   t: Translations;
@@ -14,10 +16,11 @@ interface AdminPanelProps {
   onUnlockAll: () => void;
   glitchEnabled: boolean;
   onToggleGlitch: () => void;
+  onSetView: (view: any) => void;
 }
 
 const AuditCard = ({ title, status, details, errorCount = 0 }: { title: string; status: 'OK' | 'ERROR' | 'WARNING'; details: string[] | string, errorCount?: number }) => (
-    <div className={`p-4 rounded-xl border ${status === 'OK' ? 'bg-emerald-950/20 border-emerald-900/30' : status === 'WARNING' ? 'bg-amber-950/20 border-amber-900/30' : 'bg-red-950/20 border-red-900/30'}`}>
+    <div className={`p-4 rounded-xl border transition-all ${status === 'OK' ? 'bg-emerald-950/20 border-emerald-900/30' : status === 'WARNING' ? 'bg-amber-950/20 border-amber-900/30' : 'bg-red-950/20 border-red-900/30'}`}>
         <div className="flex justify-between items-center mb-2">
             <h4 className={`text-[9px] font-black uppercase tracking-widest ${status === 'OK' ? 'text-emerald-400' : status === 'WARNING' ? 'text-amber-400' : 'text-red-400'}`}>{title}</h4>
             <div className="flex gap-2">
@@ -35,16 +38,15 @@ const AuditCard = ({ title, status, details, errorCount = 0 }: { title: string; 
     </div>
 );
 
-const JsonInspector = ({ data }: { data: any }) => (
-    <div className="bg-black/40 rounded-xl p-4 border border-slate-800 font-mono text-[9px] overflow-auto max-h-[300px] custom-scrollbar">
-        <pre className="text-emerald-500/80">{JSON.stringify(data, null, 2)}</pre>
-    </div>
-);
-
-export const AdminPanel = memo<AdminPanelProps>(({ t, onExit, result, history, onUnlockAll, glitchEnabled, onToggleGlitch }) => {
-  const [activeTab, setActiveTab] = useState<'system' | 'audit' | 'translation' | 'db'>('system');
-  const [logs, setLogs] = useState<any[]>(() => StorageService.load<any[]>(STORAGE_KEYS.AUDIT_LOG, []));
+export const AdminPanel = memo<AdminPanelProps>(({ t, onExit, result, history, onUnlockAll, glitchEnabled, onToggleGlitch, onSetView }) => {
+  const [activeTab, setActiveTab] = useState<'kernel' | 'learning' | 'integrity' | 'health' | 'logs' | 'recovery'>('kernel');
+  const [logs, setLogs] = useState<SystemLogEntry[]>(() => StorageService.load<SystemLogEntry[]>(STORAGE_KEYS.AUDIT_LOG, []));
+  const [telemetry, setTelemetry] = useState<TelemetryEvent[]>(() => StorageService.getTelemetry());
+  const [feedback, setFeedback] = useState<FeedbackEntry[]>(() => StorageService.getFeedback());
   const [uptime, setUptime] = useState('00:00:00');
+  const [importData, setImportData] = useState('');
+  
+  const logScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const start = Date.now();
@@ -58,66 +60,76 @@ export const AdminPanel = memo<AdminPanelProps>(({ t, onExit, result, history, o
     return () => clearInterval(interval);
   }, []);
 
-  // --- DIAGNOSTIC LOGIC ---
+  const handleImport = () => {
+    const success = StorageService.injectState(importData);
+    if (success) {
+        PlatformBridge.haptic.notification('success');
+        alert("KERNEL STATE INJECTED. RELOADING...");
+        window.location.reload();
+    } else {
+        PlatformBridge.haptic.notification('error');
+        alert("INVALID DATA STRUCTURE");
+    }
+  };
 
-  const reachabilityAudit = useMemo(() => {
-    const usedBeliefs = new Set<string>();
-    Object.values(MODULE_REGISTRY).forEach(domain => {
-        Object.values(domain).forEach(scene => {
-            scene.choices.forEach(choice => usedBeliefs.add(choice.beliefKey));
-        });
-    });
-    const orphaned = ALL_BELIEFS.filter(b => !usedBeliefs.has(b));
-    return {
-        status: orphaned.length > 0 ? 'WARNING' as const : 'OK' as const,
-        orphaned: orphaned.map(b => `[ORPHAN] ${b.toUpperCase()} is defined but not linked to any Scene`)
-    };
-  }, []);
+  const nodeInsights = useMemo(() => {
+      if (telemetry.length < 3) return [];
+      const nodeData: Record<string, TelemetryEvent[]> = {};
+      telemetry.forEach(e => {
+          if (!nodeData[e.nodeId]) nodeData[e.nodeId] = [];
+          nodeData[e.nodeId].push(e);
+      });
 
-  const translationAudit = useMemo(() => {
-    const ru = translations.ru;
-    const ka = translations.ka;
-    const issues: string[] = [];
-    
-    const checkKeys = (obj1: any, obj2: any, path: string) => {
-        Object.keys(obj1).forEach(key => {
-            const currentPath = path ? `${path}.${key}` : key;
-            if (!(key in obj2)) {
-                issues.push(`[MISSING_KA] ${currentPath}`);
-            } else if (typeof obj1[key] === 'object' && obj1[key] !== null) {
-                checkKeys(obj1[key], obj2[key], currentPath);
-            }
-        });
-    };
-    checkKeys(ru, ka, "");
-    return {
-        status: issues.length > 0 ? 'ERROR' as const : 'OK' as const,
-        issues
-    };
-  }, []);
+      const insights: NodeInsight[] = Object.entries(nodeData).map(([id, events]) => {
+          const avgLat = events.reduce((a, b) => a + b.latency, 0) / events.length;
+          const conflictCount = events.filter(e => e.sensation !== 's0' && e.sensation !== 's2').length;
+          const conflictRate = conflictCount / events.length;
+          const friction = avgLat / 2000;
+          let reliability = 1.0;
+          let rec = "";
 
-  const dbSummary = useMemo(() => {
-    const keys = Object.keys(localStorage);
-    return keys.filter(k => k.includes('genesis') || k.includes('app')).map(k => {
-        const val = localStorage.getItem(k) || '';
-        return `${k.padEnd(25)} | ${(val.length / 1024).toFixed(2)} KB`;
-    });
+          if (friction > SYSTEM_METADATA.LEARNING_CONFIG.FRICTION_THRESHOLD) { reliability -= 0.2; rec = "High Latency: Check translation clarity."; }
+          if (conflictRate > SYSTEM_METADATA.LEARNING_CONFIG.CONFLICT_THRESHOLD) { reliability -= 0.3; rec = (rec ? rec + " " : "") + "Somatic Dissonance: Likely semantic noise."; }
+
+          return { nodeId: id, avgLatency: avgLat, frictionIndex: friction, somaticConflictRate: conflictRate, reliability, recommendation: rec };
+      });
+
+      return insights.sort((a, b) => a.reliability - b.reliability);
+  }, [telemetry]);
+
+  const abPerformance = useMemo(() => {
+      const stats: Record<string, { total: number, accurate: number }> = { "CORE_WEIGHTS_V2": { total: 0, accurate: 0 } };
+      feedback.forEach(f => {
+          stats["CORE_WEIGHTS_V2"].total++;
+          if (f.isAccurate) stats["CORE_WEIGHTS_V2"].accurate++;
+      });
+      return stats;
+  }, [feedback]);
+
+  const integrityAudit = useMemo(() => {
+      const issues: string[] = [];
+      const usedBeliefs = new Set<string>();
+      Object.values(MODULE_REGISTRY).forEach(domain => {
+          Object.values(domain).forEach(scene => { scene.choices.forEach(choice => usedBeliefs.add(choice.beliefKey)); });
+      });
+      const orphaned = ALL_BELIEFS.filter(b => !usedBeliefs.has(b));
+      orphaned.forEach(b => issues.push(`[ORPHAN] BeliefKey ${b.toUpperCase()} not found in Scenes`));
+      return { status: (issues.length > 0 ? 'WARNING' : 'OK') as 'OK' | 'WARNING' | 'ERROR', issues };
   }, []);
 
   const handleCopyBundle = () => {
     const bundle = {
-        version: "8.4.0-DIAGNOSTIC",
+        meta: SYSTEM_METADATA,
         timestamp: new Date().toISOString(),
-        state: result?.state,
-        history_length: history.length,
-        raw_history: history,
-        logs: logs.slice(0, 20),
-        reachability: reachabilityAudit,
-        translation_debt: translationAudit.issues.length
+        kernelState: result?.state,
+        history,
+        telemetry: telemetry.slice(0, 100),
+        feedback: feedback.slice(0, 50),
+        integrity: integrityAudit.status
     };
     navigator.clipboard.writeText(JSON.stringify(bundle, null, 2));
     PlatformBridge.haptic.notification('success');
-    alert("Diagnostic Bundle Copied to Clipboard. Send this to the developer.");
+    alert("OVERSIGHT BUNDLE COPIED.");
   };
 
   return (
@@ -126,129 +138,191 @@ export const AdminPanel = memo<AdminPanelProps>(({ t, onExit, result, history, o
         <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 font-black border border-emerald-500/20 animate-pulse">G</div>
             <div>
-                <h2 className="text-sm font-black uppercase tracking-[0.3em] text-emerald-500">GENESIS_KERNEL_V8.4</h2>
-                <span className="text-[7px] opacity-40 uppercase">Mode: CLINICAL_SUPERVISOR_HARDENED</span>
+                <h2 className="text-sm font-black uppercase tracking-[0.3em] text-emerald-500">SLC_ADMIN_v{SYSTEM_METADATA.VERSION}</h2>
+                <span className="text-[7px] opacity-40 uppercase">{SYSTEM_METADATA.CODENAME}</span>
             </div>
         </div>
-        <button onClick={onExit} className="bg-red-900/20 px-4 py-2 rounded border border-red-900/50 text-red-500 text-[10px] uppercase font-black tracking-widest hover:bg-red-900/40 transition-all">TERMINATE_ADMIN</button>
+        <button onClick={onExit} className="bg-red-900/20 px-4 py-2 rounded border border-red-900/50 text-red-500 text-[10px] uppercase font-black tracking-widest">TERMINATE</button>
       </header>
 
-      <nav className="flex gap-1 shrink-0 p-1 bg-slate-900/50 rounded-xl overflow-x-auto no-scrollbar border border-white/5">
-        {(['system', 'audit', 'translation', 'db'] as const).map(tab => (
+      <nav className="flex gap-1 shrink-0 p-1 bg-slate-900/50 rounded-xl border border-white/5 overflow-x-auto no-scrollbar">
+        {(['kernel', 'learning', 'integrity', 'health', 'logs', 'recovery'] as const).map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)} className={`px-4 py-2.5 rounded-lg text-[8px] font-black uppercase whitespace-nowrap transition-all ${activeTab === tab ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'opacity-40 text-slate-400'}`}>
-                {tab === 'system' ? 'KERNEL' : tab === 'audit' ? 'INTEGRITY' : tab === 'translation' ? 'L10N_DEBT' : 'STORAGE'}
+                {tab}
             </button>
         ))}
       </nav>
 
       <div className="flex-1 overflow-y-auto space-y-6 pr-1 custom-scrollbar">
-        {activeTab === 'system' && (
+        {activeTab === 'kernel' && (
             <div className="space-y-6 animate-in">
-                <div className="grid grid-cols-2 gap-4">
-                    <button onClick={() => { if(confirm("WIPE ALL DATA?")) StorageService.clear(); }} className="bg-red-900/10 p-6 rounded-2xl border border-red-900/30 text-center space-y-3 group hover:bg-red-900/20 transition-all">
-                        <div className="w-12 h-12 bg-orange-500 rounded-full mx-auto flex items-center justify-center text-2xl shadow-[0_0_20px_rgba(249,115,22,0.3)]">☢️</div>
-                        <span className="block text-[9px] font-black text-red-400 uppercase tracking-widest">Wipe Memory</span>
+                <section className="bg-slate-900/40 p-6 rounded-2xl border border-white/5 space-y-4 shadow-xl">
+                    <h3 className="text-[10px] font-black uppercase tracking-widest text-indigo-400 border-b border-white/5 pb-2 italic">Active Kernel Status</h3>
+                    <div className="grid grid-cols-2 gap-y-4">
+                        <div><span className="text-[7px] text-slate-500 block uppercase">Version</span><span className="text-xs">{SYSTEM_METADATA.VERSION}</span></div>
+                        <div><span className="text-[7px] text-slate-500 block uppercase">Uptime</span><span className="text-xs font-bold text-emerald-400">{uptime}</span></div>
+                        <div><span className="text-[7px] text-slate-500 block uppercase">Last Updated</span><span className="text-xs">{SYSTEM_METADATA.LAST_UPDATED}</span></div>
+                        <div><span className="text-[7px] text-slate-500 block uppercase">Diagnostic Stack</span><span className="text-xs">{history.length} nodes</span></div>
+                    </div>
+                </section>
+                
+                <section className="bg-indigo-950/20 p-5 rounded-2xl border border-indigo-500/20 space-y-3">
+                    <h3 className="text-[10px] font-black uppercase tracking-widest text-indigo-400">A/B Experiments</h3>
+                    {Object.entries(SYSTEM_METADATA.EXPERIMENTS).map(([id, config]) => (
+                        <div key={id} className="p-3 bg-black/40 rounded-xl border border-white/5 space-y-2">
+                            <div className="flex justify-between items-center">
+                                <span className="text-[10px] font-black text-indigo-300">{id}</span>
+                                <span className="text-[8px] bg-indigo-500/20 text-indigo-400 px-2 rounded uppercase font-bold">LIVE</span>
+                            </div>
+                            <p className="text-[9px] text-slate-500 italic">{config.description}</p>
+                            <div className="flex justify-between items-end pt-1">
+                                <div>
+                                    <span className="text-[7px] text-slate-600 block uppercase">Validation Accuracy</span>
+                                    <span className="text-xs font-bold text-emerald-400">{((abPerformance[id]?.accurate / abPerformance[id]?.total || 0) * 100).toFixed(1)}%</span>
+                                </div>
+                                <span className="text-[9px] text-slate-600 font-mono">{abPerformance[id]?.total} samples</span>
+                            </div>
+                        </div>
+                    ))}
+                </section>
+                
+                <div className="grid grid-cols-2 gap-4 pb-6">
+                    <button onClick={onUnlockAll} className="bg-indigo-600/20 p-5 rounded-2xl border border-indigo-600/30 text-center space-y-2 hover:bg-indigo-600/40">
+                        <div className="text-xl">🔓</div>
+                        <span className="block text-[8px] font-black text-indigo-400 uppercase tracking-widest">Bypass Onboarding</span>
                     </button>
-                    <button onClick={onUnlockAll} className="bg-amber-900/10 p-6 rounded-2xl border border-amber-900/30 text-center space-y-3 group hover:bg-amber-900/20 transition-all">
-                        <div className="w-12 h-12 bg-yellow-500 rounded-full mx-auto flex items-center justify-center text-2xl shadow-[0_0_20px_rgba(234,179,8,0.3)]">🔑</div>
-                        <span className="block text-[9px] font-black text-amber-400 uppercase tracking-widest">Master Unlock</span>
+                    <button onClick={onToggleGlitch} className={`${glitchEnabled ? 'bg-amber-600/40 border-amber-500/50' : 'bg-slate-800/40 border-white/10'} p-5 rounded-2xl border text-center space-y-2`}>
+                        <div className="text-xl">{glitchEnabled ? '⚠️' : '🛡️'}</div>
+                        <span className="block text-[8px] font-black text-slate-400 uppercase tracking-widest">Chaos: {glitchEnabled ? 'ON' : 'OFF'}</span>
+                    </button>
+                    <button onClick={() => onSetView('system_integrity')} className="col-span-2 bg-emerald-600/10 p-5 rounded-2xl border border-emerald-500/20 text-center space-y-2 hover:bg-emerald-600/20 flex flex-col items-center">
+                        <div className="text-xl">📡</div>
+                        <span className="block text-[8px] font-black text-emerald-400 uppercase tracking-widest">Deep Kernel Integrity</span>
                     </button>
                 </div>
+            </div>
+        )}
 
-                <button onClick={handleCopyBundle} className="w-full bg-indigo-900/20 p-5 rounded-2xl border border-indigo-500/30 flex items-center justify-center gap-3 active:scale-[0.98] transition-all">
-                    <span className="text-xl">📦</span>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Copy Diagnostic Bundle</span>
+        {activeTab === 'learning' && (
+            <div className="space-y-4 animate-in">
+                <div className="bg-slate-900/50 p-5 rounded-2xl border border-white/5 space-y-4">
+                    <h3 className="text-[10px] font-black uppercase tracking-widest text-emerald-500 border-b border-emerald-500/20 pb-2">Clinical Accuracy Stream</h3>
+                    <div className="max-h-40 overflow-y-auto space-y-2 custom-scrollbar pr-2">
+                        {feedback.length === 0 ? <p className="text-[10px] text-slate-600 italic">No feedback entries.</p> : feedback.map((f, i) => (
+                            <div key={i} className="flex justify-between items-center p-2 bg-black/20 rounded-lg border border-white/5">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm">{f.isAccurate ? '✅' : '❌'}</span>
+                                    <span className="text-[9px] text-slate-400 font-mono">#{f.scanId.substring(0,6)}</span>
+                                </div>
+                                <span className="text-[8px] text-slate-600 font-mono">{new Date(f.timestamp).toLocaleTimeString()}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="bg-slate-900/50 p-5 rounded-2xl border border-white/5 space-y-4">
+                    <h3 className="text-[10px] font-black uppercase tracking-widest text-amber-500 border-b border-amber-500/20 pb-2">Node Friction Insights</h3>
+                    <div className="space-y-3">
+                        {nodeInsights.map((insight) => (
+                            <div key={insight.nodeId} className="p-3 bg-black/20 rounded-xl border border-white/5 space-y-2">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-[10px] font-black text-indigo-500 uppercase">{insight.nodeId}</span>
+                                    <span className={`text-[8px] px-1.5 py-0.5 rounded font-black ${insight.reliability > 0.8 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>REL: {(insight.reliability * 100).toFixed(0)}%</span>
+                                </div>
+                                <div className="flex gap-4">
+                                    <div className="flex-1">
+                                        <span className="text-[7px] text-slate-500 uppercase block">Friction</span>
+                                        <div className="h-1 bg-slate-800 rounded-full mt-1 overflow-hidden">
+                                            <div className="h-full bg-amber-500" style={{ width: `${Math.min(100, insight.frictionIndex * 20)}%` }}></div>
+                                        </div>
+                                    </div>
+                                    <div className="flex-1">
+                                        <span className="text-[7px] text-slate-500 uppercase block">Conflict</span>
+                                        <div className="h-1 bg-slate-800 rounded-full mt-1 overflow-hidden">
+                                            <div className="h-full bg-red-500" style={{ width: `${insight.somaticConflictRate * 100}%` }}></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {insight.recommendation && <p className="text-[8px] text-amber-400 italic font-mono">{insight.recommendation}</p>}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {activeTab === 'integrity' && <div className="space-y-4 animate-in"><AuditCard title="Belief Reachability" status={integrityAudit.status} details={integrityAudit.issues} errorCount={integrityAudit.issues.length} /></div>}
+
+        {activeTab === 'health' && (
+            <div className="space-y-6 animate-in">
+                <div className="grid grid-cols-1 gap-4">
+                    {['registry', 'telemetry', 'feedback', 'engine'].map((key) => (
+                        <div key={key} className="flex justify-between items-center bg-slate-900/50 p-4 rounded-xl border border-white/5">
+                            <div className="space-y-1">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-200">{key}</span>
+                                <p className="text-[8px] text-slate-500 italic">Diagnostic subsystem active</p>
+                            </div>
+                            <div className="text-right">
+                                <div className="text-[10px] font-bold text-emerald-400">OPERATIONAL</div>
+                                <span className="text-[7px] opacity-40 uppercase font-mono">STATUS_OK</span>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        )}
+
+        {activeTab === 'logs' && (
+            <div className="bg-slate-900/50 rounded-2xl border border-white/5 overflow-hidden flex-1 flex flex-col min-h-[300px]">
+                <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar" ref={logScrollRef}>
+                    {logs.map((log, i) => (
+                        <div key={i} className="text-[9px] font-mono border-l-2 border-white/10 pl-3 py-1">
+                            <div className="flex justify-between items-center mb-1">
+                                <span className={`font-black ${log.level === 'ERROR' ? 'text-red-500' : log.level === 'WARN' ? 'text-amber-500' : 'text-indigo-400'}`}>[{log.level}] {log.action}</span>
+                                <span className="text-slate-600 text-[7px]">{new Date(log.timestamp).toLocaleTimeString()}</span>
+                            </div>
+                            <div className="text-slate-500 text-[8px] uppercase">{log.module}</div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        )}
+
+        {activeTab === 'recovery' && (
+            <div className="space-y-6 animate-in pb-10">
+                <button onClick={handleCopyBundle} className="w-full bg-indigo-900/20 p-8 rounded-2xl border border-indigo-500/30 flex flex-col items-center justify-center gap-3 group">
+                    <span className="text-4xl group-hover:scale-110 transition-transform">📦</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Generate Evolution Bundle</span>
+                    <span className="text-[7px] text-slate-500 mt-2 italic">Exports telemetry, SLC insights & A/B stats</span>
                 </button>
+                
+                <section className="bg-slate-900/40 p-5 rounded-2xl border border-white/5 space-y-4">
+                    <h3 className="text-[10px] font-black uppercase text-indigo-400 border-b border-indigo-500/20 pb-2 flex items-center gap-2"><span>📥</span> SESSION_STATE_INJECTOR</h3>
+                    <textarea 
+                        className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-[9px] font-mono text-emerald-500 h-24 outline-none focus:border-indigo-500/50"
+                        placeholder="Paste JSON state string here..."
+                        value={importData}
+                        onChange={e => setImportData(e.target.value)}
+                    />
+                    <button onClick={handleImport} className="w-full py-3 bg-indigo-600 text-white rounded-xl text-[9px] font-black uppercase shadow-lg shadow-indigo-900/40">INJECT_STATE</button>
+                    <p className="text-[8px] text-slate-500 italic text-center leading-tight">CAUTION: This bypasses normal session logic. Use only for clinical recovery.</p>
+                </section>
 
-                <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800 flex justify-between items-center">
-                    <div className="space-y-1">
-                        <span className="text-[10px] font-black text-slate-200 uppercase tracking-widest italic">GLITCH_OVERRIDE</span>
-                        <p className="text-[8px] text-slate-500 font-mono">Force entropy visual triggers for UI stress testing.</p>
-                    </div>
-                    <button 
-                        onClick={onToggleGlitch}
-                        className={`w-14 h-7 rounded-full transition-all relative ${glitchEnabled ? 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]' : 'bg-slate-700'}`}
-                    >
-                        <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-all ${glitchEnabled ? 'right-1' : 'left-1'}`}></div>
-                    </button>
-                </div>
-            </div>
-        )}
-
-        {activeTab === 'audit' && (
-            <div className="space-y-4 animate-in">
-                <h3 className="text-[10px] uppercase tracking-[0.4em] font-black text-emerald-600 text-center mb-4">Core Integrity Check</h3>
-                <AuditCard 
-                    title="Belief Key Reachability" 
-                    status={reachabilityAudit.status} 
-                    details={reachabilityAudit.orphaned} 
-                    errorCount={reachabilityAudit.orphaned.length}
-                />
-                <AuditCard 
-                    title="Node Density" 
-                    status="OK" 
-                    details={`System contains ${TOTAL_NODES} clinical nodes across 5 domains. Saturation: 100%.`} 
-                />
-                <AuditCard 
-                    title="Engine Predictability" 
-                    status={history.length > 0 ? "OK" : "WARNING"} 
-                    details={history.length > 0 ? `Active session captured. Buffer size: ${history.length} events.` : "System idling. Awaiting user input to calibrate entropy sensors."} 
-                />
-            </div>
-        )}
-
-        {activeTab === 'translation' && (
-            <div className="space-y-4 animate-in">
-                <h3 className="text-[10px] uppercase tracking-[0.4em] font-black text-indigo-500 text-center mb-4">Localization Audit</h3>
-                <AuditCard 
-                    title="KA Language Sync" 
-                    status={translationAudit.status} 
-                    details={translationAudit.issues} 
-                    errorCount={translationAudit.issues.length}
-                />
-                <div className="grid grid-cols-2 gap-3 text-center">
-                    <div className="p-3 bg-slate-900 rounded-xl border border-white/5">
-                        <span className="text-[7px] text-slate-500 uppercase">RU_DICT_LEN</span>
-                        <p className="text-xs font-bold text-emerald-400">{Object.keys(translations.ru).length} KEYS</p>
-                    </div>
-                    <div className="p-3 bg-slate-900 rounded-xl border border-white/5">
-                        <span className="text-[7px] text-slate-500 uppercase">KA_DICT_LEN</span>
-                        <p className="text-xs font-bold text-indigo-400">{Object.keys(translations.ka).length} KEYS</p>
-                    </div>
-                </div>
-            </div>
-        )}
-
-        {activeTab === 'db' && (
-            <div className="space-y-4 animate-in">
-                <h3 className="text-[10px] uppercase tracking-[0.4em] font-black text-emerald-600 text-center mb-4">Storage Inspector</h3>
-                <AuditCard title="Raw LocalStorage Map" status="OK" details={dbSummary} />
-                <div className="space-y-2">
-                    <span className="text-[9px] font-black text-slate-600 uppercase ml-2">Current Session JSON</span>
-                    <JsonInspector data={{ result, historyCount: history.length }} />
+                <div className="bg-red-950/10 p-5 rounded-2xl border border-red-900/30 text-center space-y-3">
+                    <h3 className="text-[10px] font-black uppercase text-red-500">System Wipe</h3>
+                    <button onClick={() => confirm("FACTORY RESET?") && StorageService.clear()} className="w-full py-3 bg-red-600/20 text-red-500 rounded-xl text-[9px] font-black uppercase border border-red-600/30">Factory_Reset_Kernel</button>
                 </div>
             </div>
         )}
       </div>
 
-      <div className="shrink-0 bg-slate-900/80 rounded-2xl p-4 border border-emerald-900/20 space-y-3">
-        <div className="flex justify-between text-[8px] font-black uppercase opacity-50 tracking-widest">
-            <span>KERNEL_LOG_BUFFER</span>
-            <span>UPTIME: {uptime}</span>
+      <footer className="shrink-0 bg-slate-900/80 rounded-2xl p-4 border border-emerald-900/20 flex justify-between items-center shadow-inner">
+        <div className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">SLC_DAEMON_ACTIVE</span>
         </div>
-        <div className="h-20 overflow-y-auto font-mono text-[8px] space-y-1.5 custom-scrollbar-thin">
-            <div className="flex gap-2 text-emerald-500/70 italic">
-                <span>[SYSTEM]</span>
-                <span>Diagnostic core active. No leaks detected.</span>
-            </div>
-            {logs.slice(0, 10).map((log, i) => (
-                <div key={i} className="flex gap-2">
-                    <span className="text-emerald-800">[{new Date(log.timestamp).toLocaleTimeString()}]</span>
-                    <span className="text-slate-500 uppercase">{log.action}: SUCCESS</span>
-                </div>
-            ))}
-        </div>
-      </div>
+        <span className="text-[9px] font-black text-emerald-900 uppercase italic">Clinical Bridge Oversight</span>
+      </footer>
     </div>
   );
 });

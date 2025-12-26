@@ -1,7 +1,7 @@
 
 import React, { memo, useMemo } from 'react';
 import { DomainType, Translations, AnalysisResult, ScanHistory } from '../../types';
-import { DOMAIN_SETTINGS } from '../../constants';
+import { DOMAIN_SETTINGS, SYSTEM_METADATA } from '../../constants';
 import { EvolutionDashboard } from '../EvolutionDashboard';
 
 export interface NodeUI {
@@ -60,8 +60,8 @@ export const DashboardView = memo<DashboardViewProps>(({
                 {t.ui.status_report_title}
             </h2>
             <div className="flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-full">
-                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
-                <span className="text-[8px] font-mono font-bold text-slate-500 uppercase tracking-tighter">{t.ui.live_uplink}</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span className="text-[8px] font-mono font-bold text-slate-500 uppercase tracking-tighter">OVERSIGHT_v{SYSTEM_METADATA.VERSION.split('-')[0]}</span>
             </div>
         </div>
         

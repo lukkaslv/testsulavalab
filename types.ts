@@ -29,6 +29,112 @@ export type VerdictKey =
   | 'FROZEN_POTENTIAL' 
   | 'CRITICAL_DEFICIT';
 
+// --- ADVANCED LOGGING & INTEGRITY ---
+
+export enum LogLevel {
+  ERROR = 'ERROR',
+  WARN = 'WARN',
+  INFO = 'INFO',
+  DEBUG = 'DEBUG'
+}
+
+export interface LogEntry {
+  timestamp: number;
+  level: LogLevel;
+  module: string;
+  message: string;
+  stack?: string;
+  context?: Record<string, any>;
+}
+
+export interface ConfigError {
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  type: 'id_mismatch' | 'orphaned_key' | 'missing_translation' | 'unreachable';
+  details: string;
+  fix: string;
+  file: string;
+  line?: number;
+  impact: string;
+}
+
+export interface IntegrityReport {
+  status: 'healthy' | 'warning' | 'error';
+  errors: ConfigError[];
+  warnings: ConfigError[];
+  healthy: string[];
+  timestamp: number;
+}
+
+export interface SystemHealth {
+  config: {
+    status: 'healthy' | 'warning' | 'error';
+    beliefKeysSync: { total: number; synced: number };
+    translationsComplete: number;
+    reachability: { total: number; reachable: number };
+  };
+  runtime: {
+    status: 'stable' | 'unstable';
+    errors24h: number;
+    warnings24h: number;
+    lastCrash: number | null;
+  };
+  storage: {
+    status: 'operational' | 'degraded' | 'failed';
+    readSuccess: { total: number; success: number };
+    writeSuccess: { total: number; success: number };
+    quotaUsed: number;
+    quotaTotal: number;
+  };
+  performance: {
+    status: 'excellent' | 'good' | 'poor';
+    avgMetricsCalc: number;
+    avgRenderTime: number;
+    memoryUsage: number;
+  };
+}
+
+export interface TelemetryEvent {
+    nodeId: string;
+    domain: DomainType;
+    latency: number;
+    sensation: string;
+    beliefKey: string;
+    isOutlier: boolean;
+    timestamp: number;
+    variantId?: string;
+}
+
+export interface FeedbackEntry {
+    scanId: string;
+    isAccurate: boolean;
+    notes: string;
+    timestamp: number;
+    psychologistId: string;
+}
+
+export interface NodeInsight {
+    nodeId: string;
+    avgLatency: number;
+    frictionIndex: number;
+    somaticConflictRate: number;
+    reliability: number;
+    recommendation?: string;
+    variantPerformance?: Record<string, number>;
+}
+
+export interface DomainConfig {
+  key: DomainType;
+  count: number;
+  color: string;
+  startId: number;
+}
+
+export interface DomainRawConfig {
+  key: DomainType;
+  count: number;
+  color: string;
+}
+
 export class DataCorruptionError extends Error {
   constructor(message: string) {
     super(message);
@@ -65,6 +171,20 @@ export interface GameHistoryItem {
   choicePosition: number;
 }
 
+export interface SystemLogEntry {
+    timestamp: string;
+    level: 'INFO' | 'WARN' | 'ERROR' | 'SYSTEM';
+    module: string;
+    action: string;
+    details?: any;
+}
+
+export interface HealthMetric {
+    status: 'OK' | 'DEGRADED' | 'CRITICAL';
+    value: string | number;
+    description: string;
+}
+
 export interface NeuralCorrelation {
   nodeId: string;
   domain: DomainType;
@@ -93,6 +213,7 @@ export interface AnalysisFlags {
   isSocialDesirabilityBiasDetected: boolean;
   processingSpeedCompensation: number;
   entropyType: 'NEUTRAL' | 'CREATIVE' | 'STRUCTURAL';
+  isL10nRiskDetected: boolean;
 }
 
 export interface PatternFlags {
@@ -137,6 +258,15 @@ export interface AdaptiveState {
   confidenceScore: number;
 }
 
+export interface CompatibilityReport {
+  overallScore: number;
+  domainSynergies: DomainType[];
+  domainConflicts: DomainType[];
+  recommendations: string[];
+  relationshipType: 'Synergy' | 'Complementary' | 'Neutral' | 'Challenging';
+  partnerArchetype: ArchetypeKey;
+}
+
 export interface RawAnalysisResult {
   state: { foundation: number; agency: number; resource: number; entropy: number };
   integrity: number;
@@ -166,6 +296,7 @@ export interface AnalysisResult extends RawAnalysisResult {
   shareCode: string;
   archetypeKey: ArchetypeKey;
   secondaryArchetypeKey?: ArchetypeKey;
+  matchPercent?: number; 
   archetypeMatch: number;
   archetypeSpectrum: Array<{ key: ArchetypeKey; score: number }>;
   verdictKey: VerdictKey;
@@ -177,6 +308,7 @@ export interface AnalysisResult extends RawAnalysisResult {
   shadowDirective: string;
   interferenceInsight?: string;
   patternFlags: PatternFlags;
+  variantId?: string;
 }
 
 export interface ScanHistory {
@@ -193,6 +325,38 @@ export interface SessionStep {
   phase: string;
   title: string;
   action: string;
+}
+
+export interface TherapyHypothesis {
+  id: string;
+  hypothesis: string;
+  basedOn: string;
+  focusForSession: string;
+}
+
+export interface ClinicalInterpretation {
+    systemConfiguration: {
+        title: string;
+        description: string;
+        limitingFactor: string;
+    };
+    deepMechanism: {
+        title: string;
+        analysis: string[];
+    };
+    metricInteractions: {
+        farDescription: string;
+        syncDescription: string;
+    };
+    archetypeClinical: {
+        strategy: string;
+        functionality: string;
+        limit: string;
+    };
+    beliefImpact: string;
+    hypotheses: TherapyHypothesis[];
+    risks: string[];
+    sessionEntry: string;
 }
 
 export interface ClinicalNarrative {
@@ -224,60 +388,6 @@ export interface ClinicalNarrative {
     riskAssessment: string[];
     therapeuticEntry: string;
   };
-}
-
-// FIX: Added missing DomainRawConfig and DomainConfig used in constants.ts
-export interface DomainRawConfig {
-  key: DomainType;
-  count: number;
-  color: string;
-}
-
-export interface DomainConfig extends DomainRawConfig {
-  startId: number;
-}
-
-// FIX: Added missing CompatibilityReport used in compatibilityEngine.ts
-export interface CompatibilityReport {
-  overallScore: number;
-  domainSynergies: DomainType[];
-  domainConflicts: DomainType[];
-  recommendations: string[];
-  relationshipType: 'Synergy' | 'Complementary' | 'Challenging' | 'Neutral';
-  partnerArchetype: ArchetypeKey;
-}
-
-// FIX: Added missing TherapyHypothesis and ClinicalInterpretation used in clinicalDecoder.ts
-export interface TherapyHypothesis {
-    id: string;
-    hypothesis: string;
-    basedOn: string;
-    focusForSession: string;
-}
-
-export interface ClinicalInterpretation {
-    systemConfiguration: {
-        title: string;
-        description: string;
-        limitingFactor: string;
-    };
-    deepMechanism: {
-        title: string;
-        analysis: string[];
-    };
-    metricInteractions: {
-        farDescription: string;
-        syncDescription: string;
-    };
-    archetypeClinical: {
-        strategy: string;
-        functionality: string;
-        limit: string;
-    };
-    beliefImpact: string;
-    hypotheses: TherapyHypothesis[];
-    risks: string[];
-    sessionEntry: string;
 }
 
 export interface Translations {

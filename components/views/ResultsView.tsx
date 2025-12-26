@@ -1,4 +1,5 @@
 
+import { FeedbackEntry } from '../../types';
 import React, { useState, memo, useCallback, useMemo } from 'react';
 import { AnalysisResult, Translations, AdaptiveState, ScanHistory, BeliefKey } from '../../types';
 import { StorageService, STORAGE_KEYS } from '../../services/storageService';
@@ -19,6 +20,42 @@ interface ResultsViewProps {
   adaptiveState: AdaptiveState;
   onOpenBriefExplainer: () => void;
 }
+
+const ClinicalFeedback = ({ scanId }: { scanId: string }) => {
+    const [sent, setSent] = useState(false);
+    const handleFeedback = (isAccurate: boolean) => {
+        const entry: FeedbackEntry = {
+            scanId,
+            isAccurate,
+            notes: "Manual validation",
+            timestamp: Date.now(),
+            psychologistId: "local_session"
+        };
+        StorageService.saveFeedback(entry);
+        setSent(true);
+        PlatformBridge.haptic.notification('success');
+    };
+
+    if (sent) return (
+        <div className="bg-emerald-950/20 p-4 rounded-2xl border border-emerald-900/30 text-center animate-in">
+            <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest italic">Validation Locked. Data ingested into SLC.</p>
+        </div>
+    );
+
+    return (
+        <section className="bg-slate-900 p-6 rounded-[2.5rem] border border-white/5 space-y-4 shadow-2xl">
+            <div className="text-center">
+                <span className="text-[9px] font-black text-indigo-400 uppercase tracking-[0.3em] block mb-1">Human-in-the-Loop</span>
+                <h4 className="text-[11px] font-bold text-white italic uppercase">Validate Diagnosis Accuracy?</h4>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+                <button onClick={() => handleFeedback(true)} className="bg-emerald-600/20 py-3 rounded-xl border border-emerald-600/30 text-emerald-400 text-[9px] font-black uppercase hover:bg-emerald-600/40 transition-all">ACCURATE</button>
+                <button onClick={() => handleFeedback(false)} className="bg-red-600/20 py-3 rounded-xl border border-red-600/30 text-red-400 text-[9px] font-black uppercase hover:bg-red-600/40 transition-all">OUTLIER</button>
+            </div>
+            <p className="text-[8px] text-slate-500 text-center leading-tight">This signal will calibrate future A/B variants of the FARE engine.</p>
+        </section>
+    );
+};
 
 const DeltaBadge = ({ current, previous, inverse = false }: { current: number, previous: number | undefined, inverse?: boolean }) => {
     if (previous === undefined) return null;
@@ -123,8 +160,6 @@ export const ResultsView = memo<ResultsViewProps>(({
   const [showPrep, setShowPrep] = useState(false);
   const [activeMetricHelp, setActiveMetricHelp] = useState<string | null>(null);
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [showBrief, setShowBrief] = useState(false);
   const [completedTasks, setCompletedTasks] = useState<number[]>(() => StorageService.load<number[]>(STORAGE_KEYS.ROADMAP_STATE, []));
 
   const currentLang = t.subtitle.includes('LUKA') && t.onboarding.title.includes('ნავიგატორი') ? 'ka' : 'ru';
@@ -137,53 +172,14 @@ export const ResultsView = memo<ResultsViewProps>(({
   const previousScan = useMemo(() => {
       if (!history || history.scans.length === 0) return undefined;
       const currentIndex = history.scans.findIndex(s => s.createdAt === result.createdAt);
-      if (currentIndex > 0) {
-          return history.scans[currentIndex - 1];
-      } else if (currentIndex === -1) {
-          return history.scans[history.scans.length - 1];
-      }
+      if (currentIndex > 0) return history.scans[currentIndex - 1];
+      else if (currentIndex === -1) return history.scans[history.scans.length - 1];
       return undefined;
   }, [history, result]);
 
   const archetype = t.archetypes[result.archetypeKey];
   const verdict = t.verdicts[result.verdictKey];
 
-  const toggleTask = useCallback((day: number) => {
-    PlatformBridge.haptic.impact('light');
-    setCompletedTasks(prev => {
-        const next = prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day];
-        StorageService.save(STORAGE_KEYS.ROADMAP_STATE, next);
-        return next;
-    });
-  }, []);
-
-  const briefText = useMemo(() => `
-Genesis OS // CLINICAL REFERRAL
--------------------------------
-CLIENT ID: ${result.shareCode}
-ARCHETYPE: ${archetype.title}
-VALIDITY: ${result.validity}
-
-METRICS [FARE]:
-- Foundation: ${Math.round(result.state.foundation)}
-- Agency: ${Math.round(result.state.agency)}
-- Resource: ${Math.round(result.state.resource)}
-- Entropy: ${Math.round(result.state.entropy)}
-
-SYNC: ${result.neuroSync}%
-DIAGNOSED PATTERN: ${verdict?.label.toUpperCase()}
-
-ACTIVE BELIEFS:
-${result.activePatterns.map(p => `• ${t.beliefs[p]}`).join('\n')}
-  `.trim(), [result, t, archetype, verdict]);
-
-  const handleCopyBrief = useCallback(() => {
-      navigator.clipboard.writeText(briefText);
-      setCopied(true);
-      PlatformBridge.haptic.notification('success');
-      setTimeout(() => setCopied(false), 3000);
-  }, [briefText]);
-  
   const sessionPrepQuestions = useMemo(() => SessionPrepService.generate(result, t), [result, t]);
 
   if (!disclaimerAccepted) {
@@ -269,6 +265,9 @@ ${result.activePatterns.map(p => `• ${t.beliefs[p]}`).join('\n')}
             </div>
         </div>
       </header>
+
+      {/* SLC LOOP: CLINICAL FEEDBACK BLOCK */}
+      <ClinicalFeedback scanId={result.shareCode} />
 
       {(result.activePatterns && result.activePatterns.length > 0) && (
           <section className="space-y-4">

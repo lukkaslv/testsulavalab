@@ -40,17 +40,27 @@ export const useTestEngine = ({
   const hardwareLatencyOffset = useRef<number>(0); 
   const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ATOMIC COMMIT: Protects against race conditions by using functional state updates
   const commitUpdate = useCallback((newItem: GameHistoryItem, lastNodeId: number) => {
     let finalNodes: number[] = [];
     
+    // SLC: Log Telemetry with Variant ID
+    const userId = localStorage.getItem(STORAGE_KEYS.SESSION) || 'anonymous';
+    const variantId = (userId.charCodeAt(0) % 2 === 0) ? 'A' : 'B';
+
+    StorageService.logTelemetry({
+        nodeId: newItem.nodeId,
+        domain: newItem.domain,
+        latency: newItem.latency,
+        sensation: newItem.sensation,
+        beliefKey: newItem.beliefKey,
+        variantId
+    });
+
     setHistory(prev => {
         const next = [...prev, newItem];
         setCompletedNodeIds(prevNodes => {
             const nextNodes = prevNodes.includes(lastNodeId) ? prevNodes : [...prevNodes, lastNodeId];
             finalNodes = nextNodes;
-            
-            // Atomic save to persistence
             const sessionState: SessionState = { nodes: nextNodes, history: next };
             StorageService.save(STORAGE_KEYS.SESSION_STATE, sessionState);
             return nextNodes;
@@ -58,9 +68,8 @@ export const useTestEngine = ({
         return next;
     });
 
-    // Clean recovery buffer
     StorageService.save('genesis_recovery_choice', null);
-    return () => finalNodes; // Thunk to get computed state
+    return () => finalNodes;
   }, [setHistory, setCompletedNodeIds]);
 
   useEffect(() => {
@@ -100,7 +109,6 @@ export const useTestEngine = ({
     if (nextId >= TOTAL_NODES) { setView('results'); return; }
     if (isDemo && nextId >= 3) { setView('dashboard'); return; }
 
-    // Checkpoint every 10 nodes
     if (nextNodes.length > 0 && nextNodes.length % 10 === 0 && !nextNodes.includes(nextId)) {
         setView('dashboard');
         window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred?.('success');
@@ -134,7 +142,6 @@ export const useTestEngine = ({
     commitUpdate(newItem, lastSelectedNode);
 
     if (sensation === 's0') {
-         // Immediate jump
          setCompletedNodeIds(nodes => {
              advanceNode(nodes);
              return nodes;
@@ -152,7 +159,7 @@ export const useTestEngine = ({
   }, [state, isProcessing, activeModule, lastSelectedNode, advanceNode, setView, commitUpdate, setCompletedNodeIds]);
 
   const handleChoice = useCallback((choice: Choice) => {
-    if (isProcessing) return; // Ignore spam
+    if (isProcessing) return; 
     
     window.Telegram?.WebApp?.HapticFeedback?.selectionChanged?.(); 
     const now = performance.now();
@@ -168,8 +175,6 @@ export const useTestEngine = ({
         const shouldSample = numericId < ONBOARDING_NODES_COUNT || currentScene.intensity >= 4;
 
         setState(prev => ({ ...prev, lastChoice: choiceWithLatency }));
-        
-        // Persistence Recovery Buffer: Save choice so it's not lost if user closes browser here
         StorageService.save('genesis_recovery_choice', choiceWithLatency);
 
         if (shouldSample) {
@@ -177,11 +182,8 @@ export const useTestEngine = ({
         } else {
              setIsProcessing(true);
              const newItem: GameHistoryItem = { 
-                 beliefKey: choice.beliefKey, 
-                 sensation: 's0', 
-                 latency: cleanLatency,
-                 nodeId: state.currentId,
-                 domain: activeModule as DomainType,
+                 beliefKey: choice.beliefKey, sensation: 's0', latency: cleanLatency,
+                 nodeId: state.currentId, domain: activeModule as DomainType,
                  choicePosition: choice.position
              };
              commitUpdate(newItem, lastSelectedNode);
@@ -198,7 +200,6 @@ export const useTestEngine = ({
     const neutralHistory: GameHistoryItem[] = allIds.map(id => ({
         beliefKey: 'default', sensation: 's0', latency: 1500, nodeId: id.toString(), domain: 'foundation' as DomainType, choicePosition: -1
     }));
-
     setHistory(() => neutralHistory);
     setCompletedNodeIds(() => allIds);
     StorageService.save(STORAGE_KEYS.SESSION_STATE, { nodes: allIds, history: neutralHistory });

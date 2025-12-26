@@ -143,7 +143,9 @@ export const CompatibilityEngine = {
                 isNeuroSyncReliable: true,
                 isSocialDesirabilityBiasDetected: false,
                 processingSpeedCompensation: 1.0,
-                entropyType: 'NEUTRAL'
+                entropyType: 'NEUTRAL',
+                // Fix: Added missing isL10nRiskDetected flag for AnalysisFlags interface compliance
+                isL10nRiskDetected: false
             },
             // FIX: Added isEarlyTermination to patternFlags.
             patternFlags: { isMonotonic: false, isHighSkipRate: false, isFlatline: false, dominantPosition: null, isRoboticTiming: false, isSomaticMonotony: false, isEarlyTermination: false },

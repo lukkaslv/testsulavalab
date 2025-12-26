@@ -1,21 +1,14 @@
-import { AnalysisResult, ScanHistory, DataCorruptionError } from '../types';
+
+import { AnalysisResult, ScanHistory, DataCorruptionError, SystemLogEntry, TelemetryEvent, FeedbackEntry } from '../types';
+import { STORAGE_KEYS } from '../constants';
+
+export { STORAGE_KEYS };
 
 export interface SessionState {
   nodes: number[];
-  history: any[]; // Using 'any' to avoid circular dependency issues, should be GameHistoryItem
+  history: any[]; 
 }
 
-export const STORAGE_KEYS = {
-  LANG: 'app_lang',
-  SESSION: 'session_auth',
-  SESSION_STATE: 'genesis_session_state', // Replaces NODES and HISTORY
-  VERSION: 'genesis_version',
-  ROADMAP_STATE: 'genesis_roadmap_completed',
-  SCAN_HISTORY: 'genesis_scan_history',
-  AUDIT_LOG: 'genesis_audit_log'
-} as const;
-
-// In-Memory Fallback for sandbox environments (artifacts)
 const memoryStore: Record<string, string> = {};
 
 const getStorageProvider = () => {
@@ -25,7 +18,6 @@ const getStorageProvider = () => {
     window.localStorage.removeItem(testKey);
     return window.localStorage;
   } catch (e) {
-    console.warn('LocalStorage unavailable. Operating in RAM mode.');
     return {
       getItem: (key: string) => memoryStore[key] || null,
       setItem: (key: string, val: string) => { memoryStore[key] = val; },
@@ -42,7 +34,6 @@ const getStorageProvider = () => {
 
 const provider = getStorageProvider();
 
-// Helper to safely parse history
 const loadHistory = (): ScanHistory => {
   const item = provider.getItem(STORAGE_KEYS.SCAN_HISTORY);
   if (!item) return { 
@@ -53,27 +44,16 @@ const loadHistory = (): ScanHistory => {
   try {
     return JSON.parse(item) as ScanHistory;
   } catch (e) {
-    // Unlike session state, scan history can be reset without losing current progress.
-    return { 
-      scans: [], 
-      latestScan: null, 
-      evolutionMetrics: { entropyTrend: [], integrityTrend: [], dates: [] } 
-    };
+    return { scans: [], latestScan: null, evolutionMetrics: { entropyTrend: [], integrityTrend: [], dates: [] } };
   }
 };
-
-// Initialize counter based on existing data to enforce determinism across reloads
-const initialHistory = loadHistory();
-let persistenceCounter = initialHistory.scans.length > 0 
-  ? initialHistory.scans.length 
-  : 0;
 
 export const StorageService = {
   save: (key: string, data: unknown) => {
     try {
       provider.setItem(key, JSON.stringify(data));
     } catch (e) {
-      console.error('Storage Persistence Failure:', e);
+      StorageService.logEvent('ERROR', 'STORAGE', 'SAVE_FAILED', { key, error: String(e) });
     }
   },
   
@@ -83,65 +63,121 @@ export const StorageService = {
     try {
       return JSON.parse(item) as T;
     } catch (e) {
-      console.error(`CRITICAL: Data Corruption at key ${key}.`, e);
+      StorageService.logEvent('ERROR', 'STORAGE', 'PARSE_FAILED', { key, error: String(e) });
       throw new DataCorruptionError(`Failed to parse data for key: ${key}`);
     }
   },
 
+  logTelemetry: (event: Omit<TelemetryEvent, 'timestamp' | 'isOutlier'>) => {
+      try {
+          const raw = provider.getItem(STORAGE_KEYS.TELEMETRY_DATA);
+          const data: TelemetryEvent[] = raw ? JSON.parse(raw) : [];
+          
+          const newEvent: TelemetryEvent = {
+              ...event,
+              timestamp: Date.now(),
+              isOutlier: event.latency > 30000 || event.latency < 200
+          };
+          
+          data.push(newEvent);
+          if (data.length > 200) data.shift();
+          
+          provider.setItem(STORAGE_KEYS.TELEMETRY_DATA, JSON.stringify(data));
+      } catch (e) {
+          console.error("Telemetry failed", e);
+      }
+  },
+
+  getTelemetry: (): TelemetryEvent[] => {
+      return StorageService.load<TelemetryEvent[]>(STORAGE_KEYS.TELEMETRY_DATA, []);
+  },
+
+  saveFeedback: (entry: FeedbackEntry) => {
+      const logs = StorageService.load<FeedbackEntry[]>(STORAGE_KEYS.CLINICAL_FEEDBACK, []);
+      logs.unshift(entry);
+      if (logs.length > 50) logs.length = 50;
+      StorageService.save(STORAGE_KEYS.CLINICAL_FEEDBACK, logs);
+      StorageService.logEvent('INFO', 'LEARNING', 'FEEDBACK_RECORDED', { accuracy: entry.isAccurate });
+  },
+
+  getFeedback: (): FeedbackEntry[] => {
+      return StorageService.load<FeedbackEntry[]>(STORAGE_KEYS.CLINICAL_FEEDBACK, []);
+  },
+
   async saveScan(result: AnalysisResult): Promise<void> {
     const history = loadHistory();
-    
-    // Deterministic progression marker instead of Date.now()
-    persistenceCounter++;
-    // This service is the single source of truth for timestamps.
-    const deterministicResult: AnalysisResult = { 
-        ...result, 
-        createdAt: persistenceCounter,
-        timestamp: Date.now() // The real-world timestamp is applied here.
-    };
+    const deterministicResult: AnalysisResult = { ...result, timestamp: Date.now() };
     
     history.scans.push(deterministicResult);
     history.latestScan = deterministicResult;
     history.evolutionMetrics.entropyTrend.push(deterministicResult.entropyScore);
     history.evolutionMetrics.integrityTrend.push(deterministicResult.integrity);
-    history.evolutionMetrics.dates.push(`ID_${persistenceCounter}`);
+    history.evolutionMetrics.dates.push(new Date().toISOString());
 
     StorageService.save(STORAGE_KEYS.SCAN_HISTORY, history);
+    StorageService.logEvent('INFO', 'SCANS', 'SCAN_SAVED', { integrity: result.integrity, variant: result.variantId });
   },
 
-  getScanHistory(): ScanHistory {
-    return loadHistory();
-  },
+  getScanHistory(): ScanHistory { return loadHistory(); },
   
-  logAuditEvent: (action: string, details?: Record<string, any>) => {
+  logEvent: (level: SystemLogEntry['level'], module: string, action: string, details?: any) => {
     try {
-        const logs = StorageService.load<any[]>(STORAGE_KEYS.AUDIT_LOG, []);
-        const newLog = {
-            timestamp: new Date().toISOString(),
-            action,
-            details: details || {}
+        const item = provider.getItem(STORAGE_KEYS.AUDIT_LOG);
+        const logs: SystemLogEntry[] = item ? JSON.parse(item) : [];
+        const newLog: SystemLogEntry = {
+            timestamp: new Date().toISOString(), level, module, action, details: details || null
         };
-        logs.unshift(newLog); // Add to the beginning
-        // Keep only the last 50 log entries
-        if (logs.length > 50) {
-            logs.length = 50;
-        }
-        StorageService.save(STORAGE_KEYS.AUDIT_LOG, logs);
+        logs.unshift(newLog);
+        if (logs.length > 50) logs.length = 50;
+        provider.setItem(STORAGE_KEYS.AUDIT_LOG, JSON.stringify(logs));
+        window.dispatchEvent(new CustomEvent('system_log_update', { detail: newLog }));
     } catch (e) {
-        console.error("Failed to write to audit log:", e);
+        console.error("Critical logging failure:", e);
     }
   },
 
+  repairSession: () => {
+    try {
+        const state = provider.getItem(STORAGE_KEYS.SESSION_STATE);
+        if (!state) return { success: false, message: "No session found" };
+        const parsed = JSON.parse(state);
+        if (Array.isArray(parsed.nodes) && Array.isArray(parsed.history)) {
+            let repaired = false;
+            if (parsed.nodes.length !== parsed.history.length) {
+                const minLen = Math.min(parsed.nodes.length, parsed.history.length);
+                parsed.nodes = parsed.nodes.slice(0, minLen);
+                parsed.history = parsed.history.slice(0, minLen);
+                repaired = true;
+            }
+            parsed.nodes = [...new Set(parsed.nodes)];
+            StorageService.save(STORAGE_KEYS.SESSION_STATE, parsed);
+            StorageService.logEvent('SYSTEM', 'RECOVERY', 'SESSION_REPAIRED', { repaired });
+            return { success: true, message: repaired ? "Length mismatch repaired" : "Session validated as healthy" };
+        }
+        return { success: false, message: "Incompatible data structure" };
+    } catch (e) {
+        StorageService.logEvent('ERROR', 'RECOVERY', 'REPAIR_FAILED', { error: String(e) });
+        return { success: false, message: "Fatal corruption. Reset required." };
+    }
+  },
+
+  injectState: (newState: string) => {
+      try {
+          const parsed = JSON.parse(newState);
+          if (!parsed.nodes || !parsed.history) throw new Error("Invalid structure");
+          provider.setItem(STORAGE_KEYS.SESSION_STATE, newState);
+          StorageService.logEvent('SYSTEM', 'RECOVERY', 'STATE_INJECTED');
+          return true;
+      } catch(e) { return false; }
+  },
+
   clear: () => {
-    // CRITICAL: Preserve audit log and language settings during a wipe.
-    const preservedKeys: string[] = [STORAGE_KEYS.LANG, STORAGE_KEYS.AUDIT_LOG];
-    
+    const preservedKeys: string[] = [STORAGE_KEYS.LANG, STORAGE_KEYS.AUDIT_LOG, STORAGE_KEYS.TELEMETRY_DATA, STORAGE_KEYS.CLINICAL_FEEDBACK];
     Object.values(STORAGE_KEYS).forEach(key => {
-      if (!preservedKeys.includes(key)) {
-        provider.removeItem(key);
+      if (!preservedKeys.includes(key as any)) {
+        provider.removeItem(key as any);
       }
     });
-    persistenceCounter = 0;
-    StorageService.logAuditEvent("SESSION_WIPE_EXECUTED");
+    StorageService.logEvent('SYSTEM', 'STORAGE', 'FACTORY_WIPE');
   }
 };
