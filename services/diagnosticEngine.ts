@@ -37,7 +37,6 @@ export const DiagnosticEngine = {
     const { state, phase, conflicts, activePatterns } = raw;
     const { foundation: f, agency: a, resource: r, entropy: e } = state;
 
-    // 1. Archetype Determination with STABLE SORT for determinism
     const archetypeSpectrum = ([
       { key: 'THE_CHAOS_SURFER', score: e },
       { key: 'THE_DRIFTER', score: 100 - a },
@@ -45,18 +44,12 @@ export const DiagnosticEngine = {
       { key: 'THE_GOLDEN_PRISONER', score: (r + (100 - a)) / 2 },
       { key: 'THE_GUARDIAN', score: (f + (100 - a)) / 2 },
       { key: 'THE_ARCHITECT', score: (a + f + r) / 3 }
-    ] as { key: ArchetypeKey; score: number }[]).sort((a, b) => {
-        const scoreDiff = b.score - a.score;
-        if (scoreDiff !== 0) return scoreDiff;
-        // Deterministic tie-breaker
-        return a.key.localeCompare(b.key);
-    });
+    ] as { key: ArchetypeKey; score: number }[]).sort((a, b) => b.score - a.score);
 
     const primary = archetypeSpectrum[0];
     const secondary = archetypeSpectrum[1];
     const matchPercent = Math.round((primary.score / (primary.score + (secondary?.score || 0))) * 100);
 
-    // 2. Verdict Determination (Single Source of Truth)
     let verdictKey: VerdictKey = 'HEALTHY_SCALE';
     if (f <= 35) verdictKey = 'CRITICAL_DEFICIT';
     else if (a > 75 && f < 45) verdictKey = 'BRILLIANT_SABOTAGE';
@@ -65,25 +58,32 @@ export const DiagnosticEngine = {
     else if (a < 35 && e > 45) verdictKey = 'PARALYZED_GIANT';
     else if (f < 50 && a < 50 && r < 50 && e < 40) verdictKey = 'FROZEN_POTENTIAL';
 
-    // 3. Roadmap Generation
     const pool = TASKS_LOGIC[phase];
     const roadmap = Array.from({ length: 7 }, (_, i) => ({ day: i + 1, phase, ...pool[i % pool.length] }));
 
-    // 4. Share Code Generation
     const archIndex = ARCHETYPE_INDEX_MAP.indexOf(primary.key);
     const verdictIndex = VERDICT_INDEX_MAP.indexOf(verdictKey);
+    
+    // SAFE ENCODING: clamping values to 0-255 range for binary safety
     const payload = new Uint8Array([
-        Math.round(f), Math.round(a), Math.round(r), Math.round(e),
-        archIndex !== -1 ? archIndex : 4, // Default to Chaos Surfer
-        Math.round(raw.neuroSync),
-        verdictIndex !== -1 ? verdictIndex : 0 // Default to Healthy
+        Math.max(0, Math.min(255, Math.round(f))), 
+        Math.max(0, Math.min(255, Math.round(a))), 
+        Math.max(0, Math.min(255, Math.round(r))), 
+        Math.max(0, Math.min(255, Math.round(e))),
+        archIndex !== -1 ? archIndex : 4,
+        Math.max(0, Math.min(255, Math.round(raw.neuroSync))),
+        verdictIndex !== -1 ? verdictIndex : 0
     ]);
-    const shareCode = btoa(String.fromCharCode(...payload)).replace(/=/g, '');
+    
+    let binary = '';
+    const len = payload.byteLength;
+    for (let i = 0; i < len; i++) {
+        binary += String.fromCharCode(payload[i]);
+    }
+    const shareCode = btoa(binary).replace(/=/g, '');
 
-    // 5. Narrative & Strategic Fields
     const coreConflict = conflicts.length > 0 ? conflicts[0].key : (verdictKey !== 'HEALTHY_SCALE' ? verdictKey.toLowerCase() : 'none');
     
-    // 6. Validity Override
     let finalValidity = raw.validity;
     if (patternFlags.isMonotonic || patternFlags.isHighSkipRate || patternFlags.isFlatline || patternFlags.isRoboticTiming || patternFlags.isSomaticMonotony || patternFlags.isEarlyTermination) {
         finalValidity = 'INVALID';

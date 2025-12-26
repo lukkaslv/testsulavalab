@@ -49,7 +49,7 @@ export const RadarChart: React.FC<RadarChartProps> = memo(({ points, onLabelClic
           </text>
         </g>
 
-        <g onClick={(e) => { e.stopPropagation(); handleInteraction('resource'); }} className="cursor-pointer hover:opacity-70 transition-opacity">
+        <g onClick={(e) => { e.stopPropagation(); handleInteraction('money'); }} className="cursor-pointer hover:opacity-70 transition-opacity">
           <rect x="70" y="85" width="40" height="20" fill="transparent" />
           <text x="98" y="98" textAnchor="middle" className="text-[9px] fill-slate-600 font-black uppercase tracking-widest">
             {t.domains.money}

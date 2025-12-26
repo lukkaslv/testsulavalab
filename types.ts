@@ -1,12 +1,4 @@
 
-// Add global window declaration for Telegram WebApp SDK
-declare global {
-  interface Window {
-    Telegram?: any;
-    webkitAudioContext?: any;
-  }
-}
-
 export type DomainType = 'foundation' | 'agency' | 'money' | 'social' | 'legacy';
 
 export type ArchetypeKey = 
@@ -62,16 +54,6 @@ export interface Scene {
   descKey: string;
   intensity: number;
   choices: Choice[];
-}
-
-export interface DomainRawConfig {
-  key: DomainType;
-  count: number;
-  color: string;
-}
-
-export interface DomainConfig extends DomainRawConfig {
-  startId: number;
 }
 
 export interface GameHistoryItem {
@@ -139,6 +121,22 @@ export interface ProtocolStep {
   targetMetricKey: string;
 }
 
+export interface Contradiction {
+  type: string;
+  nodeId: string;
+  beliefKey: string;
+  severity: number;
+  description: string;
+}
+
+export interface AdaptiveState {
+  clarity: number;
+  contradictions: Contradiction[];
+  isComplete: boolean;
+  suggestedNextNodeId: string | null;
+  confidenceScore: number;
+}
+
 export interface RawAnalysisResult {
   state: { foundation: number; agency: number; resource: number; entropy: number };
   integrity: number;
@@ -158,7 +156,7 @@ export interface RawAnalysisResult {
   clarity: number;
   confidenceScore: number;
   warnings: ClinicalWarning[];
-  flags?: AnalysisFlags;
+  flags: AnalysisFlags;
   skippedCount: number;
 }
 
@@ -169,11 +167,11 @@ export interface AnalysisResult extends RawAnalysisResult {
   archetypeKey: ArchetypeKey;
   secondaryArchetypeKey?: ArchetypeKey;
   archetypeMatch: number;
-  archetypeSpectrum: { key: ArchetypeKey; score: number }[];
+  archetypeSpectrum: Array<{ key: ArchetypeKey; score: number }>;
   verdictKey: VerdictKey;
   lifeScriptKey: string;
   roadmap: ProtocolStep[];
-  graphPoints: { x: number; y: number }[];
+  graphPoints: Array<{ x: number; y: number }>;
   interventionStrategy: string;
   coreConflict: string;
   shadowDirective: string;
@@ -191,68 +189,10 @@ export interface ScanHistory {
   };
 }
 
-export interface Contradiction {
-  type: string;
-  nodeId: string;
-  beliefKey: string;
-  severity: number;
-  description: string;
-}
-
-export interface AdaptiveState {
-  clarity: number;
-  contradictions: Contradiction[];
-  isComplete: boolean;
-  suggestedNextNodeId: string | null;
-  confidenceScore: number;
-}
-
 export interface SessionStep {
   phase: string;
   title: string;
   action: string;
-}
-
-// Added missing exported types for Clinical and Compatibility engines
-export interface TherapyHypothesis {
-  id: string;
-  hypothesis: string;
-  basedOn: string;
-  focusForSession: string;
-}
-
-export interface ClinicalInterpretation {
-  systemConfiguration: {
-    title: string;
-    description: string;
-    limitingFactor: string;
-  };
-  deepMechanism: {
-    title: string;
-    analysis: string[];
-  };
-  metricInteractions: {
-    farDescription: string;
-    syncDescription: string;
-  };
-  archetypeClinical: {
-    strategy: string;
-    functionality: string;
-    limit: string;
-  };
-  beliefImpact: string;
-  hypotheses: TherapyHypothesis[];
-  risks: string[];
-  sessionEntry: string;
-}
-
-export interface CompatibilityReport {
-  overallScore: number;
-  domainSynergies: DomainType[];
-  domainConflicts: DomainType[];
-  recommendations: string[];
-  relationshipType: 'Synergy' | 'Complementary' | 'Challenging' | 'Neutral';
-  partnerArchetype: ArchetypeKey;
 }
 
 export interface ClinicalNarrative {
@@ -286,106 +226,85 @@ export interface ClinicalNarrative {
   };
 }
 
+// FIX: Added missing DomainRawConfig and DomainConfig used in constants.ts
+export interface DomainRawConfig {
+  key: DomainType;
+  count: number;
+  color: string;
+}
+
+export interface DomainConfig extends DomainRawConfig {
+  startId: number;
+}
+
+// FIX: Added missing CompatibilityReport used in compatibilityEngine.ts
+export interface CompatibilityReport {
+  overallScore: number;
+  domainSynergies: DomainType[];
+  domainConflicts: DomainType[];
+  recommendations: string[];
+  relationshipType: 'Synergy' | 'Complementary' | 'Challenging' | 'Neutral';
+  partnerArchetype: ArchetypeKey;
+}
+
+// FIX: Added missing TherapyHypothesis and ClinicalInterpretation used in clinicalDecoder.ts
+export interface TherapyHypothesis {
+    id: string;
+    hypothesis: string;
+    basedOn: string;
+    focusForSession: string;
+}
+
+export interface ClinicalInterpretation {
+    systemConfiguration: {
+        title: string;
+        description: string;
+        limitingFactor: string;
+    };
+    deepMechanism: {
+        title: string;
+        analysis: string[];
+    };
+    metricInteractions: {
+        farDescription: string;
+        syncDescription: string;
+    };
+    archetypeClinical: {
+        strategy: string;
+        functionality: string;
+        limit: string;
+    };
+    beliefImpact: string;
+    hypotheses: TherapyHypothesis[];
+    risks: string[];
+    sessionEntry: string;
+}
+
 export interface Translations {
   subtitle: string;
-  onboarding: {
-    title: string;
-    step1_t: string;
-    step1_d: string;
-    step2_t: string;
-    step2_d: string;
-    step3_t: string;
-    step3_d: string;
-    protocol_btn: string;
-    protocol_init: string;
-    protocol_ready: string;
-    start_btn: string;
-  };
-  invalid_results: {
-      title: string;
-      subtitle: string;
-      message: string;
-      reason_monotonic: string;
-      reason_skip: string;
-      reason_flatline: string;
-      reason_robotic: string;
-      reason_somatic: string;
-      reason_early_termination: string;
-      recommendation: string;
-      reset_button: string;
-  };
+  onboarding: Record<string, string>;
+  invalid_results: Record<string, string>;
   boot_sequence: string[];
-  ui: {
-    scanning: string;
-    module_label: string;
-    skip_button: string;
-    system_build: string;
-    reset_session_btn: string;
-    verified_badge: string;
-    day_label: string;
-    status_report_title: string;
-    live_uplink: string;
-    secured_label: string;
-    system_audit_title: string;
-    progress_label: string;
-    decrypt_btn: string;
-    close_session_btn: string;
-    agree_terms_btn: string;
-    mode_client: string;
-    mode_pro: string;
-    access_restricted: string;
-    paste_code: string;
-    architecture_session: string;
-    status_protocol: string;
-    behavioral_markers: string;
-    systemic_root: string;
-    verdict_protocol: string;
-    supervision_layer: string;
-  };
+  ui: Record<string, string>;
   admin: Record<string, string>;
-  guide: {
-    title: string;
-    subtitle: string;
-    sections: { title: string; content: string[] }[];
-    metaphor: string;
-  };
-  pro_guide: {
-    title: string;
-    subtitle: string;
-    sections: { title: string; content: string[] }[];
-    closing: string;
-  };
+  guide: any;
+  pro_guide: any;
   brief_explainer: Record<string, string>;
-  clinical_decoder: {
-    title: string;
-    subtitle: string;
-    headers: Record<string, string>;
-    configs: Record<string, { title: string; desc: string }>;
-    analysis_patterns: Record<string, string>;
-    sync_patterns: Record<string, string>;
-    archetype_strategies: Record<string, { strategy: string; func: string; limit: string }>;
-    risks: Record<string, string>;
-    session_entries: Record<string, string>;
-    common_hypotheses: Record<string, { h: string; q: string }>;
-    disclaimer: string;
-    somatic_dissonance_title: string;
-    somatic_dissonance_desc: string;
-  };
+  clinical_decoder: any;
   global: Record<string, string>;
   sync: Record<string, string>;
   sensation_feedback: Record<string, string>;
-  domains: Record<DomainType, string>;
+  domains: Record<string, string>;
   dashboard: Record<string, string>;
   results: Record<string, string>;
   phases: Record<string, string>;
-  // Fixed tasks and scenes types to be flexible for assigned data structures
   tasks: Record<string, any>;
   scenes: Record<string, any>;
   beliefs: Record<string, string>;
   explanations: Record<string, string>;
   pattern_library: Record<string, { protection: string; cost: string; antidote: string }>;
-  archetypes: Record<string, { title: string; desc: string; superpower: string; shadow: string; quote: string; root_command: string }>;
-  verdicts: Record<string, { label: string; description: string; impact: string; supportive_context: string }>;
+  archetypes: Record<string, any>;
+  verdicts: Record<string, any>;
   metric_definitions: Record<string, string>;
   conflicts: Record<string, string>;
   system_commentary: string[];
@@ -393,4 +312,18 @@ export interface Translations {
   legal_disclaimer: string;
   safety: Record<string, string>;
   session_prep_templates: Record<string, string>;
+  synthesis_categories: Record<string, any>;
+  synthesis: Record<string, any>;
+  interventions: Record<string, any>;
+  directives: Record<string, any>;
+  interferences: Record<string, any>;
+  correlation_types: Record<string, any>;
+  integrity_audit: Record<string, any>;
+}
+
+declare global {
+  interface Window {
+    Telegram?: any;
+    webkitAudioContext?: any;
+  }
 }

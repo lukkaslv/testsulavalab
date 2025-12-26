@@ -6,7 +6,7 @@ const pattern_library_ru = {
     scarcity_mindset: { protection: "Защита от разочарования. 'Если я ничего не жду, мне не будет больно'.", cost: "Слепота к возможностям. Видение рисков вместо ресурсов.", antidote: "Вопрос: 'Если бы безопасность была гарантирована, какой шаг я бы сделал?'" },
     fear_of_punishment: { protection: "Детская защита от гнева авторитетов. 'Не проявляйся — не накажут'.", cost: "Паралич инициативы. Постоянное ожидание разрешения.", antidote: "Ошибка — это данные для анализа, а не повод для наказания." },
     imposter_syndrome: { protection: "Защита от стыда. Перфекционизм как щит от критики.", cost: "Бесконечное обучение без практики. Жизнь 'на черновик'.", antidote: "Действие: Сделать на 70% и выпустить в мир." },
-    poverty_is_virtue: { protection: "Моральное превосходство. 'Я бедный, зато честный'.", cost: "Запрет на достойную оплату. Обесценивание своего времени.", antidote: "Ресурс нейтрален. Он лишь усиливает то, что уже есть в человеке." },
+    poverty_is_virtue: { protection: "Моральное превосходство. 'Я бедный, зато честный'.", cost: "Запрет на достойную оплату. Обесценивание своего времени.", antidote: "Ресурс нейтрален. Он лишь усиливает то, что уже есть в человеку." },
     hard_work_only: { protection: "Снятие вины за доход. 'Я имею право на деньги только через страдание'.", cost: "Выгорание. Невозможность принимать подарки.", antidote: "Ценность создается пользой, а не степенью усталости." },
     self_permission: { protection: "Ожидание внешней валидации.", cost: "Зависимость от мнения экспертов и авторитетов.", antidote: "Я сам являюсь источником разрешения на действие." },
     fear_of_conflict: { protection: "Сохранение хрупкой стабильности. 'Мир важнее истины'.", cost: "Потеря границ. Использование вашего ресурса другими.", antidote: "Конфликт — это инструмент прояснения реальности, а не война." },
@@ -33,7 +33,7 @@ const pattern_library_ka = {
     family_loyalty: { protection: "ინარჩუნებს გვარისადმი კუთვნილებას. შიში: 'თუ გავმდიდრდები, ვუღალატებ მათ'.", cost: "ფინანსური ჭერი. წარმატების გაუფასურება.", antidote: "ფრაზა: 'მე მაქვს უფლება ვიცხოვრო სხვანაირად'." },
     scarcity_mindset: { protection: "დაცვა იმედგაცრუებისგან.", cost: "შესაძლებლობების მიმართ სიბრმავე.", antidote: "კითხვა: 'უსაფრთხოება გარანტირებული რომ იყოს, რას ვიზამდი?'" },
     fear_of_punishment: { protection: "ბავშვური დაცვა რისხვისგან.", cost: "ინიციატივის პარალიზება.", antidote: "შეცდომა არის მონაცემი სწავლისთვის." },
-    imposter_syndrome: { protection: "დაცვა სირცხვილისგან.", cost: "უსასრულო სწავლა პრაქტიკის გარეშე.", antidote: "ქმედება: გააკეთე 70%-ით და გამოაქვეყნე." },
+    imposter_syndrome: { protection: "დაცვა სირცხვილისგან.", cost: "უსასრულო სწავლა პრაქტიკის გარეშე.", antidote: "ქმედება: გააკეთე 70%-ით და გამოაქვსნე." },
     poverty_is_virtue: { protection: "მორალური უპირატესობა.", cost: "საკუთარი შრომის გაუფასურება.", antidote: "ფული ნეიტრალურია." },
     hard_work_only: { protection: "დანაშაულის მოხსნა ტანჯვით.", cost: "გადაწვა.", antidote: "ფული მოდის ღირებულებაზე." },
     self_permission: { protection: "გარე ვალიდაციის ლოდინი.", cost: "ავტორიტეტებისგან დამოკიდებულება.", antidote: "მე თვითონ ვაძლევ საკუთარ თავს უფლებას." },
@@ -57,27 +57,41 @@ const pattern_library_ka = {
     default: { protection: "ადაპტაცია.", cost: "შეზღუდვა.", antidote: "დაკვირვება." }
 };
 
-// Defined session preparation templates for clinical context
+const generateScenes = (domain: string, count: number, isKa = false) => {
+    const scenes: Record<string, any> = {};
+    for (let i = 0; i < count; i++) {
+        const key = `${domain}_${i}`;
+        scenes[key] = {
+            title: isKa ? `კვლევა: ${domain.toUpperCase()} #${i+1}` : `Исследование: ${domain.toUpperCase()} #${i+1}`,
+            desc: isKa ? `სისტემის პარამეტრების ანალიზი ${domain} სექტორში. აირჩიეთ ბუნებრივი რეაქცია.` : `Ситуация анализа параметров системы в секторе ${domain}. Выберите наиболее естественную реакцию.`,
+            c1: isKa ? "ჩვეული მოქმედება" : "Действовать привычным образом",
+            c2: isKa ? "ახალი კომპრომისი" : "Искать новый компромисс",
+            c3: isKa ? "გარისკვა" : "Рискнуть и изменить подход"
+        };
+    }
+    return scenes;
+};
+
 const session_prep_ru = {
-    low_foundation_pattern: "Как паттерн «{{pattern}}» помогает вам чувствовать себя в безопасности сейчас?",
-    low_foundation_generic: "Какие основные опоры вы чувствуете в своей жизни в данный момент?",
-    conflict: "Как конфликт «{{conflict_name}}» между {{metric1}} и {{metric2}} проявляется в ваших ежедневных решениях?",
-    somatic_dissonance: "Что ваше тело пытается сказать вам через паттерн «{{pattern}}»?",
-    pattern_interaction: "Как взаимодействуют «{{pattern1}}» и «{{pattern2}}» в вашей текущей ситуации?",
-    default_latency: "Почему возникла задержка при обсуждении вашей тени «{{archetype_shadow}}»?",
-    default_archetype: "Как ваша теневая сторона «{{archetype_shadow}}» мешает вам достигать целей?",
-    default_verdict: "Какое влияние оказывает вердикт «{{verdict_impact}}» на ваше самовосприятие?"
+    low_foundation_pattern: "Как паттерн «{{pattern}}» помогает вам чувствовать себя в безопасности при потере опор?",
+    low_foundation_generic: "Ваша базовая устойчивость критически снижена. Что в вашей жизни сейчас ощущается как «зыбучие пески»?",
+    conflict: "Обсудите внутренний конфликт «{{conflict_name}}»: почему потребность в {{metric1}} противоречит {{metric2}}?",
+    somatic_dissonance: "Тело выдало реакцию отторжения на паттерн «{{pattern}}», хотя сознательно вы выбрали его. О чем этот страх?",
+    pattern_interaction: "Как взаимодействуют «{{pattern1}}» и «{{pattern2}}» в моменты принятия важных решений?",
+    default_latency: "Вы долго колебались перед ответами на темы {{archetype_shadow}}. Что вы пытались скрыть от самого себя?",
+    default_archetype: "Ваша теневая сторона проявляется через {{archetype_shadow}}. В каких ситуациях она берет контроль?",
+    default_verdict: "Ваш текущий результат указывает на {{verdict_impact}}. Как вы чувствуете это влияние в повседневности?"
 };
 
 const session_prep_ka = {
-    low_foundation_pattern: "როგორ გეხმარებათ პატერნი „{{pattern}}“ თავის დაცულად გრძნობაში ახლა?",
-    low_foundation_generic: "რა არის თქვენი ძირითადი საყრდენები ცხოვრებაში ამ მომენტში?",
-    conflict: "როგორ ვლინდება კონფლიქტი „{{conflict_name}}“ {{metric1}}-სა და {{metric2}}-ს შორის თქვენს ყოველდღიურ გადაწყვეტილებებში?",
-    somatic_dissonance: "რისი თქმა სურს თქვენს სხეულს პატერნ „{{pattern}}“-ის მეშვეობით?",
-    pattern_interaction: "როგორ ურთიერთქმედებენ „{{pattern1}}“ და „{{pattern2}}“ თქვენს ამჟამინდელ სიტუაციაში?",
-    default_latency: "რატომ გაჩნდა დაყოვნება თქვენს ჩრდილოვან მხარეზე „{{archetype_shadow}}“ საუბრისას?",
-    default_archetype: "როგორ უშლის ხელს თქვენი ჩრდილოვანი მხარე „{{archetype_shadow}}“ მიზნების მიღწევას?",
-    default_verdict: "რა გავლენას ახდენს ვერდიქტი „{{verdict_impact}}“ თქვენს თვითაღქმაზე?"
+    low_foundation_pattern: "როგორ გეხმარებათ პატერნი „{{pattern}}“ თავის დაცულად გრძნობაში, როცა საყრდენს კარგავთ?",
+    low_foundation_generic: "თქვენი საბაზისო მდგრადობა კრიტიკულად დაბალია. რა გეჩვენებათ ახლა „ჭაობად“ თქვენს ცხოვრებაში?",
+    conflict: "განიხილეთ შინაგანი კონფლიქტი „{{conflict_name}}“: რატომ ეწინააღმდეგება {{metric1}}-ის მოთხოვნილება {{metric2}}-ს?",
+    somatic_dissonance: "თქვენმა სხეულმა უარყოფის რეაქცია აჩვენა პატერნზე „{{pattern}}“. რაზე მეტყველებს ეს შიში?",
+    pattern_interaction: "როგორ ურთიერთქმედებენ „{{pattern1}}“ და „{{pattern2}}“ გადაწყვეტილებების მიღებისას?",
+    default_latency: "თქვენ დიდხანს ყოყმანობდით {{archetype_shadow}}-ის თემებზე. რის დამალვას ცდილობდით საკუთარი თავისგან?",
+    default_archetype: "თქვენი ჩრდილოვანი მხარე ვლინდება {{archetype_shadow}}-ით. რომელ სიტუაციებში იღებს ის კონტროლს?",
+    default_verdict: "თქვენი შედეგი მიუთითებს {{verdict_impact}}-ზე. როგორ გრძნობთ ამ გავლენას ყოველდღიურობაში?"
 };
 
 const ru: Translations = {
@@ -101,7 +115,7 @@ const ru: Translations = {
       message: "Система обнаружила паттерн ответов, который не позволяет построить достоверную клиническую картину.",
       reason_monotonic: "Причина: Обнаружен монотонный паттерн (выбор одной позиции).",
       reason_skip: "Причина: Слишком высокий процент пропущенных вопросов.",
-      reason_flatline: "Причина: Обнаружен 'плоский' эмоциональный профиль.",
+      reason_flatline: "Причина: Обнаружен «плоский» эмоциональный профиль.",
       reason_robotic: "Причина: Роботизированный тайминг (отсутствие живой вариативности).",
       reason_somatic: "Причина: Монотонный паттерн телесных откликов.",
       reason_early_termination: "Причина: Исследование завершено слишком рано.",
@@ -151,17 +165,17 @@ const ru: Translations = {
     confirm_destructive: "Подтвердите действие",
     irreversible_note: "Это действие необратимо. Введите код подтверждения.",
     execute: "Выполнить",
-    kernel_commands: "Команды Ядра",
-    live_metrics: "Живые Метрики",
-    integrity_audit: "Аудит Системы",
-    translation_deep: "Аудит Перевода",
+    kernel_commands: "Команды ядра",
+    live_metrics: "Живые метрики",
+    integrity_audit: "Аудит системы",
+    translation_deep: "Аудит перевода",
     db_inspector: "Инспектор БД"
   },
   guide: {
     title: "ПРОТОКОЛ ПОЛЬЗОВАТЕЛЯ",
     subtitle: "Инструкция клиента",
     sections: [
-        { title: "1. ЦЕЛЬ ИССЛЕДОВАНИЯ", content: ["Genesis OS — это инструмент объективизации внутренних конфликтов.", "Мы анализируем не только 'что' вы отвечаете, но и 'как' — с какой задержкой и телесным откликом."] },
+        { title: "1. ЦЕЛЬ ИССЛЕДОВАНИЯ", content: ["Genesis OS — это инструмент объективизации внутренних конфликтов.", "Мы анализируем не только «что» вы отвечаете, но и «как» — с какой задержкой и телесным откликом."] },
         { title: "2. ПРАВИЛА ОТВЕТОВ", content: ["Используйте первый импульс. Здесь нет правильных ответов.", "Если тело дает реакцию (сжатие, тепло) — фиксируйте это в блоке резонанса."] }
     ],
     metaphor: "Genesis OS — это компас, показывающий, где ваша энергия заблокирована страхом."
@@ -229,7 +243,7 @@ const ru: Translations = {
         THE_DRIFTER: { strategy: "Гибкая адаптация", func: "Поиск возможностей", limit: "Нет заземления" },
         THE_BURNED_HERO: { strategy: "Восстановление", func: "Эмпатия через боль", limit: "Самопожертвование" },
         THE_GOLDEN_PRISONER: { strategy: "Границы", func: "Безопасность", limit: "Страх перемен" },
-        THE_CHAOS_SURFER: { strategy: "Сдвиг", func: "Интуиция", limit: "Нестаბильность" },
+        THE_CHAOS_SURFER: { strategy: "Сдвиг", func: "Интуиция", limit: "Нестабильность" },
         THE_GUARDIAN: { strategy: "Стабилизация", func: "Защита", limit: "Ригидность" }
     },
     risks: {
@@ -257,7 +271,7 @@ const ru: Translations = {
     somatic_dissonance_desc: "Тело блокирует импульс сознания."
   },
   global: { stats: "Ядро", export: "Экспорт", import: "Импорт", close: "Закрыть", back: "Назад", calibrating: "КАЛИБРОВКА...", calib_desc: "Поиск спутников системы...", complete: "ГОТОВО", progress: "ПРОГРЕСС" },
-  sync: { title: "РЕЗОНАНС", desc: "Что в теле сейчас?", guidance_tip: "Сканируйте отклик на выбранный ответ.", s0: "Нейтрально", s1: "Сжатие", s2: "Расширение", s3: "Жар", s4: "Холод", proceed: "Далее", processing: "Синхронизация..." },
+  sync: { title: "РЕЗОНАНС", desc: "Что в теле сейчас?", guidance_tip: "Сканируйте отклик на выбранный ответ.", s0: "Нейтрально", s1: "Сжатие", s2: "Расширение", s3: "Жар", s4: "Холод", proceed: "Далее", processing: "Сინქრონიზაცია..." },
   sensation_feedback: { s0: "СИГНАЛ_ОК", s1: "БЛОК_ОБНАРУЖЕН", s2: "РЕСУРС_ПОДТВЕРЖДЕН", s3: "АКТИВАЦИЯ", s4: "ЗАЖИМ_ВЫЯВЛЕН" },
   domains: { foundation: "ОПОРА", agency: "ВОЛЯ", money: "РЕСУРС", social: "СВЯЗИ", legacy: "СМЫСЛ" },
   dashboard: { title: "Genesis", desc: "Навигатор", insight_noise: "Высокий шум", insight_coherence: "Ясность подтверждена", insight_somatic_dissonance: "Выявлен диссонанс", retest_ready: "ОБНОВИТЬ", retest_desc: "Рекомендуется повторный замер.", select_domain: "Секторы исследования:", open_terminal: "ТЕРМИНАЛ", manual_btn: "ИНСТРУКЦИЯ" },
@@ -325,6 +339,14 @@ const ru: Translations = {
     resource: "Ваша пропускная способность для благ и возможностей. Готовность принимать и удерживать масштаб.",
     entropy: "Уровень внутренних помех. Энергия, которая тратится на сомнения, страхи и борьбу."
   },
+  beliefs: {
+    family_loyalty: "Лояльность роду", scarcity_mindset: "Дефицит", self_permission: "Право быть", fear_of_punishment: "Страх наказания",
+    imposter_syndrome: "Самозванец", hard_work_only: "Тяжелый труд", boundary_collapse: "Слияние", money_is_danger: "Опасность ресурса",
+    shame_of_success: "Стыд успеха", betrayal_trauma: "Предательство", capacity_expansion: "Рост емкости", money_is_tool: "Инструмент",
+    unconscious_fear: "Слепой страх", fear_of_conflict: "Страх конфликта", impulse_spend: "Слив ресурса", short_term_bias: "Короткий фокус",
+    poverty_is_virtue: "Святая бедность", latency_resistance: "Торг", resource_toxicity: "Токсичность", body_mind_conflict: "Диссонанс",
+    ambivalence_loop: "Петля сомнений", hero_martyr: "Мученик", autopilot_mode: "Автопилот", golden_cage: "Золотая клетка", default: 'По умолчанию'
+  },
   archetypes: {
     THE_ARCHITECT: { title: "Архитектор", desc: "Строит системы через логику.", superpower: "Системность", shadow: "Контроль", quote: "Порядок освобождает энергию.", root_command: "СТРОИТЬ" },
     THE_DRIFTER: { title: "Скиталец", desc: "Адаптируется к потоку.", superpower: "Гибкость", shadow: "Нет корней", quote: "Направление важнее плана.", root_command: "ИСКАТЬ" },
@@ -351,14 +373,12 @@ const ru: Translations = {
   },
   phases: { sanitation: "Очистка", stabilization: "Укрепление", expansion: "Рост" },
   tasks: pattern_library_ru,
-  scenes: pattern_library_ru,
-  beliefs: {
-    family_loyalty: "Лояльность роду", scarcity_mindset: "Дефицит", self_permission: "Право быть", fear_of_punishment: "Страх наказания",
-    imposter_syndrome: "Самозванец", hard_work_only: "Тяжелый труд", boundary_collapse: "Слияние", money_is_danger: "Опасность ресурса",
-    shame_of_success: "Стыд успеха", betrayal_trauma: "Предательство", capacity_expansion: "Рост емкости", money_is_tool: "Инструмент",
-    unconscious_fear: "Слепой страх", fear_of_conflict: "Страх конфликта", impulse_spend: "Слив ресурса", short_term_bias: "Короткий фокус",
-    poverty_is_virtue: "Святая бедность", latency_resistance: "Торг", resource_toxicity: "Токсичность", body_mind_conflict: "Диссонанс",
-    ambivalence_loop: "Петля сомнений", hero_martyr: "Мученик", autopilot_mode: "Автопилот", golden_cage: "Золотая клетка", default: 'По умолчанию'
+  scenes: {
+    ...generateScenes('foundation', 15),
+    ...generateScenes('agency', 10),
+    ...generateScenes('money', 10),
+    ...generateScenes('social', 10),
+    ...generateScenes('legacy', 5),
   },
   conflicts: {
       icarus: "Икар (воля без опоры)",
@@ -383,12 +403,19 @@ const ru: Translations = {
     important_context_body: "Тело сигнализирует о сопротивлении."
   },
   pattern_library: pattern_library_ru,
+  synthesis_categories: {},
+  synthesis: {},
+  interventions: {},
+  directives: {},
+  interferences: {},
+  correlation_types: {},
+  integrity_audit: {},
   session_prep_templates: session_prep_ru,
 };
 
 const ka: Translations = {
   ...ru,
-  subtitle: "LUKA SULAVA // ნეირო-ორიენტირება",
+  subtitle: "LUKA SULAVA // უკუკავშირი",
   onboarding: {
     title: "Genesis OS: ნავიგატორი",
     step1_t: "რეაქციის სისწრაფე",
@@ -403,10 +430,15 @@ const ka: Translations = {
     start_btn: "კვლევის დაწყება"
   },
   invalid_results: {
-    ...ru.invalid_results,
     title: "მონაცემები არ არის ვალიდური",
     subtitle: "სიგნალის მთლიანობა დარღვეულია",
     message: "სისტემამ აღმოაჩინა პასუხების ნიმუში, რომელიც არ იძლევა სანდო კლინიკური სურათის აგების საშუალებას.",
+    reason_monotonic: "მიზეზი: აღმოჩენილია მონოტონური პატერნი.",
+    reason_skip: "მიზეზი: გამოტოვებული კითხვების მაღალი პროცენტი.",
+    reason_flatline: "მიზეზი: აღმოჩენილია „ბრტყელი“ ემოციური პროფილი.",
+    reason_robotic: "მიზეზი: რობოტიზებული ტაიმინგი.",
+    reason_somatic: "მიზეზი: სხეულის პასუხების მონოტონური პატერნი.",
+    reason_early_termination: "მიზეზი: კვლევა ძალიან ადრე დასრულდა.",
     recommendation: "გთხოვთ, ხელახლა გაიაროთ კვლევა, ენდეთ თქვენს პირველ იმპულსს.",
     reset_button: "თავიდან დაწყება"
   },
@@ -414,7 +446,7 @@ const ka: Translations = {
     ...ru.ui,
     scanning: "სინქრონიზაცია",
     module_label: "მოდული",
-    skip_button: "არ ვარ დარწმუნებული",
+    skip_button: "არ ვარ დარწმუნებული / გამოტოვება",
     system_build: "სისტემის ვერსია",
     reset_session_btn: "სესიის_გადატვირთვა",
     day_label: "დღე",
@@ -432,27 +464,10 @@ const ka: Translations = {
     verdict_protocol: "ვერდიქტი და პროტოკოლი",
     supervision_layer: "სუპერვიზიის შრე"
   },
-  guide: {
-    title: "მომხმარებლის პროტოკოლი",
-    subtitle: "ინსტრუქცია კლიენტისთვის",
-    sections: [
-        { title: "1. კვლევის მიზანი", content: ["Genesis OS არის შინაგანი კონფლიქტების ობიექტივიზაციის ინსტრუმენტი.", "ჩვენ ვაანალიზებთ არა მხოლოდ 'რას' პასუხობთ, არამედ 'როგორ' - რა დაყოვნებით და სხეულის პასუხით."] },
-        { title: "2. პასუხის წესები", content: ["გამოიყენეთ პირველი იმპულსი. აქ არ არის სწორი პასუხები.", "თუ სხეული რეაქციას გაძლევთ (შეკუმშვა, სითბო) - დააფიქსირეთ ეს რეზონანსის ბლოკში."] }
-    ],
-    metaphor: "Genesis OS არის კომპასი, რომელიც აჩვენებს სად არის თქვენი ენერგია ბლოკირებული."
-  },
-  pro_guide: {
-    title: "კლინიკური პროტოკოლი",
-    subtitle: "სახელმძღვანელო სპეციალისტისთვის",
-    sections: [
-        { title: "1. მეტრიკების ინტერპრეტაცია", content: ["Foundation (საყრდენი) — უსაფრთხოების დონე. 35%-ზე დაბალი მოითხოვს სტაბილიზაციას.", "Agency (ნება) — ექსპანსიის უნარი.", "Entropy (ხმაური) — შინაგანი ხახუნის დონე."] }
-    ],
-    closing: "გამოიყენეთ ეს მონაცემები როგორც ჰიპოთეზა სესიისთვის."
-  },
   global: { ...ru.global, stats: "ბირთვი", back: "უკან", complete: "მზად არის" },
-  sync: { title: "რეზონანსი", desc: "რას გრძნობს სხეული?", guidance_tip: "დააკვირდით სხეულის რეაქციას პასუხზე.", s0: "ნეიტრალური", s1: "შეკუმშვა", s2: "გაფართოება", s3: "სიცხე", s4: "სიცივე", proceed: "შემდეგი" },
+  sync: { ...ru.sync, title: "რეზონანსი", desc: "რას გრძნობს სხეული?", guidance_tip: "დააკვირდით სხეულის რეაქციას პასუხზე.", s0: "ნეიტრალური", s1: "შეკუმშვა", s2: "გაფართოება", s3: "სიცხე", s4: "სიცივე", proceed: "შემდეგი", processing: "სინქრონიზაცია..." },
   domains: { foundation: "საყრდენი", agency: "ნება", money: "რესურსი", social: "კავშირები", legacy: "აზრი" },
-  dashboard: { title: "Genesis", desc: "ნავიგატორი", retest_ready: "განახლება", select_domain: "სექტორები:", open_terminal: "ტერმინალი", manual_btn: "ინსტრუქცია" },
+  dashboard: { ...ru.dashboard, title: "Genesis", desc: "ნავიგატორი", select_domain: "სექტორები:", open_terminal: "ტერმინალი", manual_btn: "ინსტრუქცია", insight_noise: "მაღალი ხმაური", insight_coherence: "სიცხადე დადასტურებულია", insight_somatic_dissonance: "გამოვლენილია დისონანსი", retest_desc: "რეკომენდებულია განმეორებითი გაზომვა." },
   results: {
     ...ru.results,
     integrity: "მთლიანობა", entropy: "სირთულე", capacity: "ტევადობა", roadmap: "პროტოკოლი (7 დღე)",
@@ -479,6 +494,13 @@ const ka: Translations = {
     ambivalence_loop: "ეჭვის მარყუჟი", hero_martyr: "წამებული", autopilot_mode: "ავტოპილოტი", golden_cage: "ოქროს გალია", default: 'ნაგულისხმევი'
   },
   pattern_library: pattern_library_ka,
+  scenes: {
+    ...generateScenes('foundation', 15, true),
+    ...generateScenes('agency', 10, true),
+    ...generateScenes('money', 10, true),
+    ...generateScenes('social', 10, true),
+    ...generateScenes('legacy', 5, true),
+  },
   session_prep_templates: session_prep_ka,
 };
 
