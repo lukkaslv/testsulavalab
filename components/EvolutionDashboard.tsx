@@ -54,17 +54,37 @@ export const EvolutionDashboard: React.FC<EvolutionDashboardProps> = memo(({ his
       </div>
 
       {!hasHistory ? (
-          <div className="py-4 space-y-3">
+          <div className="py-4 space-y-3 relative z-10">
               <div className="h-2 bg-white/5 rounded-full w-full"></div>
               <div className="h-2 bg-white/5 rounded-full w-2/3"></div>
               <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest pt-2">Complete your first investigation to enable longitudinal tracking.</p>
           </div>
       ) : (
-        <>
-          <div className="grid grid-cols-1 gap-6 relative z-10">
+        <div className="grid grid-cols-1 gap-6 relative z-10">
              <div className="space-y-3">
                 <div className="flex justify-between text-[9px] font-black uppercase text-slate-400 tracking-widest">
                     <span>Integrity Drift</span>
                     <span className="text-emerald-400 font-mono">RESOLVING...</span>
                 </div>
-                
+                <Sparkline data={history.evolutionMetrics.integrityTrend} color="#10b981" />
+             </div>
+
+             <div className="space-y-3">
+                <div className="flex justify-between text-[9px] font-black uppercase text-slate-400 tracking-widest">
+                    <span>Noise (Entropy)</span>
+                    <span className="text-red-400 font-mono">TRACKING...</span>
+                </div>
+                <Sparkline data={history.evolutionMetrics.entropyTrend} color="#f43f5e" />
+             </div>
+
+             <div className="pt-2 border-t border-white/5">
+                <p className="text-[9px] text-slate-500 leading-relaxed italic">
+                    Long-term data indicates current system state is {(history.evolutionMetrics.integrityTrend[history.evolutionMetrics.integrityTrend.length-1] > 70) ? 'Optimizing' : 'Stabilizing'}. 
+                    Neural correlations mapped successfully across {scansCount} instances.
+                </p>
+             </div>
+        </div>
+      )}
+    </section>
+  );
+});
