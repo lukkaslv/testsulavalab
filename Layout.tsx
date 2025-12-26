@@ -1,6 +1,6 @@
-
 import React, { memo, useEffect, useRef } from 'react';
-import { translations } from './translations.ts';
+// FIXED: Removed .ts extension for consistent module imports
+import { translations } from './translations';
 
 interface LayoutProps {
   children: React.ReactNode;

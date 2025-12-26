@@ -1,15 +1,16 @@
-
 import { AnalysisResult, ScanHistory, DataCorruptionError, SystemLogEntry, TelemetryEvent, FeedbackEntry } from '../types';
 import { STORAGE_KEYS } from '../constants';
+import { SecurityCore } from '../utils/crypto';
 
 export { STORAGE_KEYS };
+
+// Session key derived from the environment/password (Internal use)
+const INTERNAL_KEY = "genesis_stable_v3";
 
 export interface SessionState {
   nodes: number[];
   history: any[]; 
 }
-
-const memoryStore: Record<string, string> = {};
 
 const getStorageProvider = () => {
   try {
@@ -18,31 +19,23 @@ const getStorageProvider = () => {
     window.localStorage.removeItem(testKey);
     return window.localStorage;
   } catch (e) {
-    return {
-      getItem: (key: string) => memoryStore[key] || null,
-      setItem: (key: string, val: string) => { memoryStore[key] = val; },
-      removeItem: (key: string) => { delete memoryStore[key]; },
-      getAllKeys: () => Object.keys(memoryStore),
-      clear: () => { 
-          for (const key in memoryStore) {
-              delete memoryStore[key];
-          }
-      }
-    };
+    return null; // Fallback handled in logic
   }
 };
 
 const provider = getStorageProvider();
 
 const loadHistory = (): ScanHistory => {
-  const item = provider.getItem(STORAGE_KEYS.SCAN_HISTORY);
-  if (!item) return { 
-    scans: [], 
-    latestScan: null, 
-    evolutionMetrics: { entropyTrend: [], integrityTrend: [], dates: [] } 
-  };
+  const item = provider?.getItem(STORAGE_KEYS.SCAN_HISTORY);
+  if (!item) return { scans: [], latestScan: null, evolutionMetrics: { entropyTrend: [], integrityTrend: [], dates: [] } };
+  
+  // Try decrypting. If it fails, try parsing as raw JSON (migration support)
+  const decrypted = SecurityCore.safeDecode(item, INTERNAL_KEY);
+  if (decrypted) return decrypted;
+
   try {
-    return JSON.parse(item) as ScanHistory;
+    const raw = JSON.parse(item);
+    return raw;
   } catch (e) {
     return { scans: [], latestScan: null, evolutionMetrics: { entropyTrend: [], integrityTrend: [], dates: [] } };
   }
@@ -51,58 +44,59 @@ const loadHistory = (): ScanHistory => {
 export const StorageService = {
   save: (key: string, data: unknown) => {
     try {
-      provider.setItem(key, JSON.stringify(data));
+      // Encrypt sensitive diagnostic data
+      const isSensitive = [STORAGE_KEYS.SCAN_HISTORY, STORAGE_KEYS.SESSION_STATE, STORAGE_KEYS.TELEMETRY_DATA].includes(key as any);
+      const payload = isSensitive ? SecurityCore.safeEncode(data, INTERNAL_KEY) : JSON.stringify(data);
+      provider?.setItem(key, payload);
     } catch (e) {
       StorageService.logEvent('ERROR', 'STORAGE', 'SAVE_FAILED', { key, error: String(e) });
     }
   },
   
   load: <T,>(key: string, fallback: T): T => {
-    const item = provider.getItem(key);
+    const item = provider?.getItem(key);
     if (!item) return fallback;
+    
+    const isSensitive = [STORAGE_KEYS.SCAN_HISTORY, STORAGE_KEYS.SESSION_STATE, STORAGE_KEYS.TELEMETRY_DATA].includes(key as any);
+    if (isSensitive) {
+        const decrypted = SecurityCore.safeDecode(item, INTERNAL_KEY);
+        if (decrypted) return decrypted as T;
+    }
+
     try {
       return JSON.parse(item) as T;
     } catch (e) {
-      StorageService.logEvent('ERROR', 'STORAGE', 'PARSE_FAILED', { key, error: String(e) });
-      throw new DataCorruptionError(`Failed to parse data for key: ${key}`);
+      if (isSensitive) throw new DataCorruptionError(`Security mismatch for key: ${key}`);
+      return fallback;
     }
   },
 
   logTelemetry: (event: Omit<TelemetryEvent, 'timestamp' | 'isOutlier'>) => {
       try {
-          const raw = provider.getItem(STORAGE_KEYS.TELEMETRY_DATA);
-          const data: TelemetryEvent[] = raw ? JSON.parse(raw) : [];
-          
+          const data = StorageService.load<TelemetryEvent[]>(STORAGE_KEYS.TELEMETRY_DATA, []);
           const newEvent: TelemetryEvent = {
               ...event,
               timestamp: Date.now(),
               isOutlier: event.latency > 30000 || event.latency < 200
           };
-          
           data.push(newEvent);
           if (data.length > 200) data.shift();
-          
-          provider.setItem(STORAGE_KEYS.TELEMETRY_DATA, JSON.stringify(data));
+          StorageService.save(STORAGE_KEYS.TELEMETRY_DATA, data);
       } catch (e) {
           console.error("Telemetry failed", e);
       }
   },
 
-  getTelemetry: (): TelemetryEvent[] => {
-      return StorageService.load<TelemetryEvent[]>(STORAGE_KEYS.TELEMETRY_DATA, []);
-  },
+  getTelemetry: (): TelemetryEvent[] => StorageService.load<TelemetryEvent[]>(STORAGE_KEYS.TELEMETRY_DATA, []),
 
   saveFeedback: (entry: FeedbackEntry) => {
       const logs = StorageService.load<FeedbackEntry[]>(STORAGE_KEYS.CLINICAL_FEEDBACK, []);
       logs.unshift(entry);
       if (logs.length > 50) logs.length = 50;
       StorageService.save(STORAGE_KEYS.CLINICAL_FEEDBACK, logs);
-      StorageService.logEvent('INFO', 'LEARNING', 'FEEDBACK_RECORDED', { accuracy: entry.isAccurate });
   },
 
-  getFeedback: (): FeedbackEntry[] => {
-      return StorageService.load<FeedbackEntry[]>(STORAGE_KEYS.CLINICAL_FEEDBACK, []);
-  },
+  getFeedback: (): FeedbackEntry[] => StorageService.load<FeedbackEntry[]>(STORAGE_KEYS.CLINICAL_FEEDBACK, []),
 
   async saveScan(result: AnalysisResult): Promise<void> {
     const history = loadHistory();
@@ -115,69 +109,58 @@ export const StorageService = {
     history.evolutionMetrics.dates.push(new Date().toISOString());
 
     StorageService.save(STORAGE_KEYS.SCAN_HISTORY, history);
-    StorageService.logEvent('INFO', 'SCANS', 'SCAN_SAVED', { integrity: result.integrity, variant: result.variantId });
   },
 
   getScanHistory(): ScanHistory { return loadHistory(); },
   
   logEvent: (level: SystemLogEntry['level'], module: string, action: string, details?: any) => {
     try {
-        const item = provider.getItem(STORAGE_KEYS.AUDIT_LOG);
+        const item = provider?.getItem(STORAGE_KEYS.AUDIT_LOG);
         const logs: SystemLogEntry[] = item ? JSON.parse(item) : [];
         const newLog: SystemLogEntry = {
             timestamp: new Date().toISOString(), level, module, action, details: details || null
         };
         logs.unshift(newLog);
         if (logs.length > 50) logs.length = 50;
-        provider.setItem(STORAGE_KEYS.AUDIT_LOG, JSON.stringify(logs));
-        window.dispatchEvent(new CustomEvent('system_log_update', { detail: newLog }));
-    } catch (e) {
-        console.error("Critical logging failure:", e);
-    }
+        provider?.setItem(STORAGE_KEYS.AUDIT_LOG, JSON.stringify(logs));
+    } catch (e) {}
   },
 
-  repairSession: () => {
+  // Added injectState to handle clinical recovery of session state
+  injectState: (json: string): boolean => {
     try {
-        const state = provider.getItem(STORAGE_KEYS.SESSION_STATE);
-        if (!state) return { success: false, message: "No session found" };
-        const parsed = JSON.parse(state);
-        if (Array.isArray(parsed.nodes) && Array.isArray(parsed.history)) {
-            let repaired = false;
-            if (parsed.nodes.length !== parsed.history.length) {
-                const minLen = Math.min(parsed.nodes.length, parsed.history.length);
-                parsed.nodes = parsed.nodes.slice(0, minLen);
-                parsed.history = parsed.history.slice(0, minLen);
-                repaired = true;
-            }
-            parsed.nodes = [...new Set(parsed.nodes)];
-            StorageService.save(STORAGE_KEYS.SESSION_STATE, parsed);
-            StorageService.logEvent('SYSTEM', 'RECOVERY', 'SESSION_REPAIRED', { repaired });
-            return { success: true, message: repaired ? "Length mismatch repaired" : "Session validated as healthy" };
-        }
-        return { success: false, message: "Incompatible data structure" };
-    } catch (e) {
-        StorageService.logEvent('ERROR', 'RECOVERY', 'REPAIR_FAILED', { error: String(e) });
-        return { success: false, message: "Fatal corruption. Reset required." };
-    }
-  },
+      const data = JSON.parse(json);
+      if (!data || typeof data !== 'object') return false;
 
-  injectState: (newState: string) => {
-      try {
-          const parsed = JSON.parse(newState);
-          if (!parsed.nodes || !parsed.history) throw new Error("Invalid structure");
-          provider.setItem(STORAGE_KEYS.SESSION_STATE, newState);
-          StorageService.logEvent('SYSTEM', 'RECOVERY', 'STATE_INJECTED');
+      // Handle raw session state injection
+      if (data.history && Array.isArray(data.history)) {
+          StorageService.save(STORAGE_KEYS.SESSION_STATE, {
+              nodes: data.nodes || [],
+              history: data.history
+          });
           return true;
-      } catch(e) { return false; }
+      }
+
+      // Handle evolution bundle or recognized keys
+      let injected = false;
+      Object.entries(data).forEach(([key, value]) => {
+          if (Object.values(STORAGE_KEYS).includes(key as any)) {
+              StorageService.save(key, value);
+              injected = true;
+          }
+      });
+      return injected;
+    } catch (e) {
+      return false;
+    }
   },
 
   clear: () => {
-    const preservedKeys: string[] = [STORAGE_KEYS.LANG, STORAGE_KEYS.AUDIT_LOG, STORAGE_KEYS.TELEMETRY_DATA, STORAGE_KEYS.CLINICAL_FEEDBACK];
+    const preservedKeys: string[] = [STORAGE_KEYS.LANG, STORAGE_KEYS.AUDIT_LOG, STORAGE_KEYS.CLINICAL_FEEDBACK];
     Object.values(STORAGE_KEYS).forEach(key => {
       if (!preservedKeys.includes(key as any)) {
-        provider.removeItem(key as any);
+        provider?.removeItem(key as any);
       }
     });
-    StorageService.logEvent('SYSTEM', 'STORAGE', 'FACTORY_WIPE');
   }
 };

@@ -1,8 +1,8 @@
-
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Layout } from './components/Layout.tsx';
 import { MODULE_REGISTRY, TOTAL_NODES, ONBOARDING_NODES_COUNT, DOMAIN_SETTINGS } from './constants.ts';
-import { translations } from './translations.ts';
+// FIXED: Remove .ts extension for consistent module resolution
+import { translations } from './translations';
 import { calculateRawMetrics } from './services/psychologyService.ts';
 import { DiagnosticEngine } from './services/diagnosticEngine.ts';
 import { DomainType, Translations, AnalysisResult, GameHistoryItem, ScanHistory, DataCorruptionError } from './types.ts';
@@ -196,6 +196,7 @@ const App: React.FC = () => {
       setIsDemo(false);
       setIsPro(false);
       setView('auth');
+      PlatformBridge.haptic.notification('success');
     };
 
     if (force) {
@@ -230,7 +231,7 @@ const App: React.FC = () => {
   const handleShare = useCallback(async () => {
     if (!result) return;
     const blob = await generateShareImage(result, t);
-    const text = `Genesis OS Blueprint: ${t.archetypes[result.archetypeKey].title}. Share Code: ${result.shareCode}`;
+    const text = `Genesis OS Blueprint: ${t.archetypes[result.archetypeKey]?.title || 'Analysis'}. Share Code: ${result.shareCode}`;
     if (blob && navigator.share) {
        try {
          const file = new File([blob], 'genesis_blueprint.png', { type: 'image/png' });
@@ -248,17 +249,17 @@ const App: React.FC = () => {
   const renderCurrentView = () => {
     if (dataStatus === 'corrupted') return <DataCorruptionView t={t} onReset={() => handleReset(true)} />;
     switch (view) {
-      case 'auth': return <AuthView onLogin={handleLogin} t={t} />;
+      case 'auth': return <AuthView onLogin={handleLogin} t={t} lang={lang} onLangChange={setLang} />;
       case 'boot': return <BootView isDemo={isDemo} onComplete={() => { sessionStorage.setItem('genesis_boot_seen', 'true'); setBootShown(true); setView('dashboard'); }} t={t} />;
-      case 'dashboard': return <DashboardView t={t} isDemo={isDemo} globalProgress={globalProgress} result={result} currentDomain={currentDomain} nodes={nodes} completedNodeIds={completedNodeIds} onSetView={setView as any} onSetCurrentDomain={onSetCurrentDomain => setCurrentDomain(onSetCurrentDomain)} onStartNode={engine.startNode} onLogout={handleLogout} scanHistory={scanHistory} />;
+      case 'dashboard': return <DashboardView lang={lang} t={t} isDemo={isDemo} globalProgress={globalProgress} result={result} currentDomain={currentDomain} nodes={nodes} completedNodeIds={completedNodeIds} onSetView={setView as any} onSetCurrentDomain={onSetCurrentDomain => setCurrentDomain(onSetCurrentDomain)} onStartNode={engine.startNode} onLogout={handleLogout} scanHistory={scanHistory} />;
       case 'test': return !activeModule ? null : <TestView t={t} activeModule={activeModule} currentId={engine.state.currentId} scene={MODULE_REGISTRY[activeModule]?.[engine.state.currentId]} onChoice={engine.handleChoice} onExit={() => setView('dashboard')} getSceneText={getSceneText} adaptiveState={adaptiveState} />;
-      case 'body_sync': return <BodySyncView t={t} onSync={engine.syncBodySensation} />;
-      case 'reflection': return <ReflectionView t={t} sensation={history[history.length - 1]?.sensation} />;
-      case 'results': if (!result) return null; return result.validity === 'INVALID' ? <InvalidResultsView t={t} onReset={() => handleReset(true)} patternFlags={result.patternFlags} /> : <ResultsView t={t} result={result} isGlitchMode={!!isGlitchMode} onContinue={handleContinue} onShare={handleShare} onBack={() => setView('dashboard')} getSceneText={getSceneText} adaptiveState={adaptiveState} onOpenBriefExplainer={() => setView('brief_explainer')} />;
-      case 'compatibility': return <CompatibilityView userResult={result} isProSession={isPro} onUnlockPro={() => setIsPro(true)} t={t} onBack={() => setView('dashboard')} />;
+      case 'body_sync': return <BodySyncView lang={lang} t={t} onSync={engine.syncBodySensation} />;
+      case 'reflection': return <ReflectionView lang={lang} t={t} sensation={history[history.length - 1]?.sensation} />;
+      case 'results': if (!result) return null; return result.validity === 'INVALID' ? <InvalidResultsView t={t} onReset={() => handleReset(true)} patternFlags={result.patternFlags} /> : <ResultsView lang={lang} t={t} result={result} isGlitchMode={!!isGlitchMode} onContinue={handleContinue} onShare={handleShare} onBack={() => setView('dashboard')} getSceneText={getSceneText} adaptiveState={adaptiveState} onOpenBriefExplainer={() => setView('brief_explainer')} />;
+      case 'compatibility': return <CompatibilityView lang={lang} userResult={result} isProSession={isPro} onUnlockPro={() => setIsPro(true)} t={t} onBack={() => setView('dashboard')} />;
       case 'guide': return <GuideView t={t} onBack={() => setView('dashboard')} />;
       case 'brief_explainer': return <BriefExplainerView t={t} onBack={() => setView('results')} />;
-      default: return <AuthView onLogin={handleLogin} t={t} />;
+      default: return <AuthView onLogin={handleLogin} t={t} lang={lang} onLangChange={setLang} />;
     }
   };
   
@@ -268,6 +269,10 @@ const App: React.FC = () => {
         <AdminPanel t={t} onExit={() => setView('auth')} result={result} history={history} onUnlockAll={engine.forceCompleteAll} glitchEnabled={forceGlitch} onToggleGlitch={() => setForceGlitch(!forceGlitch)} onSetView={setView} />
       ) : view === 'system_integrity' ? (
         <SystemIntegrityView t={t} onBack={() => setView('admin')} />
+      ) : view === 'auth' ? (
+        <AuthView onLogin={handleLogin} t={t} lang={lang} onLangChange={setLang} />
+      ) : view === 'boot' ? (
+        <BootView isDemo={isDemo} onComplete={() => { sessionStorage.setItem('genesis_boot_seen', 'true'); setBootShown(true); setView('dashboard'); }} t={t} />
       ) : (
         <Layout {...layoutProps}>{renderCurrentView()}</Layout>
       )}

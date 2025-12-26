@@ -12,6 +12,7 @@ export interface NodeUI {
 }
 
 interface DashboardViewProps {
+  lang: 'ru' | 'ka';
   t: Translations;
   isDemo: boolean;
   globalProgress: number;
@@ -27,7 +28,7 @@ interface DashboardViewProps {
 }
 
 export const DashboardView = memo<DashboardViewProps>(({
-  t, isDemo, globalProgress, result, currentDomain, nodes, completedNodeIds,
+  lang, t, isDemo, globalProgress, result, currentDomain, nodes, completedNodeIds,
   onSetView, onSetCurrentDomain, onStartNode, onLogout, scanHistory
 }) => {
   
@@ -81,7 +82,7 @@ export const DashboardView = memo<DashboardViewProps>(({
         </div>
       </header>
 
-      <EvolutionDashboard history={scanHistory} />
+      <EvolutionDashboard history={scanHistory} lang={lang} />
 
       <section 
         className={`p-6 rounded-[2.5rem] shadow-2xl relative overflow-hidden shrink-0 group cursor-pointer transition-all active:scale-[0.98] ${globalProgress === 100 ? 'bg-indigo-600 ring-4 ring-indigo-500/20' : 'dark-glass-card'}`} 

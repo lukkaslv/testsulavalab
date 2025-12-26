@@ -1,6 +1,6 @@
-
 import React, { memo, useEffect, useRef } from 'react';
-import { translations } from '../translations.ts';
+// FIXED: Removed .ts extension for consistent module imports
+import { translations } from '../translations';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -108,7 +108,7 @@ export const Layout = memo<LayoutProps>(({
       <footer className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md px-6 py-4 glass-card border-t border-slate-100 z-50 flex justify-between items-center rounded-t-3xl shadow-2xl">
         <div className="flex flex-col">
             <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest">{t.ui.system_build}</span>
-            <span className="text-[9px] font-mono font-bold text-slate-400">v6.4.3-STABLE</span>
+            <span className="text-[9px] font-mono font-bold text-slate-400">v9.8.0-SLC</span>
         </div>
         <button onClick={onReset} className="text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100 hover:bg-slate-100 transition-colors">
           {t.ui.reset_session_btn}

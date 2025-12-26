@@ -1,5 +1,5 @@
 
-import { Scene, BeliefKey, DomainType, DomainRawConfig, DomainConfig } from './types';
+import { Scene, BeliefKey, DomainType, DomainConfig } from './types';
 
 export const STORAGE_KEYS = {
   LANG: 'genesis_lang',
