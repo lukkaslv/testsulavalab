@@ -1,3 +1,4 @@
+
 import { BeliefKey, GameHistoryItem, RawAnalysisResult, NeuralCorrelation, DomainType, SystemConflict, MetricLevel, ClinicalWarning, SessionPulseNode, LifeContext } from '../types';
 import { SYSTEM_METADATA, STORAGE_KEYS, TOTAL_NODES } from '../constants';
 
@@ -27,11 +28,6 @@ const WEIGHTS: Record<BeliefKey, { f: number; a: number; r: number; e: number }>
   'autopilot_mode':       { f: 0, a: -5, r: 0, e: 5 },
   'golden_cage':          { f: 0, a: -5, r: 0, e: 5 },
   'default':              { f: 0, a: 0, r: 0, e: 0 } 
-};
-
-const WEIGHT_VARIANT_B: Partial<Record<BeliefKey, Partial<{ f: number; a: number; r: number; e: number }>>> = {
-    'imposter_syndrome': { a: 15 }, 
-    'ambivalence_loop': { e: 12 }
 };
 
 const toLogSpace = (ms: number): number => Math.log(Math.max(1, ms));
@@ -75,13 +71,7 @@ const calculateZScore = (value: number, mean: number, stdDev: number): number =>
     return (value - mean) / stdDev;
 };
 
-const getABVariant = (userId: string): 'A' | 'B' => {
-    let hash = 0;
-    for (let i = 0; i < userId.length; i++) hash = ((hash << 5) - hash) + userId.charCodeAt(i);
-    return (Math.abs(hash) % 2 === 0) ? 'A' : 'B';
-};
-
-export function calculateRawMetrics(history: GameHistoryItem[]): RawAnalysisResult & { variantId: string } {
+export function calculateRawMetrics(history: GameHistoryItem[]): RawAnalysisResult {
   let f = 50, a = 50, r = 50, e = 15;
   let syncScore = 100;
   let skippedCount = 0;
@@ -98,8 +88,6 @@ export function calculateRawMetrics(history: GameHistoryItem[]): RawAnalysisResu
   const langHealth = SYSTEM_METADATA.LANG_HEALTH[currentLang];
   const nodeOverrides = SYSTEM_METADATA.SEMANTIC_RELIABILITY_OVERRIDE;
 
-  const sessionId = localStorage.getItem(STORAGE_KEYS.SESSION) || 'anonymous';
-  const variantId = getABVariant(sessionId);
   const context: LifeContext = (localStorage.getItem('genesis_context') as LifeContext) || 'NORMAL';
 
   let validLatencies: number[] = [];
@@ -110,10 +98,6 @@ export function calculateRawMetrics(history: GameHistoryItem[]): RawAnalysisResu
   
   let neutralSensationCount = 0;
   let mismatchCount = 0; 
-
-  if (langHealth.status === 'BETA_RISK' || langHealth.status === 'LEARNING') {
-      warnings.push({ type: 'L10N_ACCURACY_LOW', severity: 'LOW', messageKey: 'L10n accuracy under SLC audit.' });
-  }
 
   const allLatencies = history.map(h => h.latency).filter(l => l > 300 && l < 30000);
   const sessionMean = allLatencies.length > 0 ? allLatencies.reduce((a, b) => a + b, 0) / allLatencies.length : 2000;
@@ -148,9 +132,6 @@ export function calculateRawMetrics(history: GameHistoryItem[]): RawAnalysisResu
     const beliefKey = h.beliefKey as BeliefKey;
     
     let w = { ...WEIGHTS[beliefKey] || { f: 0, a: 0, r: 0, e: 1 } };
-    if (variantId === 'B' && WEIGHT_VARIANT_B[beliefKey]) {
-        w = { ...w, ...WEIGHT_VARIANT_B[beliefKey] };
-    }
 
     if (lastLatency > sessionMean + sessionStdDev) {
         if (h.latency < lastLatency) {
@@ -187,7 +168,7 @@ export function calculateRawMetrics(history: GameHistoryItem[]): RawAnalysisResu
     
     const entropyDelta = w.e > 0 ? w.e : w.e * 0.5;
     const resistancePenalty = zScore > 1.0 ? zScore * 2 : 0;
-    e = Math.max(0, Math.min(100, e + (entropyDelta * nodeReliability) + resistancePenalty));
+    e = e + (entropyDelta * nodeReliability) + resistancePenalty;
     
     if (h.sensation === 's1' || h.sensation === 's4') somaticProfile.blocks++;
     if (h.sensation === 's2') somaticProfile.resources++;
@@ -197,7 +178,7 @@ export function calculateRawMetrics(history: GameHistoryItem[]): RawAnalysisResu
         const isSomaticNegative = h.sensation === 's1' || h.sensation === 's3' || h.sensation === 's4';
         if (isSomaticNegative) {
             correlations.push({ nodeId: h.nodeId, domain: h.domain, type: 'resistance', descriptionKey: `correlation_resistance_${beliefKey}` });
-            e = Math.min(100, e + (4 * nodeReliability)); 
+            e = e + (4 * nodeReliability); 
         } else if (h.sensation === 's0') {
             mismatchCount++;
         }
@@ -241,14 +222,19 @@ export function calculateRawMetrics(history: GameHistoryItem[]): RawAnalysisResu
   }
 
   const foundationCoherence = calculateDomainCoherence(history.filter(h => h.domain === 'foundation'));
-  const agencyCoherence = calculateDomainCoherence(history.filter(h => h.domain === 'agency'));
   
   if (foundationCoherence < 0.6) {
       f = f * 0.85; 
       e += 8;       
       warnings.push({ type: 'FRAGMENTATION', severity: 'MEDIUM', messageKey: 'Foundation Splitting Detected' });
   }
-  
+
+  // FINAL SAFETY CLAMP: Ensure all core metrics are within 0-100 before state commitment
+  f = Math.max(0, Math.min(100, f));
+  a = Math.max(0, Math.min(100, a));
+  r = Math.max(0, Math.min(100, r));
+  e = Math.max(0, Math.min(100, e));
+
   const latencyLogVariance = calculateLogVariance(validLatencies);
   const isVolatile = latencyLogVariance > 0.6; 
 
@@ -262,7 +248,6 @@ export function calculateRawMetrics(history: GameHistoryItem[]): RawAnalysisResu
   if (isVolatile) technicalConfidence -= 15;
   if (isSocialDesirabilityBiasDetected) technicalConfidence -= 20;
   if (isAlexithymiaDetected) technicalConfidence -= 15; 
-  if (foundationCoherence < 0.7 || agencyCoherence < 0.7) technicalConfidence -= 15;
   
   const dataDensity = history.length / TOTAL_NODES; 
   if (dataDensity < 0.6) {
@@ -284,7 +269,6 @@ export function calculateRawMetrics(history: GameHistoryItem[]): RawAnalysisResu
   const neuroPlasticity = spikeCount > 0 ? Math.min(100, Math.round((recoverySum / spikeCount) / 10)) : 50;
 
   return {
-    variantId,
     context,
     state: { 
         foundation: Math.round(f), 
