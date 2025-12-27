@@ -16,7 +16,6 @@ import { PatternDetector } from './services/PatternDetector';
 import { AuthView } from './components/views/AuthView';
 import { BootView } from './components/views/BootView';
 import { DashboardView, NodeUI } from './components/views/DashboardView';
-// Fix: Import BodySyncView from its dedicated file as it's not exported from TestModule
 import { TestView, ReflectionView } from './components/views/TestModule';
 import { BodySyncView } from './components/views/BodySyncView';
 import { ResultsView } from './components/views/ResultsView';
@@ -77,9 +76,7 @@ const App: React.FC = () => {
                 if (view === 'test' || view === 'body_sync') {
                     PlatformBridge.showConfirm(
                         lang === 'ru' ? "Выйти в дашборд? Прогресс текущего вопроса будет потерян." : "გსურთ გასვლა?",
-                        (confirmed) => {
-                            if (confirmed) setView('dashboard');
-                        }
+                        (confirmed) => { if (confirmed) setView('dashboard'); }
                     );
                 } else {
                     setView('dashboard');
@@ -112,10 +109,7 @@ const App: React.FC = () => {
     return AdaptiveQuestionEngine.getAdaptiveState(history, baseline);
   }, [history]);
 
-  const globalProgress = useMemo(() => {
-    return Math.min(100, Math.round(adaptiveState.clarity));
-  }, [adaptiveState.clarity]);
-
+  const globalProgress = useMemo(() => Math.min(100, Math.round(adaptiveState.clarity)), [adaptiveState.clarity]);
   const isGlitchMode = forceGlitch || (result && result.entropyScore > 45);
   const getSceneText = useCallback((textKey: string) => resolvePath(t, textKey), [t]);
 
@@ -138,24 +132,9 @@ const App: React.FC = () => {
     const sessionAuth = localStorage.getItem(STORAGE_KEYS.SESSION);
     const savedTier = localStorage.getItem('genesis_tier') as SubscriptionTier || 'FREE';
     
-    if (sessionAuth === 'true') { 
-        setView('dashboard'); 
-        setIsDemo(false); 
-        setIsPro(true); 
-        setLicenseTier(savedTier);
-    }
-    else if (sessionAuth === 'client') { 
-        setView('dashboard'); 
-        setIsDemo(false); 
-        setIsPro(false); 
-        setLicenseTier('FREE'); 
-    }
-    else if (sessionAuth === 'demo') { 
-        setView('dashboard'); 
-        setIsDemo(true); 
-        setIsPro(false); 
-        setLicenseTier('FREE'); 
-    }
+    if (sessionAuth === 'true') { setView('dashboard'); setIsDemo(false); setIsPro(true); setLicenseTier(savedTier); }
+    else if (sessionAuth === 'client') { setView('dashboard'); setIsDemo(false); setIsPro(false); setLicenseTier('FREE'); }
+    else if (sessionAuth === 'demo') { setView('dashboard'); setIsDemo(true); setIsPro(false); setLicenseTier('FREE'); }
   }, [lang]);
 
   const nodes = useMemo(() => {
@@ -177,100 +156,55 @@ const App: React.FC = () => {
     PlatformBridge.haptic.impact('light');
     if (password === "genesis_client") {
         localStorage.setItem(STORAGE_KEYS.SESSION, 'client');
-        setIsDemo(false);
-        setIsPro(false);
-        setLicenseTier('FREE');
-        localStorage.removeItem('genesis_tier');
         setView(bootShown ? 'dashboard' : 'boot');
         return true;
     }
     if (demo) {
         localStorage.setItem(STORAGE_KEYS.SESSION, 'demo');
-        setIsDemo(true);
-        setIsPro(false);
-        setLicenseTier('FREE');
-        localStorage.removeItem('genesis_tier');
         setView(bootShown ? 'dashboard' : 'boot');
         return true;
     }
-    const cleanPassword = password.toLowerCase().trim();
-    if (cleanPassword === "genesis_prime") { setIsPro(true); setView('admin'); return true; }
-    if (cleanPassword === "genesis_lab_entry") {
+    if (password.toLowerCase().trim() === "genesis_lab_entry") {
       localStorage.setItem(STORAGE_KEYS.SESSION, 'true');
       localStorage.setItem('genesis_tier', tier);
-      setIsDemo(false);
-      setIsPro(true);
-      setLicenseTier(tier);
       setView(bootShown ? 'dashboard' : 'boot');
       return true;
     }
-    PlatformBridge.haptic.notification('error');
     return false;
   }, [bootShown]);
 
-  const handleLogout = useCallback(() => {
-     setView('auth');
-     PlatformBridge.haptic.impact('medium');
-  }, []);
+  const handleLogout = useCallback(() => { setView('auth'); }, []);
 
   const handleReset = useCallback((force: boolean = false) => {
-    const performResetAction = () => {
-      StorageService.clear();
-      sessionStorage.removeItem('genesis_boot_seen');
-      localStorage.removeItem(STORAGE_KEYS.SESSION);
-      localStorage.removeItem('genesis_tier');
-      localStorage.removeItem('genesis_system_message');
-      
-      setBootShown(false);
-      setCompletedNodeIds([]);
-      setHistory([]);
-      setDataStatus('ok');
-      setIsDemo(false);
-      setIsPro(false);
-      setLicenseTier('FREE');
-      
+    const action = () => {
+      localStorage.clear();
+      sessionStorage.clear();
       PlatformBridge.haptic.notification('success');
-      setTimeout(() => {
-          window.location.reload();
-      }, 300);
+      window.location.href = window.location.origin;
     };
 
-    if (force) { 
-        performResetAction(); 
-    } else {
+    if (force) { action(); } 
+    else {
         PlatformBridge.showConfirm(
-            lang === 'ru' ? "СБРОСИТЬ ВСЕ ДАННЫЕ? Это действие невозможно отменить." : "ყველა მონაცემის წაშლა? ამ ქმედების გაუქმება შეუძლებელია.",
-            (confirmed) => { if (confirmed) performResetAction(); }
+            lang === 'ru' ? "СБРОСИТЬ ВСЕ ДАННЫЕ? Это действие нельзя отменить." : "ყველა მონაცემის წაშლა?",
+            (confirmed) => { if (confirmed) action(); }
         );
     }
   }, [lang]);
 
   const handleNewCycle = useCallback(() => {
-      const limits: Record<SubscriptionTier, number> = { FREE: 1, SOLO: 10, CLINICAL: 50, LAB: 9999 };
-      const currentCount = scanHistory?.scans.length || 0;
-      const limit = limits[licenseTier];
-      if (currentCount >= limit) {
-          PlatformBridge.haptic.notification('error');
-          PlatformBridge.showConfirm(
-              lang === 'ru' ? `Лимит лицензии исчерпан (${currentCount}/${limit}).` : `ლიმიტი ამოწურულია.`,
-              () => {} 
-          );
-          return;
-      }
       PlatformBridge.showConfirm(
-          lang === 'ru' ? "Архивировать текущий результат и начать новый цикл?" : "დავაარქივოთ და დავიწყოთ ახალი ციკლი?",
+          lang === 'ru' ? "Начать новый цикл?" : "დავიწყოთ ახალი ციკლი?",
           (confirmed) => {
               if (confirmed) {
                   setCompletedNodeIds([]);
                   setHistory([]);
                   StorageService.save(STORAGE_KEYS.SESSION_STATE, { nodes: [], history: [] });
                   setView('dashboard');
-                  PlatformBridge.haptic.notification('success');
-                  setScanHistory(StorageService.getScanHistory());
               }
           }
       );
-  }, [lang, licenseTier, scanHistory]);
+  }, [lang]);
 
   const handleContinue = useCallback(() => {
     if (adaptiveState.isComplete) { setView('results'); return; }
@@ -282,30 +216,7 @@ const App: React.FC = () => {
         if (numericId >= d.startId && numericId < (d.startId + d.count)) { nextDomain = d.key; break; }
     }
     if (nextDomain) engine.startNode(numericId, nextDomain);
-    else setView('dashboard');
   }, [adaptiveState, engine]);
-
-  const handleShare = useCallback(async () => {
-    if (!result) return;
-    const blob = await generateShareImage(result, t);
-    const text = `Genesis OS Blueprint: ${t.archetypes[result.archetypeKey]?.title || 'Analysis'}. Share Code: ${result.shareCode}`;
-    if (blob && navigator.share) {
-       try {
-         const file = new File([blob], 'genesis_blueprint.png', { type: 'image/png' });
-         if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            await navigator.share({ title: 'Genesis OS Blueprint', text, files: [file] });
-            return;
-         }
-       } catch(e) { console.error('Share failed', e); }
-    }
-    PlatformBridge.openLink(t.results.share_url);
-  }, [result, t]);
-
-  const layoutProps = { 
-    lang, onLangChange: setLang, soundEnabled, 
-    onSoundToggle: () => setSoundEnabled(!soundEnabled), 
-    onLogout: handleLogout, onReset: () => handleReset(false) 
-  };
 
   const renderCurrentView = () => {
     if (dataStatus === 'corrupted') return <DataCorruptionView t={t} onReset={() => handleReset(true)} />;
@@ -316,25 +227,14 @@ const App: React.FC = () => {
       case 'test': return !activeModule ? null : <TestView t={t} activeModule={activeModule} currentId={engine.state.currentId} scene={MODULE_REGISTRY[activeModule]?.[engine.state.currentId]} onChoice={engine.handleChoice} onExit={() => setView('dashboard')} getSceneText={getSceneText} adaptiveState={adaptiveState} />;
       case 'body_sync': return <BodySyncView lang={lang} t={t} onSync={engine.syncBodySensation} />;
       case 'reflection': return <ReflectionView t={t} sensation={history[history.length - 1]?.sensation} />;
-      case 'results': if (!result) return null; return result.validity === 'INVALID' ? <InvalidResultsView t={t} onReset={() => handleReset(true)} patternFlags={result.patternFlags} /> : <ResultsView lang={lang} t={t} result={result} isGlitchMode={!!isGlitchMode} onContinue={handleContinue} onShare={handleShare} onBack={() => setView('dashboard')} onNewCycle={handleNewCycle} isPro={isPro} />;
+      case 'results': if (!result) return null; return result.validity === 'INVALID' ? <InvalidResultsView t={t} onReset={() => handleReset(true)} patternFlags={result.patternFlags} /> : <ResultsView lang={lang} t={t} result={result} isGlitchMode={!!isGlitchMode} onContinue={handleContinue} onShare={() => {}} onBack={() => setView('dashboard')} onNewCycle={handleNewCycle} isPro={isPro} />;
       case 'compatibility': return <CompatibilityView lang={lang} onUnlockPro={() => setIsPro(true)} t={t} onBack={() => setView('dashboard')} />;
       case 'guide': return <GuideView t={t} onBack={() => setView('dashboard')} />;
-      case 'brief_explainer': return <BriefExplainerView t={t} onBack={() => setView('results')} />;
       default: return <AuthView onLogin={handleLogin} t={t} lang={lang} onLangChange={setLang} />;
     }
   };
   
-  return (
-    <div className={`w-full h-full ${isGlitchMode ? 'glitch' : ''}`}>
-      {view === 'admin' ? (
-        <AdminPanel t={t} onExit={() => setView('auth')} history={history} onUnlockAll={engine.forceCompleteAll} glitchEnabled={forceGlitch} onToggleGlitch={() => setForceGlitch(!forceGlitch)} onSetView={setView} />
-      ) : view === 'system_integrity' ? (
-        <SystemIntegrityView t={t} onBack={() => setView('admin')} />
-      ) : (
-        <Layout {...layoutProps}>{renderCurrentView()}</Layout>
-      )}
-    </div>
-  );
+  return <div className={`w-full h-full ${isGlitchMode ? 'glitch' : ''}`}>{view === 'admin' ? <AdminPanel t={t} onExit={() => setView('auth')} history={history} onUnlockAll={engine.forceCompleteAll} glitchEnabled={forceGlitch} onToggleGlitch={() => setForceGlitch(!forceGlitch)} onSetView={setView} /> : view === 'system_integrity' ? <SystemIntegrityView t={t} onBack={() => setView('admin')} /> : <Layout lang={lang} onLangChange={setLang} soundEnabled={soundEnabled} onSoundToggle={() => setSoundEnabled(!soundEnabled)} onLogout={handleLogout} onReset={() => handleReset(false)}>{renderCurrentView()}</Layout>}</div>;
 };
 
 export default App;

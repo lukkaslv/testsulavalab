@@ -10,7 +10,7 @@ export const simpleHash = (str: string): number => {
   return hash;
 };
 
-// Safe deep object property access with enhanced error reporting
+// Safe deep object property access
 export const resolvePath = (obj: Record<string, any>, path: string): string => {
   if (!obj) return `[ROOT_MISSING]`;
   if (!path) return `[PATH_EMPTY]`;
@@ -22,17 +22,11 @@ export const resolvePath = (obj: Record<string, any>, path: string): string => {
     if (current && typeof current === 'object' && key in current) {
       current = current[key];
     } else {
-      console.warn(`Translation path error: "${key}" not found in path "${path}"`);
       return `[KEY_ERROR: ${key}]`;
     }
   }
   
-  if (typeof current === 'string') return current;
-  if (typeof current === 'object' && current !== null) {
-    return `[OBJECT_ERROR: ${path}]`;
-  }
-  
-  return `[TYPE_ERROR: ${path}]`;
+  return typeof current === 'string' ? current : `[TYPE_ERROR: ${path}]`;
 };
 
 // --- PLATFORM BRIDGE ---
@@ -40,69 +34,40 @@ type HapticStyle = 'light' | 'medium' | 'heavy' | 'rigid' | 'soft';
 type NotificationType = 'error' | 'success' | 'warning';
 
 export const PlatformBridge = {
-  isTelegram: (): boolean => {
-    return !!(window.Telegram?.WebApp?.initData);
-  },
+  isTelegram: (): boolean => !!(window.Telegram?.WebApp?.initData),
 
-  expand: () => {
-    if (window.Telegram?.WebApp?.expand) {
-      window.Telegram.WebApp.expand();
-    }
-  },
-
-  ready: () => {
-    if (window.Telegram?.WebApp?.ready) {
-      window.Telegram.WebApp.ready();
-    }
-  },
+  expand: () => window.Telegram?.WebApp?.expand?.(),
+  ready: () => window.Telegram?.WebApp?.ready?.(),
 
   showConfirm: (message: string, callback: (confirmed: boolean) => void) => {
     const tg = window.Telegram?.WebApp;
     
-    // Attempting Telegram native popup first for version 6.2+
-    try {
-      if (tg && tg.isVersionAtLeast && tg.isVersionAtLeast('6.2') && tg.showPopup) {
-        tg.showPopup({
-          message: message,
-          buttons: [
-              { type: 'destructive', id: 'ok', text: 'OK' },
-              { type: 'cancel', id: 'cancel', text: 'Cancel' }
-          ]
-        }, (buttonId: string) => {
-          callback(buttonId === 'ok');
+    // Check for native Telegram confirmation support first (v6.2+)
+    if (tg && tg.isVersionAtLeast && tg.isVersionAtLeast('6.2')) {
+      try {
+        tg.showConfirm(message, (confirmed: boolean) => {
+          callback(confirmed);
         });
         return;
+      } catch (e) {
+        console.warn("Telegram showConfirm failed");
       }
-    } catch (e) {
-      console.warn("Telegram showPopup failed, falling back to native confirm");
     }
 
-    // Rock-solid fallback for all browsers and old Telegram clients
+    // Rock-solid fallback
     const confirmed = window.confirm(message);
     callback(confirmed);
   },
 
   haptic: {
     impact: (style: HapticStyle) => {
-      if (window.Telegram?.WebApp?.HapticFeedback) {
-        window.Telegram.WebApp.HapticFeedback.impactOccurred(style);
-      } else if (navigator.vibrate) {
-        const durations = { light: 10, medium: 20, heavy: 40, rigid: 15, soft: 10 };
-        navigator.vibrate(durations[style] || 10);
-      }
+      window.Telegram?.WebApp?.HapticFeedback?.impactOccurred(style);
     },
     notification: (type: NotificationType) => {
-      if (window.Telegram?.WebApp?.HapticFeedback) {
-        window.Telegram.WebApp.HapticFeedback.notificationOccurred(type);
-      } else if (navigator.vibrate) {
-         const patterns = { success: [20, 50, 20], warning: [30, 50, 30], error: [50, 30, 50, 30, 50] };
-         navigator.vibrate(patterns[type] || 50);
-      }
+      window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred(type);
     },
     selection: () => {
-      if (window.Telegram?.WebApp?.HapticFeedback) {
-        window.Telegram.WebApp.HapticFeedback.selectionChanged();
-      }
+      window.Telegram?.WebApp?.HapticFeedback?.selectionChanged();
     }
   },
 
