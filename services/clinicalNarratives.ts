@@ -24,7 +24,7 @@ const INTERVENTION_LIBRARY: Record<Lang, {
             { type: 'PARADOX', text: "Попробуйте на этой неделе саботировать свой успех еще эффективнее.", purpose: "Легализация сопротивления." }
         ],
         support: [
-            { type: 'SUPPORT', text: "Я вижу твою усталость. Ты не должен справляться в одиночку прямо сейчас.", purpose: "Валидация дефицита." }
+            { type: 'SUPPORT', text: "Я вижу твою усталость. Ты не должен справляться в осознанном одиночестве прямо сейчас.", purpose: "Валидация дефицита." }
         ]
     },
     ka: {
@@ -45,7 +45,7 @@ const INTERVENTION_LIBRARY: Record<Lang, {
 
 export function generateClinicalNarrative(result: AnalysisResult, lang: Lang): ClinicalNarrative {
     const t = translations[lang];
-    const { state, neuroSync, activePatterns, archetypeKey, verdictKey, correlations, flags } = result;
+    const { state, neuroSync, activePatterns, archetypeKey, verdictKey } = result;
 
     let psychodynamicProfile = "";
     let counterTransference = "";
@@ -191,7 +191,7 @@ export function generateClinicalNarrative(result: AnalysisResult, lang: Lang): C
             hypoExpl,
             interExpl,
             diffExpl,
-            validityExpl, // NEW
+            validityExpl, 
             archetypeAnalysis: `Dominant: ${archetypeKey}.`,
             clinicalHypotheses: lang === 'ru' ? "1. Функциональное отношение к себе. 2. Избегание близости через компетентность." : "კლინიკური ჰიპოთეზები.",
             activePatterns: activePatterns.join(', '),

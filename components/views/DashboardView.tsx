@@ -1,5 +1,5 @@
 
-import React, { memo, useMemo, useState, useEffect } from 'react';
+import { memo, useMemo, useState, useEffect } from 'react';
 import { DomainType, Translations, AnalysisResult, ScanHistory, LifeContext, SubscriptionTier } from '../../types';
 import { DOMAIN_SETTINGS, SYSTEM_METADATA } from '../../constants';
 import { EvolutionDashboard } from '../EvolutionDashboard';
@@ -58,15 +58,14 @@ const ContextCheckModal = ({ t, onSelect }: { t: Translations, onSelect: (c: Lif
 };
 
 export const DashboardView = memo<DashboardViewProps>(({
-  lang, t, isDemo, globalProgress, result, currentDomain, nodes, completedNodeIds,
-  onSetView, onSetCurrentDomain, onStartNode, onLogout, scanHistory, onResume, licenseTier = 'FREE'
+  lang, t, globalProgress, result, currentDomain, nodes,
+  onSetView, onSetCurrentDomain, onStartNode, scanHistory, onResume, licenseTier = 'FREE'
 }) => {
   
   const systemMessage = localStorage.getItem('genesis_system_message');
   const [showContextCheck, setShowContextCheck] = useState(false);
 
   useEffect(() => {
-      // Trigger context check if not set and session has barely started
       if (!localStorage.getItem('genesis_context') && globalProgress < 5) {
           setShowContextCheck(true);
       }
@@ -131,7 +130,6 @@ export const DashboardView = memo<DashboardViewProps>(({
             </div>
         </div>
         
-        {/* GLOBAL BROADCAST */}
         {systemMessage && (
             <div className="bg-indigo-50 border border-indigo-200 p-4 rounded-[1.5rem] shadow-sm animate-in">
                 <h4 className="text-[9px] font-black text-indigo-500 uppercase tracking-widest flex items-center gap-2 mb-1">

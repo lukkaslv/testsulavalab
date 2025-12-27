@@ -1,4 +1,5 @@
-import { AnalysisResult, ScanHistory, SystemLogEntry, TelemetryEvent, FeedbackEntry, LicenseRecord } from '../types';
+
+import { AnalysisResult, ScanHistory, SystemLogEntry, TelemetryEvent, FeedbackEntry, LicenseRecord, GameHistoryItem, DataCorruptionError } from '../types';
 import { STORAGE_KEYS } from '../constants';
 import { SecurityCore } from '../utils/crypto';
 
@@ -8,7 +9,7 @@ const INTERNAL_KEY = "genesis_stable_v3";
 
 export interface SessionState {
   nodes: number[];
-  history: any[]; 
+  history: GameHistoryItem[]; 
 }
 
 const getStorageProvider = () => {
@@ -65,13 +66,13 @@ export const StorageService = {
         if (decrypted) return decrypted as T;
         
         console.warn(`StorageService: Access Denied for ${key} (Integrity/Device Mismatch)`);
-        return fallback; 
+        throw new DataCorruptionError(`Integrity check failed for ${key}`);
     }
 
     try {
       return JSON.parse(item) as T;
     } catch (e) {
-      return fallback;
+      throw new DataCorruptionError(`JSON parse failed for ${key}`);
     }
   },
 

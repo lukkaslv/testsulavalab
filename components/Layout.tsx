@@ -1,6 +1,6 @@
 import React, { memo, useEffect, useRef } from 'react';
-// FIXED: Removed .ts extension for consistent module imports
 import { translations } from '../translations';
+import { SYSTEM_METADATA } from '../constants';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -8,6 +8,7 @@ interface LayoutProps {
   onLangChange: (lang: 'ru' | 'ka') => void;
   soundEnabled: boolean;
   onSoundToggle: () => void;
+  onLogout: () => void;
   onReset: () => void;
 }
 
@@ -80,6 +81,12 @@ export const Layout = memo<LayoutProps>(({
     return () => { if (noiseNodeRef.current) { (noiseNodeRef.current as any).stop(); } };
   }, [soundEnabled]);
 
+  const toggleLang = () => {
+    const nextLang = lang === 'ru' ? 'ka' : 'ru';
+    onLangChange(nextLang);
+    window.Telegram?.WebApp?.HapticFeedback?.impactOccurred?.('light');
+  };
+
   return (
     <div className="flex-1 flex flex-col max-w-md mx-auto w-full relative h-full bg-white">
       <header className="px-6 py-5 flex justify-between items-center z-50 relative shrink-0 border-b border-slate-100/50 glass-card">
@@ -95,7 +102,7 @@ export const Layout = memo<LayoutProps>(({
           <button onClick={onSoundToggle} className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all ${soundEnabled ? 'bg-indigo-600 text-white' : 'bg-slate-50 text-slate-400 border border-slate-100'}`}>
             {soundEnabled ? '🔊' : '🔇'}
           </button>
-          <button onClick={() => onLangChange(lang === 'ru' ? 'ka' : 'ru')} className="px-3 h-9 flex items-center justify-center rounded-xl bg-slate-50 border border-slate-100 font-black text-[10px] text-slate-800">
+          <button onClick={toggleLang} className="px-3 h-9 flex items-center justify-center rounded-xl bg-slate-50 border border-slate-100 font-black text-[10px] text-slate-800">
             {lang === 'ru' ? 'RU' : 'KA'}
           </button>
         </div>
@@ -106,7 +113,7 @@ export const Layout = memo<LayoutProps>(({
       <footer className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md px-6 py-4 glass-card border-t border-slate-100 z-50 flex justify-between items-center rounded-t-3xl shadow-2xl">
         <div className="flex flex-col">
             <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest">{t.ui.system_build}</span>
-            <span className="text-[9px] font-mono font-bold text-slate-400">v9.8.0-SLC</span>
+            <span className="text-[9px] font-mono font-bold text-slate-400">v{SYSTEM_METADATA.VERSION}</span>
         </div>
         <button onClick={onReset} className="text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100 hover:bg-slate-100 transition-colors">
           {t.ui.reset_session_btn}

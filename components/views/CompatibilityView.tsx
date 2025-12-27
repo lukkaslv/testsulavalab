@@ -1,9 +1,8 @@
 
 import React, { useState, useMemo } from 'react';
-import { AnalysisResult, Translations, SessionStep, LifeContext } from '../../types';
+import { AnalysisResult, Translations, LifeContext } from '../../types';
 import { CompatibilityEngine } from '../../services/compatibilityEngine';
 import { generateClinicalNarrative } from '../../services/clinicalNarratives';
-import { PlatformBridge } from '../../utils/helpers';
 import { ClinicalDecoder } from '../../services/clinicalDecoder';
 import { GeminiService } from '../../services/geminiService';
 

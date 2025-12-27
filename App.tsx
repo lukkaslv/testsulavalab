@@ -1,31 +1,30 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { Layout } from './components/Layout.tsx';
-import { MODULE_REGISTRY, ONBOARDING_NODES_COUNT, DOMAIN_SETTINGS } from './constants.ts';
-// FIXED: Remove .ts extension for consistent module resolution
+import { Layout } from './components/Layout';
+import { MODULE_REGISTRY, ONBOARDING_NODES_COUNT, DOMAIN_SETTINGS } from './constants';
 import { translations } from './translations';
-import { calculateRawMetrics } from './services/psychologyService.ts';
-import { DiagnosticEngine } from './services/diagnosticEngine.ts';
-import { DomainType, Translations, AnalysisResult, GameHistoryItem, ScanHistory, DataCorruptionError, SubscriptionTier } from './types.ts';
-import { StorageService, STORAGE_KEYS, SessionState } from './services/storageService.ts';
-import { resolvePath, PlatformBridge } from './utils/helpers.ts';
-import { useTestEngine } from './hooks/useTestEngine.ts';
-import { AdaptiveQuestionEngine } from './services/adaptiveQuestionEngine.ts';
-import { PatternDetector } from './services/PatternDetector.ts';
+import { calculateRawMetrics } from './services/psychologyService';
+import { DiagnosticEngine } from './services/diagnosticEngine';
+import { DomainType, Translations, AnalysisResult, GameHistoryItem, ScanHistory, DataCorruptionError, SubscriptionTier } from './types';
+import { StorageService, STORAGE_KEYS, SessionState } from './services/storageService';
+import { resolvePath, PlatformBridge } from './utils/helpers';
+import { useTestEngine } from './hooks/useTestEngine';
+import { AdaptiveQuestionEngine } from './services/adaptiveQuestionEngine';
+import { PatternDetector } from './services/PatternDetector';
 
 // View Imports
-import { AuthView } from './components/views/AuthView.tsx';
-import { BootView } from './components/views/BootView.tsx';
-import { DashboardView, NodeUI } from './components/views/DashboardView.tsx';
-import { TestView, BodySyncView, ReflectionView } from './components/views/TestModule.tsx';
-import { ResultsView } from './components/views/ResultsView.tsx';
-import { AdminPanel } from './components/views/AdminPanel.tsx';
-import { CompatibilityView } from './components/views/CompatibilityView.tsx';
-import { GuideView } from './components/views/GuideView.tsx';
-import { BriefExplainerView } from './components/views/BriefExplainerView.tsx';
-import { DataCorruptionView } from './components/views/DataCorruptionView.tsx';
-import { generateShareImage } from './utils/shareGenerator.ts';
-import { InvalidResultsView } from './components/views/InvalidResultsView.tsx';
-import { SystemIntegrityView } from './components/views/SystemIntegrityView.tsx';
+import { AuthView } from './components/views/AuthView';
+import { BootView } from './components/views/BootView';
+import { DashboardView, NodeUI } from './components/views/DashboardView';
+import { TestView, BodySyncView, ReflectionView } from './components/views/TestModule';
+import { ResultsView } from './components/views/ResultsView';
+import { AdminPanel } from './components/views/AdminPanel';
+import { CompatibilityView } from './components/views/CompatibilityView';
+import { GuideView } from './components/views/GuideView';
+import { BriefExplainerView } from './components/views/BriefExplainerView';
+import { DataCorruptionView } from './components/views/DataCorruptionView';
+import { generateShareImage } from './utils/shareGenerator';
+import { InvalidResultsView } from './components/views/InvalidResultsView';
+import { SystemIntegrityView } from './components/views/SystemIntegrityView';
 
 const App: React.FC = () => {
   const [lang, setLang] = useState<'ru' | 'ka'>(() => (localStorage.getItem(STORAGE_KEYS.LANG) as 'ru' | 'ka') || 'ru');
@@ -173,8 +172,6 @@ const App: React.FC = () => {
 
   const handleLogin = useCallback((password: string, demo = false, tier: SubscriptionTier = 'FREE'): boolean => {
     PlatformBridge.haptic.impact('light');
-    
-    // Explicit Client Mode (Non-Demo, Non-Pro)
     if (password === "genesis_client") {
         localStorage.setItem(STORAGE_KEYS.SESSION, 'client');
         setIsDemo(false);
@@ -184,7 +181,6 @@ const App: React.FC = () => {
         setView(bootShown ? 'dashboard' : 'boot');
         return true;
     }
-
     if (demo) {
         localStorage.setItem(STORAGE_KEYS.SESSION, 'demo');
         setIsDemo(true);
@@ -194,7 +190,6 @@ const App: React.FC = () => {
         setView(bootShown ? 'dashboard' : 'boot');
         return true;
     }
-    
     const cleanPassword = password.toLowerCase().trim();
     if (cleanPassword === "genesis_prime") { setIsPro(true); setView('admin'); return true; }
     if (cleanPassword === "genesis_lab_entry") {
@@ -211,8 +206,6 @@ const App: React.FC = () => {
   }, [bootShown]);
 
   const handleLogout = useCallback(() => {
-     // User specifically asked to "Exit to Main Menu" instead of resetting session
-     // We don't clear storage here, just return to auth
      setView('auth');
      PlatformBridge.haptic.impact('medium');
   }, []);
@@ -233,51 +226,35 @@ const App: React.FC = () => {
       setView('auth');
       PlatformBridge.haptic.notification('success');
     };
-
-    if (force) {
-      performResetAction();
-    } else {
+    if (force) { performResetAction(); } else {
       PlatformBridge.showConfirm(
         lang === 'ru' ? "Сбросить текущую сессию?" : "გსურთ სესიის გადატვირთვა?",
-        (confirmed) => {
-          if (confirmed) performResetAction();
-        }
+        (confirmed) => { if (confirmed) performResetAction(); }
       );
     }
   }, [lang]);
 
-  // CLINICAL BRIDGE: Allows starting a new cycle without losing auth or history
   const handleNewCycle = useCallback(() => {
-      // LIMIT ENFORCEMENT CHECK
       const limits: Record<SubscriptionTier, number> = { FREE: 1, SOLO: 10, CLINICAL: 50, LAB: 9999 };
       const currentCount = scanHistory?.scans.length || 0;
       const limit = limits[licenseTier];
-
       if (currentCount >= limit) {
           PlatformBridge.haptic.notification('error');
           PlatformBridge.showConfirm(
-              lang === 'ru' 
-                ? `Лимит лицензии ${licenseTier} исчерпан (${currentCount}/${limit}). Пожалуйста, обновите тариф.` 
-                : `ლიმიტი ამოწურულია.`,
+              lang === 'ru' ? `Лимит лицензии исчерпан (${currentCount}/${limit}).` : `ლიმიტი ამოწურულია.`,
               () => {} 
           );
           return;
       }
-
       PlatformBridge.showConfirm(
           lang === 'ru' ? "Архивировать текущий результат и начать новый цикл?" : "დავაარქივოთ და დავიწყოთ ახალი ციკლი?",
           (confirmed) => {
               if (confirmed) {
-                  // 1. Archive active session (implicitly handled by useEffect saving scanHistory)
-                  // 2. Clear ACTIVE state only
                   setCompletedNodeIds([]);
                   setHistory([]);
                   StorageService.save(STORAGE_KEYS.SESSION_STATE, { nodes: [], history: [] });
-                  // 3. Reset View
                   setView('dashboard');
                   PlatformBridge.haptic.notification('success');
-                  
-                  // Reload history so charts update immediately
                   setScanHistory(StorageService.getScanHistory());
               }
           }
@@ -297,10 +274,6 @@ const App: React.FC = () => {
     else setView('dashboard');
   }, [adaptiveState, engine]);
 
-  useEffect(() => {
-    if (adaptiveState.isComplete && result && view === 'results') { StorageService.saveScan(result); }
-  }, [adaptiveState.isComplete, result, view]);
-
   const handleShare = useCallback(async () => {
     if (!result) return;
     const blob = await generateShareImage(result, t);
@@ -317,7 +290,11 @@ const App: React.FC = () => {
     PlatformBridge.openLink(t.results.share_url);
   }, [result, t]);
 
-  const layoutProps = { lang, onLangChange: setLang, soundEnabled, onSoundToggle: () => setSoundEnabled(!soundEnabled), onReset: handleLogout };
+  const layoutProps = { 
+    lang, onLangChange: setLang, soundEnabled, 
+    onSoundToggle: () => setSoundEnabled(!soundEnabled), 
+    onLogout: handleLogout, onReset: () => handleReset(false) 
+  };
 
   const renderCurrentView = () => {
     if (dataStatus === 'corrupted') return <DataCorruptionView t={t} onReset={() => handleReset(true)} />;
@@ -342,10 +319,6 @@ const App: React.FC = () => {
         <AdminPanel t={t} onExit={() => setView('auth')} history={history} onUnlockAll={engine.forceCompleteAll} glitchEnabled={forceGlitch} onToggleGlitch={() => setForceGlitch(!forceGlitch)} onSetView={setView} />
       ) : view === 'system_integrity' ? (
         <SystemIntegrityView t={t} onBack={() => setView('admin')} />
-      ) : view === 'auth' ? (
-        <AuthView onLogin={handleLogin} t={t} lang={lang} onLangChange={setLang} />
-      ) : view === 'boot' ? (
-        <BootView onComplete={() => { sessionStorage.setItem('genesis_boot_seen', 'true'); setBootShown(true); setView('dashboard'); }} t={t} />
       ) : (
         <Layout {...layoutProps}>{renderCurrentView()}</Layout>
       )}

@@ -60,6 +60,7 @@ export interface Translations {
   subtitle: string;
   onboarding: Record<string, string>;
   invalid_results: Record<string, string>;
+  data_corruption: Record<string, string>;
   boot_sequence: string[];
   ui: Record<string, string>;
   auth_ui: {
@@ -143,7 +144,6 @@ export interface Translations {
       clinical_hypotheses: string;
       verdict_protocol: string;
   };
-  // Added pro_headers to Translations interface to fix build errors
   pro_headers: Record<string, string>;
   phases: Record<string, string>;
   tasks: Record<string, any>;
@@ -192,41 +192,151 @@ export interface SessionPulseNode {
     zScore: number; 
 }
 
+// FIX: Added missing types for AnalysisResult and RawAnalysisResult
+export interface ClinicalWarning { type: string; severity: 'LOW' | 'MEDIUM' | 'HIGH'; messageKey: string; }
+export type TaskKey = string;
+export interface ProtocolStep { day: number; phase: PhaseType; taskKey: TaskKey; targetMetricKey: string; }
+export interface PatternFlags { isMonotonic: boolean; isHighSkipRate: boolean; isFlatline: boolean; dominantPosition: number | null; isRoboticTiming: boolean; isSomaticMonotony: boolean; isEarlyTermination: boolean; }
+
+export interface AnalysisFlags { 
+    isAlexithymiaDetected: boolean; 
+    isSlowProcessingDetected: boolean; 
+    isNeuroSyncReliable: boolean; 
+    isSocialDesirabilityBiasDetected: boolean; 
+    processingSpeedCompensation: number; 
+    entropyType: 'NEUTRAL' | 'CREATIVE' | 'STRUCTURAL'; 
+    isL10nRiskDetected: boolean; 
+}
+
 export interface RawAnalysisResult { state: { foundation: number; agency: number; resource: number; entropy: number }; integrity: number; capacity: number; entropyScore: number; neuroSync: number; systemHealth: number; phase: PhaseType; status: MetricLevel; validity: 'VALID' | 'SUSPICIOUS' | 'INVALID' | 'BREACH'; activePatterns: BeliefKey[]; correlations: NeuralCorrelation[]; conflicts: SystemConflict[]; somaticDissonance: BeliefKey[]; somaticProfile: { blocks: number; resources: number; dominantSensation: string }; integrityBreakdown: IntegrityBreakdown; clarity: number; confidenceScore: number; warnings: ClinicalWarning[]; flags: AnalysisFlags; skippedCount: number; mathSignature?: MathSignature; sessionPulse: SessionPulseNode[]; context: LifeContext; }
 export interface AnalysisResult extends RawAnalysisResult { timestamp: number; createdAt: number; shareCode: string; archetypeKey: ArchetypeKey; secondaryArchetypeKey?: ArchetypeKey; matchPercent?: number; archetypeMatch: number; archetypeSpectrum: Array<{ key: ArchetypeKey; score: number }>; verdictKey: VerdictKey; lifeScriptKey: string; roadmap: ProtocolStep[]; graphPoints: Array<{ x: number; y: number }>; interventionStrategy: string; coreConflict: string; shadowDirective: string; patternFlags: PatternFlags; variantId?: string; }
 export type MetricLevel = 'OPTIMAL' | 'STABLE' | 'STRAINED' | 'PROTECTIVE' | 'UNSTABLE';
 export interface NeuralCorrelation { nodeId: string; domain: DomainType; type: 'resistance' | 'resonance'; descriptionKey: string; }
 export interface SystemConflict { key: string; severity: 'high' | 'medium' | 'low'; domain: DomainType; }
 export interface IntegrityBreakdown { coherence: number; sync: number; stability: number; label: string; description: string; status: MetricLevel; }
-export interface AnalysisFlags { isAlexithymiaDetected: boolean; isSlowProcessingDetected: boolean; isNeuroSyncReliable: boolean; isSocialDesirabilityBiasDetected: boolean; processingSpeedCompensation: number; entropyType: 'NEUTRAL' | 'CREATIVE' | 'STRUCTURAL'; isL10nRiskDetected: boolean; }
-export interface PatternFlags { isMonotonic: boolean; isHighSkipRate: boolean; isFlatline: boolean; isRoboticTiming: boolean; isSomaticMonotony: boolean; isEarlyTermination: boolean; dominantPosition: number | null; }
-export type TaskKey = string;
-export interface ProtocolStep { day: number; phase: PhaseType; taskKey: TaskKey; targetMetricKey: string; }
-export interface ClinicalWarning { type: string; severity: 'LOW' | 'MEDIUM' | 'HIGH'; messageKey: string; }
-export interface Choice { id: string; textKey: string; beliefKey: BeliefKey; position: number; }
-export interface ChoiceWithLatency extends Choice { latency: number; }
-export interface Scene { id: string; key: string; titleKey: string; descKey: string; intensity: number; choices: Choice[]; }
-export interface DomainConfig { key: DomainType; count: number; color: string; startId: number; }
-export interface GameHistoryItem { nodeId: string; domain: DomainType; latency: number; sensation: string; beliefKey: BeliefKey; choicePosition: number; }
-export interface ScanHistory { scans: AnalysisResult[]; latestScan: AnalysisResult | null; evolutionMetrics: { entropyTrend: number[]; integrityTrend: number[]; dates: string[]; }; }
-export class DataCorruptionError extends Error { constructor(message: string) { super(message); this.name = 'DataCorruptionError'; } }
-export interface TelemetryEvent { nodeId: string; domain: DomainType; latency: number; sensation: string; beliefKey: BeliefKey; variantId: string; timestamp: number; isOutlier: boolean; }
-export interface FeedbackEntry { scanId: string; timestamp: number; isAccurate: boolean; }
-export interface AdaptiveState { clarity: number; contradictions: Contradiction[]; isComplete: boolean; suggestedNextNodeId: string | null; confidenceScore: number; }
-export interface Contradiction { type: 'latency_mask' | 'somatic_clash'; nodeId: string; beliefKey: string; severity: number; description: string; }
-export interface SessionStep { phase: string; title: string; action: string; }
-export interface ClinicalInterpretation { systemConfiguration: { title: string; description: string; limitingFactor: string; }; deepMechanism: { title: string; analysis: string[]; }; metricInteractions: { farDescription: string; syncDescription: string; }; archetypeClinical: { strategy: string; functionality: string; limit: string; }; beliefImpact: string; hypotheses: TherapyHypothesis[]; risks: string[]; sessionEntry: string; }
-export enum LogLevel { DEBUG = 'DEBUG', INFO = 'INFO', WARN = 'WARN', ERROR = 'ERROR' }
-export interface LogEntry { timestamp: number; level: LogLevel; module: string; message: string; stack?: string; context?: Record<string, any>; }
-export interface IntegrityReport { status: 'healthy' | 'warning' | 'error'; errors: ConfigError[]; warnings: ConfigError[]; healthy: string[]; timestamp: number; semanticDensity?: Record<string, number>; }
-export interface ConfigError { severity: 'low' | 'high'; type: string; details: string; fix: string; file: string; impact: string; }
-export interface TherapyHypothesis { id: string; hypothesis: string; basedOn: string; focusForSession: string; }
+
+// FIX: Added missing structural types for services
+export interface GameHistoryItem {
+    beliefKey: string;
+    sensation: string;
+    latency: number;
+    nodeId: string;
+    domain: DomainType;
+    choicePosition: number;
+}
+
+export interface ScanHistory {
+    scans: AnalysisResult[];
+    latestScan: AnalysisResult | null;
+    evolutionMetrics: {
+        entropyTrend: number[];
+        integrityTrend: number[];
+        dates: string[];
+    };
+}
+
+export class DataCorruptionError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = "DataCorruptionError";
+    }
+}
+
+export interface Choice {
+    id: string;
+    textKey: string;
+    beliefKey: string;
+    position: number;
+}
+
+export interface ChoiceWithLatency extends Choice {
+    latency: number;
+}
+
+export interface Scene {
+    id: string;
+    key: string;
+    titleKey: string;
+    descKey: string;
+    intensity: number;
+    choices: Choice[];
+}
+
+export interface DomainConfig {
+    key: DomainType;
+    count: number;
+    color: string;
+    startId: number;
+}
+
+export interface Contradiction {
+    type: string;
+    nodeId: string;
+    beliefKey: string;
+    severity: number;
+    description: string;
+}
+
+export interface AdaptiveState {
+    clarity: number;
+    contradictions: Contradiction[];
+    isComplete: boolean;
+    suggestedNextNodeId: string | null;
+    confidenceScore: number;
+}
+
+export interface CompatibilityReport {
+    overallScore: number;
+    domainSynergies: any[];
+    domainConflicts: any[];
+    recommendations: string[];
+    relationshipType: string;
+    partnerArchetype: ArchetypeKey;
+}
+
+export interface SessionStep {
+    phase: string;
+    title: string;
+    action: string;
+}
+
+export interface TherapyHypothesis {
+    id: string;
+    hypothesis: string;
+    basedOn: string;
+    focusForSession: string;
+}
+
+export interface ClinicalInterpretation {
+    systemConfiguration: {
+        title: string;
+        description: string;
+        limitingFactor: string;
+    };
+    deepMechanism: {
+        title: string;
+        analysis: string[];
+    };
+    metricInteractions: {
+        farDescription: string;
+        syncDescription: string;
+    };
+    archetypeClinical: {
+        strategy: string;
+        functionality: string;
+        limit: string;
+    };
+    beliefImpact: string;
+    hypotheses: TherapyHypothesis[];
+    risks: string[];
+    sessionEntry: string;
+}
 
 export interface SystemicVector {
     origin: string;
     strength: number;
     description: string;
-    proNote: string; // NEW
+    proNote?: string;
 }
 
 export interface Intervention {
@@ -247,54 +357,94 @@ export interface ClinicalNarrative {
     level2: {
         introduction: string;
         generalConfig: string;
-        psychodynamicProfile: string; 
+        psychodynamicProfile: string;
         deepAnalysis: string;
-        deepExpl: string; 
+        deepExpl: string;
+        behaviorExpl: string;
+        hypoExpl: string;
+        interExpl: string;
+        diffExpl: string;
+        validityExpl: string;
         archetypeAnalysis: string;
         clinicalHypotheses: string;
-        hypoExpl: string; 
         activePatterns: string;
         verdictAndRecommendations: string;
         resistanceProfile: string;
         behavioralMarkers: string;
-        behaviorExpl: string; 
         systemicRoot: string;
         therapeuticAlliance: string;
         shadowContract: string;
-        shadowContractExpl: string; 
-        evolutionGoal: string; 
-        evolutionProcess: string; 
-        counterTransference: string; 
-        therapeuticTrap: string; 
-        fragilityPoint: string; 
-        primaryDefense: string; 
+        evolutionGoal: string;
+        shadowContractExpl: string;
+        evolutionProcess: string;
+        counterTransference: string;
+        primaryDefense: string;
+        therapeuticTrap: string;
+        fragilityPoint: string;
+        clinicalStrategy: string[];
+        triggers: string[];
+        blindSpots: string[];
         sessionFlow: SessionStep[];
-        clinicalStrategy: string[]; 
-        triggers: string[]; 
-        blindSpots: string[]; 
         clinicalProfile: string;
         systemicVectors: SystemicVector[];
         interventions: Intervention[];
-        interExpl: string; 
         differentialHypotheses: Array<{ label: string; probability: number }>;
-        diffExpl: string; 
-        validityExpl: string; // NEW
     };
 }
 
-export interface CompatibilityReport {
-    overallScore: number;
-    domainSynergies: string[];
-    domainConflicts: string[];
-    recommendations: string[];
-    relationshipType: string;
-    partnerArchetype: ArchetypeKey;
+export enum LogLevel {
+    DEBUG = 'DEBUG',
+    INFO = 'INFO',
+    WARN = 'WARN',
+    ERROR = 'ERROR'
+}
+
+export interface LogEntry {
+    timestamp: number;
+    level: LogLevel;
+    module: string;
+    message: string;
+    stack?: string;
+    context?: Record<string, any>;
+}
+
+export interface IntegrityReport {
+    status: 'healthy' | 'warning' | 'error';
+    errors: ConfigError[];
+    warnings: ConfigError[];
+    healthy: string[];
+    timestamp: number;
+    semanticDensity: { parity: number };
+}
+
+export interface ConfigError {
+    severity: 'low' | 'high';
+    type: string;
+    details: string;
+    fix: string;
+    file: string;
+    impact: string;
 }
 
 export interface SystemLogEntry {
     timestamp: string;
-    level: 'DEBUG' | 'INFO' | 'WARN' | 'ERROR';
+    level: 'INFO' | 'WARN' | 'ERROR';
     module: string;
     action: string;
     details: any;
+}
+
+export interface TelemetryEvent {
+    timestamp: number;
+    nodeId: string;
+    domain: DomainType;
+    latency: number;
+    sensation: string;
+    beliefKey: string;
+    variantId: string;
+    isOutlier: boolean;
+}
+
+export interface FeedbackEntry {
+    [key: string]: any;
 }
