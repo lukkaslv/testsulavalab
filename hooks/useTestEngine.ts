@@ -1,3 +1,4 @@
+
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { DomainType, GameHistoryItem, Choice, ChoiceWithLatency, BeliefKey } from '../types';
 import { StorageService, STORAGE_KEYS, SessionState } from '../services/storageService';
@@ -10,6 +11,7 @@ interface UseTestEngineProps {
   activeModule: DomainType | null;
   setActiveModule: (d: DomainType | null) => void;
   isDemo: boolean;
+  canStart: boolean;
 }
 
 export const useTestEngine = ({
@@ -18,7 +20,8 @@ export const useTestEngine = ({
   setView,
   activeModule,
   setActiveModule,
-  isDemo
+  isDemo,
+  canStart
 }: UseTestEngineProps) => {
   
   const [state, setState] = useState({ 
@@ -80,6 +83,11 @@ export const useTestEngine = ({
   }, []);
 
   const startNode = useCallback((nodeId: number, domain: DomainType) => {
+    if (!canStart && !isDemo) {
+        window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred?.('error');
+        return;
+    }
+
     if (isDemo && nodeId >= 3) {
         window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred?.('warning');
         return;
@@ -96,7 +104,7 @@ export const useTestEngine = ({
     requestAnimationFrame(() => {
       nodeStartTime.current = performance.now();
     });
-  }, [isDemo, setActiveModule, setView]);
+  }, [isDemo, canStart, setActiveModule, setView]);
 
   const advanceNode = useCallback((nextNodes: number[]) => {
     const nextId = Math.max(...nextNodes, -1) + 1;
@@ -188,7 +196,6 @@ export const useTestEngine = ({
     const userId = localStorage.getItem(STORAGE_KEYS.SESSION) || 'anonymous';
     const variantId = (userId.charCodeAt(0) % 2 === 0) ? 'A' : 'B';
 
-    // List of active beliefs to ensure we get "Valid" and "High" results
     const highValueBeliefs: BeliefKey[] = ['money_is_tool', 'self_permission', 'capacity_expansion'];
 
     const neutralHistory: GameHistoryItem[] = allIds.map(id => {
@@ -196,11 +203,11 @@ export const useTestEngine = ({
         
         const item: GameHistoryItem = {
             beliefKey: highValueBeliefs[id % highValueBeliefs.length], 
-            sensation: id % 7 === 0 ? 's2' : 's0', // Occasional resonance to avoid monotony
-            latency: 1400 + (id % 9) * 120, // Jittered latency to pass Robotic Timing check
+            sensation: id % 7 === 0 ? 's2' : 's0', 
+            latency: 1400 + (id % 9) * 120, 
             nodeId: id.toString(), 
             domain: domain as DomainType, 
-            choicePosition: id % 3 // Cycle positions 0, 1, 2 to avoid Monotonic check
+            choicePosition: id % 3 
         };
 
         StorageService.logTelemetry({

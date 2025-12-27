@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Layout } from './components/Layout';
 import { MODULE_REGISTRY, ONBOARDING_NODES_COUNT, DOMAIN_SETTINGS } from './constants';
@@ -22,9 +23,7 @@ import { ResultsView } from './components/views/ResultsView';
 import { AdminPanel } from './components/views/AdminPanel';
 import { CompatibilityView } from './components/views/CompatibilityView';
 import { GuideView } from './components/views/GuideView';
-import { BriefExplainerView } from './components/views/BriefExplainerView';
 import { DataCorruptionView } from './components/views/DataCorruptionView';
-import { generateShareImage } from './utils/shareGenerator';
 import { InvalidResultsView } from './components/views/InvalidResultsView';
 import { SystemIntegrityView } from './components/views/SystemIntegrityView';
 
@@ -32,13 +31,14 @@ const App: React.FC = () => {
   const [lang, setLang] = useState<'ru' | 'ka'>(() => (localStorage.getItem(STORAGE_KEYS.LANG) as 'ru' | 'ka') || 'ru');
   const t: Translations = useMemo(() => translations[lang], [lang]);
   
-  const [view, setView] = useState<'auth' | 'boot' | 'dashboard' | 'test' | 'body_sync' | 'reflection' | 'results' | 'admin' | 'compatibility' | 'guide' | 'brief_explainer' | 'system_integrity'>('auth');
+  const [view, setView] = useState<'auth' | 'boot' | 'dashboard' | 'test' | 'body_sync' | 'reflection' | 'results' | 'admin' | 'compatibility' | 'guide' | 'system_integrity'>('auth');
   const [dataStatus, setDataStatus] = useState<'ok' | 'corrupted'>('ok');
   const [activeModule, setActiveModule] = useState<DomainType | null>(null);
   const [currentDomain, setCurrentDomain] = useState<DomainType | null>(null);
   const [completedNodeIds, setCompletedNodeIds] = useState<number[]>([]);
   const [isDemo, setIsDemo] = useState(false);
   const [isPro, setIsPro] = useState(false);
+  const [isMaster, setIsMaster] = useState(false); 
   const [licenseTier, setLicenseTier] = useState<SubscriptionTier>('FREE');
   const [bootShown, setBootShown] = useState(() => sessionStorage.getItem('genesis_boot_seen') === 'true');
   const [soundEnabled, setSoundEnabled] = useState(false);
@@ -47,13 +47,22 @@ const App: React.FC = () => {
 
   const [history, setHistory] = useState<GameHistoryItem[]>([]);
 
+  const usageStats = useMemo(() => {
+      const limits: Record<SubscriptionTier, number> = { FREE: 1, SOLO: 10, CLINICAL: 50, LAB: 9999 };
+      const used = scanHistory?.scans.length || 0;
+      const limit = limits[licenseTier];
+      const isUnlimited = limit > 9000;
+      return { used, limit, isUnlimited, canStart: used < limit || isUnlimited };
+  }, [licenseTier, scanHistory]);
+
   const engine = useTestEngine({
     setCompletedNodeIds: (fn: any) => setCompletedNodeIds(fn),
     setHistory: (fn: any) => setHistory(fn),
     setView,
     activeModule,
     setActiveModule,
-    isDemo
+    isDemo,
+    canStart: usageStats.canStart
   });
 
   useEffect(() => {
@@ -131,10 +140,17 @@ const App: React.FC = () => {
 
     const sessionAuth = localStorage.getItem(STORAGE_KEYS.SESSION);
     const savedTier = localStorage.getItem('genesis_tier') as SubscriptionTier || 'FREE';
+    const isMasterSession = localStorage.getItem('genesis_master') === 'true';
     
-    if (sessionAuth === 'true') { setView('dashboard'); setIsDemo(false); setIsPro(true); setLicenseTier(savedTier); }
-    else if (sessionAuth === 'client') { setView('dashboard'); setIsDemo(false); setIsPro(false); setLicenseTier('FREE'); }
-    else if (sessionAuth === 'demo') { setView('dashboard'); setIsDemo(true); setIsPro(false); setLicenseTier('FREE'); }
+    if (sessionAuth === 'true') { 
+        if (view === 'auth') setView('dashboard'); 
+        setIsDemo(false); 
+        setIsPro(true); 
+        setLicenseTier(savedTier); 
+        if (isMasterSession) setIsMaster(true);
+    }
+    else if (sessionAuth === 'client') { if (view === 'auth') setView('dashboard'); setIsDemo(false); setIsPro(false); setLicenseTier('FREE'); }
+    else if (sessionAuth === 'demo') { if (view === 'auth') setView('dashboard'); setIsDemo(true); setIsPro(false); setLicenseTier('FREE'); }
   }, [lang]);
 
   const nodes = useMemo(() => {
@@ -154,26 +170,49 @@ const App: React.FC = () => {
 
   const handleLogin = useCallback((password: string, demo = false, tier: SubscriptionTier = 'FREE'): boolean => {
     PlatformBridge.haptic.impact('light');
-    if (password === "genesis_client") {
+    const pwd = password.toLowerCase().trim();
+    
+    if (pwd === "genesis_prime") {
+        localStorage.setItem(STORAGE_KEYS.SESSION, 'true');
+        localStorage.setItem('genesis_tier', 'LAB');
+        localStorage.setItem('genesis_master', 'true');
+        setLicenseTier('LAB');
+        setIsPro(true);
+        setIsMaster(true);
+        setView('admin'); 
+        return true;
+    }
+
+    if (pwd === "genesis_client") {
         localStorage.setItem(STORAGE_KEYS.SESSION, 'client');
         setView(bootShown ? 'dashboard' : 'boot');
         return true;
     }
+
     if (demo) {
         localStorage.setItem(STORAGE_KEYS.SESSION, 'demo');
         setView(bootShown ? 'dashboard' : 'boot');
         return true;
     }
-    if (password.toLowerCase().trim() === "genesis_lab_entry") {
+
+    if (pwd === "genesis_lab_entry") {
       localStorage.setItem(STORAGE_KEYS.SESSION, 'true');
       localStorage.setItem('genesis_tier', tier);
+      setLicenseTier(tier);
+      setIsPro(true);
+      setIsMaster(false);
       setView(bootShown ? 'dashboard' : 'boot');
       return true;
     }
+
     return false;
   }, [bootShown]);
 
-  const handleLogout = useCallback(() => { setView('auth'); }, []);
+  const handleLogout = useCallback(() => { 
+      localStorage.removeItem(STORAGE_KEYS.SESSION);
+      localStorage.removeItem('genesis_master');
+      setView('auth'); 
+  }, []);
 
   const handleReset = useCallback((force: boolean = false) => {
     const action = () => {
@@ -193,6 +232,11 @@ const App: React.FC = () => {
   }, [lang]);
 
   const handleNewCycle = useCallback(() => {
+      if (!usageStats.canStart) {
+          PlatformBridge.haptic.notification('error');
+          alert(t.ui.limit_reached_desc);
+          return;
+      }
       PlatformBridge.showConfirm(
           lang === 'ru' ? "Начать новый цикл?" : "დავიწყოთ ახალი ციკლი?",
           (confirmed) => {
@@ -204,7 +248,7 @@ const App: React.FC = () => {
               }
           }
       );
-  }, [lang]);
+  }, [lang, usageStats.canStart, t.ui.limit_reached_desc]);
 
   const handleContinue = useCallback(() => {
     if (adaptiveState.isComplete) { setView('results'); return; }
@@ -223,18 +267,38 @@ const App: React.FC = () => {
     switch (view) {
       case 'auth': return <AuthView onLogin={handleLogin} t={t} lang={lang} onLangChange={setLang} />;
       case 'boot': return <BootView onComplete={() => { sessionStorage.setItem('genesis_boot_seen', 'true'); setBootShown(true); setView('dashboard'); }} t={t} />;
-      case 'dashboard': return <DashboardView lang={lang} t={t} isDemo={isDemo} isPro={isPro} globalProgress={globalProgress} result={result} currentDomain={currentDomain} nodes={nodes} completedNodeIds={completedNodeIds} onSetView={setView as any} onSetCurrentDomain={onSetCurrentDomain => setCurrentDomain(onSetCurrentDomain)} onStartNode={engine.startNode} onLogout={handleLogout} scanHistory={scanHistory} onResume={handleContinue} licenseTier={licenseTier} />;
+      // FIX: Pass usageStats to DashboardView
+      case 'dashboard': return <DashboardView lang={lang} t={t} isDemo={isDemo} isPro={isPro} globalProgress={globalProgress} result={result} currentDomain={currentDomain} nodes={nodes} completedNodeIds={completedNodeIds} onSetView={setView as any} onSetCurrentDomain={onSetCurrentDomain => setCurrentDomain(onSetCurrentDomain)} onStartNode={engine.startNode} onLogout={handleLogout} scanHistory={scanHistory} onResume={handleContinue} licenseTier={licenseTier} usageStats={usageStats} />;
       case 'test': return !activeModule ? null : <TestView t={t} activeModule={activeModule} currentId={engine.state.currentId} scene={MODULE_REGISTRY[activeModule]?.[engine.state.currentId]} onChoice={engine.handleChoice} onExit={() => setView('dashboard')} getSceneText={getSceneText} adaptiveState={adaptiveState} />;
       case 'body_sync': return <BodySyncView lang={lang} t={t} onSync={engine.syncBodySensation} />;
       case 'reflection': return <ReflectionView t={t} sensation={history[history.length - 1]?.sensation} />;
       case 'results': if (!result) return null; return result.validity === 'INVALID' ? <InvalidResultsView t={t} onReset={() => handleReset(true)} patternFlags={result.patternFlags} /> : <ResultsView lang={lang} t={t} result={result} isGlitchMode={!!isGlitchMode} onContinue={handleContinue} onShare={() => {}} onBack={() => setView('dashboard')} onNewCycle={handleNewCycle} isPro={isPro} />;
-      case 'compatibility': return <CompatibilityView lang={lang} onUnlockPro={() => setIsPro(true)} t={t} onBack={() => setView('dashboard')} />;
+      case 'compatibility': return <CompatibilityView lang={lang} licenseTier={licenseTier} t={t} onBack={() => setView('dashboard')} />;
       case 'guide': return <GuideView t={t} onBack={() => setView('dashboard')} />;
       default: return <AuthView onLogin={handleLogin} t={t} lang={lang} onLangChange={setLang} />;
     }
   };
   
-  return <div className={`w-full h-full ${isGlitchMode ? 'glitch' : ''}`}>{view === 'admin' ? <AdminPanel t={t} onExit={() => setView('auth')} history={history} onUnlockAll={engine.forceCompleteAll} glitchEnabled={forceGlitch} onToggleGlitch={() => setForceGlitch(!forceGlitch)} onSetView={setView} /> : view === 'system_integrity' ? <SystemIntegrityView t={t} onBack={() => setView('admin')} /> : <Layout lang={lang} onLangChange={setLang} soundEnabled={soundEnabled} onSoundToggle={() => setSoundEnabled(!soundEnabled)} onLogout={handleLogout} onReset={() => handleReset(false)}>{renderCurrentView()}</Layout>}</div>;
+  return (
+    <div className={`w-full h-full ${isGlitchMode ? 'glitch' : ''}`}>
+      {isMaster && view === 'admin' ? (
+        <AdminPanel t={t} onExit={() => setView('dashboard')} history={history} onUnlockAll={engine.forceCompleteAll} glitchEnabled={forceGlitch} onToggleGlitch={() => setForceGlitch(!forceGlitch)} onSetView={setView} />
+      ) : isMaster && view === 'system_integrity' ? (
+        <SystemIntegrityView t={t} onBack={() => setView('admin')} />
+      ) : (
+        <Layout 
+          lang={lang} 
+          onLangChange={setLang} 
+          soundEnabled={soundEnabled} 
+          onSoundToggle={() => setSoundEnabled(!soundEnabled)} 
+          onLogout={handleLogout} 
+          onReset={() => handleReset(false)}
+        >
+          {renderCurrentView()}
+        </Layout>
+      )}
+    </div>
+  );
 };
 
 export default App;

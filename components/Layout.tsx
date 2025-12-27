@@ -111,7 +111,7 @@ export const Layout = memo<LayoutProps>(({
             </span>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
           <button onClick={onSoundToggle} className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all ${soundEnabled ? 'bg-indigo-600 text-white' : 'bg-slate-50 text-slate-400 border border-slate-100'}`}>
             {soundEnabled ? '🔊' : '🔇'}
           </button>

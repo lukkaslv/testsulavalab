@@ -4,6 +4,7 @@ import { AnalysisResult, Translations, BeliefKey, SessionPulseNode } from '../..
 import { PlatformBridge } from '../../utils/helpers';
 import { SessionPrepService } from '../../services/SessionPrepService';
 import { RadarChart } from '../RadarChart';
+import { BioSignature } from '../BioSignature';
 
 interface ResultsViewProps {
   lang: 'ru' | 'ka';
@@ -145,11 +146,20 @@ export const ResultsView = memo<ResultsViewProps>(({
               <h1 className="text-4xl font-black italic uppercase text-white leading-none tracking-tighter">{t.archetypes[result.archetypeKey]?.title}</h1>
               <p className="text-sm text-slate-400 font-medium leading-relaxed opacity-85 pt-2 border-l-2 border-indigo-500/50 pl-4">{t.archetypes[result.archetypeKey]?.desc}</p>
             </div>
-            <div className="pt-4">
+            <div className="pt-4 flex flex-col items-center">
                 <RadarChart points={result.graphPoints} onLabelClick={() => {}} lang={lang} />
+                <BioSignature f={result.state.foundation} a={result.state.agency} r={result.state.resource} e={result.state.entropy} className="mt-4 opacity-50" />
             </div>
         </div>
       </header>
+
+      {/* METHODOLOGY BLOCK (Pro-transparency) */}
+      <section className="bg-slate-50 border border-slate-200 p-6 rounded-[2rem] space-y-3">
+          <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t.results.methodology_title}</h4>
+          <p className="text-xs text-slate-600 leading-relaxed font-medium italic opacity-80">
+              {t.results.methodology_desc}
+          </p>
+      </section>
 
       {/* SESSION PREP BLOCK */}
       <section className="bg-indigo-600 p-8 rounded-[2.5rem] shadow-xl space-y-6 relative overflow-hidden text-white">

@@ -1,3 +1,4 @@
+
 import { RawAnalysisResult, AnalysisResult, ArchetypeKey, VerdictKey, PhaseType, TaskKey, PatternFlags } from '../types';
 import { SecurityCore } from '../utils/crypto';
 
@@ -20,14 +21,20 @@ const TASKS_LOGIC: Record<PhaseType, Array<{ taskKey: TaskKey, targetMetricKey: 
 export const DiagnosticEngine = {
   interpret(raw: RawAnalysisResult, patternFlags: PatternFlags & { isInconsistentRhythm?: boolean }): AnalysisResult {
     const { state, phase, conflicts } = raw;
-    const { foundation: f, agency: a, resource: r, entropy: e } = state;
+    
+    // Clamp to 100 for strict protocol adherence
+    const f = Math.min(100, state.foundation);
+    const a = Math.min(100, state.agency);
+    const r = Math.min(100, state.resource);
+    const e = Math.min(100, state.entropy);
 
+    // Advanced Archetype Matrix with jitter protection
     const archetypeSpectrum = ([
-      { key: 'THE_CHAOS_SURFER', score: e },
-      { key: 'THE_DRIFTER', score: 100 - a },
-      { key: 'THE_BURNED_HERO', score: (a + (100 - r)) / 2 },
-      { key: 'THE_GOLDEN_PRISONER', score: (r + (100 - a)) / 2 },
-      { key: 'THE_GUARDIAN', score: (f + (100 - a)) / 2 },
+      { key: 'THE_CHAOS_SURFER', score: e * 1.1 }, // Higher weight for Entropy
+      { key: 'THE_DRIFTER', score: (100 - a) * 0.9 + (e * 0.3) },
+      { key: 'THE_BURNED_HERO', score: (a * 0.8 + (100 - r) * 0.8) },
+      { key: 'THE_GOLDEN_PRISONER', score: (r * 0.7 + (100 - a) * 0.7) },
+      { key: 'THE_GUARDIAN', score: (f * 0.6 + (100 - a) * 0.6 + r * 0.4) },
       { key: 'THE_ARCHITECT', score: (a + f + r) / 3 }
     ] as { key: ArchetypeKey; score: number }[]).sort((a, b) => b.score - a.score);
 
@@ -48,10 +55,10 @@ export const DiagnosticEngine = {
     const archIndex = ARCHETYPE_INDEX_MAP.indexOf(primary.key);
     const verdictIndex = VERDICT_INDEX_MAP.indexOf(verdictKey);
     
+    // Integrity Handshake String
     const dataStr = `${Math.round(f)}|${Math.round(a)}|${Math.round(r)}|${Math.round(e)}|${archIndex}|${Math.round(raw.neuroSync)}|${verdictIndex}`;
     const sig = SecurityCore.generateChecksum(dataStr);
     
-    // Fixed: Keep padding for better cross-browser compatibility
     const shareCode = btoa(`${dataStr}#${sig}`);
 
     const coreConflict = conflicts.length > 0 ? conflicts[0].key : (verdictKey !== 'HEALTHY_SCALE' ? verdictKey.toLowerCase() : 'none');
@@ -72,6 +79,7 @@ export const DiagnosticEngine = {
 
     return {
       ...raw,
+      state: { foundation: f, agency: a, resource: r, entropy: e },
       validity: finalValidity,
       timestamp: Date.now(),
       createdAt: Date.now(),
