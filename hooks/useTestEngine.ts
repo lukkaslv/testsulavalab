@@ -51,16 +51,20 @@ export const useTestEngine = ({
         variantId
     });
 
-    setHistory(prev => {
-        const next = [...prev, newItem];
+    setHistory(prevHistory => {
+        const nextHistory = [...prevHistory, newItem];
         setCompletedNodeIds(prevNodes => {
             const nextNodes = prevNodes.includes(lastNodeId) ? prevNodes : [...prevNodes, lastNodeId];
-            const sessionState: SessionState = { nodes: nextNodes, history: next };
+            const sessionState: SessionState = { nodes: nextNodes, history: nextHistory };
             StorageService.save(STORAGE_KEYS.SESSION_STATE, sessionState);
-            onComplete(nextNodes);
+            
+            // FIX: Decouple state update from subsequent action to prevent race conditions.
+            // This ensures React has finished processing state changes before we advance the node.
+            setTimeout(() => onComplete(nextNodes), 0);
+
             return nextNodes;
         });
-        return next;
+        return nextHistory;
     });
 
     StorageService.save('genesis_recovery_choice', null);
