@@ -289,8 +289,10 @@ const App: React.FC = () => {
       case 'body_sync': return <BodySyncView lang={lang} t={t} onSync={engine.syncBodySensation} />;
       case 'reflection': return <ReflectionView t={t} sensation={history[history.length - 1]?.sensation} />;
       case 'results': if (!result) return null; return result.validity === 'INVALID' ? <InvalidResultsView t={t} onReset={() => handleReset(true)} patternFlags={result.patternFlags} /> : <ResultsView lang={lang} t={t} result={result} isGlitchMode={!!isGlitchMode} onContinue={handleContinue} onShare={() => {}} onBack={() => setViewAndPersist('dashboard')} onNewCycle={handleNewCycle} isPro={isPro} />;
+      case 'admin': return <AdminPanel t={t} onExit={() => setViewAndPersist('dashboard')} history={history} onUnlockAll={engine.forceCompleteAll} glitchEnabled={forceGlitch} onToggleGlitch={() => setForceGlitch(!forceGlitch)} onSetView={setViewAndPersist} />;
       case 'compatibility': return <CompatibilityView lang={lang} licenseTier={licenseTier} t={t} onBack={() => setViewAndPersist('dashboard')} />;
       case 'guide': return <GuideView t={t} onBack={() => setViewAndPersist('dashboard')} />;
+      case 'system_integrity': return <SystemIntegrityView t={t} onBack={() => setViewAndPersist('admin')} />;
       default: return <AuthView onLogin={handleLogin} t={t} lang={lang} onLangChange={setLang} />;
     }
   };
