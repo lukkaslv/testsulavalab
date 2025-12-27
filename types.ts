@@ -20,6 +20,8 @@ declare global {
           offClick: (cb: () => void) => void;
         };
         showConfirm: (message: string, callback: (confirmed: boolean) => void) => void;
+        showPopup: (params: { title?: string; message: string; buttons?: { id: string; type?: 'default' | 'ok' | 'close' | 'cancel' | 'destructive'; text?: string }[] }, callback?: (id: string) => void) => void;
+        isVersionAtLeast: (version: string) => boolean;
         openLink: (url: string) => void;
         initData: string;
       };
@@ -28,6 +30,7 @@ declare global {
 }
 
 export type SubscriptionTier = 'FREE' | 'SOLO' | 'CLINICAL' | 'LAB';
+export type LifeContext = 'NORMAL' | 'HIGH_LOAD' | 'CRISIS' | 'TRANSITION';
 
 export interface LicenseInfo {
     tier: SubscriptionTier;
@@ -59,6 +62,22 @@ export interface Translations {
   invalid_results: Record<string, string>;
   boot_sequence: string[];
   ui: Record<string, string>;
+  auth_ui: {
+      verifying: string;
+      authenticate: string;
+      cancel: string;
+      checking_crypto: string;
+      invalid_format: string;
+      license_expired: string;
+      revoked: string;
+      offline_mode: string;
+      maintenance: string;
+  };
+  context_check: {
+      title: string;
+      desc: string;
+      options: Record<LifeContext, { label: string; sub: string }>;
+  };
   admin: Record<string, string> & {
     billing: string;
     license_key: string;
@@ -88,7 +107,42 @@ export interface Translations {
   sensation_feedback: Record<string, string>;
   domains: Record<string, string>;
   dashboard: Record<string, string>;
-  results: Record<string, string>;
+  results: Record<string, string> & {
+      blueprint: string;
+      confidence: string;
+      consistency: string;
+      psychometric_signature: string;
+  };
+  ekg: {
+      title: string;
+      tension: string;
+      block: string;
+      flow: string;
+      start: string;
+      end: string;
+      breakdown: string;
+  };
+  pro_terminal: {
+      title: string;
+      access_restricted: string;
+      enter_code: string;
+      paste_placeholder: string;
+      decrypt_btn: string;
+      active_session: string;
+      decode_current: string;
+      security_breach: string;
+      tamper_detected: string;
+      terminate_session: string;
+      risk_high: string;
+      dissociated: string;
+      creative_chaos: string;
+      run_protocol: string;
+      calculating: string;
+      supervisor_note: string;
+      close_session: string;
+      clinical_hypotheses: string;
+      verdict_protocol: string;
+  };
   phases: Record<string, string>;
   tasks: Record<string, any>;
   scenes: Record<string, { title: string; desc: string; c1: string; c2: string; c3: string }>;
@@ -123,6 +177,8 @@ export interface MathSignature {
     sigma: number; // Standard Deviation of Latency (Consistency)
     friction: number; // Entropy Coefficient (Efficiency loss)
     volatilityScore: number; // 0-100 normalized score
+    zScoreProfile: 'STABLE' | 'ERRATIC' | 'ACCELERATED' | 'FROZEN';
+    neuroPlasticity: number; // Ability to recover from high-latency spikes
 }
 
 // Session EKG Point
@@ -132,9 +188,10 @@ export interface SessionPulseNode {
     tension: number; // 0-100 normalized stress level (latency + somatic)
     isBlock: boolean; // Did they freeze?
     isFlow: boolean; // Was it effortless?
+    zScore: number; // Normalized deviation
 }
 
-export interface RawAnalysisResult { state: { foundation: number; agency: number; resource: number; entropy: number }; integrity: number; capacity: number; entropyScore: number; neuroSync: number; systemHealth: number; phase: PhaseType; status: MetricLevel; validity: 'VALID' | 'SUSPICIOUS' | 'INVALID' | 'BREACH'; activePatterns: BeliefKey[]; correlations: NeuralCorrelation[]; conflicts: SystemConflict[]; somaticDissonance: BeliefKey[]; somaticProfile: { blocks: number; resources: number; dominantSensation: string }; integrityBreakdown: IntegrityBreakdown; clarity: number; confidenceScore: number; warnings: ClinicalWarning[]; flags: AnalysisFlags; skippedCount: number; mathSignature?: MathSignature; sessionPulse: SessionPulseNode[]; }
+export interface RawAnalysisResult { state: { foundation: number; agency: number; resource: number; entropy: number }; integrity: number; capacity: number; entropyScore: number; neuroSync: number; systemHealth: number; phase: PhaseType; status: MetricLevel; validity: 'VALID' | 'SUSPICIOUS' | 'INVALID' | 'BREACH'; activePatterns: BeliefKey[]; correlations: NeuralCorrelation[]; conflicts: SystemConflict[]; somaticDissonance: BeliefKey[]; somaticProfile: { blocks: number; resources: number; dominantSensation: string }; integrityBreakdown: IntegrityBreakdown; clarity: number; confidenceScore: number; warnings: ClinicalWarning[]; flags: AnalysisFlags; skippedCount: number; mathSignature?: MathSignature; sessionPulse: SessionPulseNode[]; context: LifeContext; }
 export interface AnalysisResult extends RawAnalysisResult { timestamp: number; createdAt: number; shareCode: string; archetypeKey: ArchetypeKey; secondaryArchetypeKey?: ArchetypeKey; matchPercent?: number; archetypeMatch: number; archetypeSpectrum: Array<{ key: ArchetypeKey; score: number }>; verdictKey: VerdictKey; lifeScriptKey: string; roadmap: ProtocolStep[]; graphPoints: Array<{ x: number; y: number }>; interventionStrategy: string; coreConflict: string; shadowDirective: string; patternFlags: PatternFlags; variantId?: string; }
 export type MetricLevel = 'OPTIMAL' | 'STABLE' | 'STRAINED' | 'PROTECTIVE' | 'UNSTABLE';
 export interface NeuralCorrelation { nodeId: string; domain: DomainType; type: 'resistance' | 'resonance'; descriptionKey: string; }

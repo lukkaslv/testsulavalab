@@ -1,13 +1,13 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Translations } from '../../types';
+import { Translations, SubscriptionTier } from '../../types';
 import { PlatformBridge } from '../../utils/helpers';
 import { SecurityCore } from '../../utils/crypto';
 import { STORAGE_KEYS, StorageService } from '../../services/storageService';
 import { RemoteAccess } from '../../services/remoteAccess';
 
 interface AuthViewProps {
-  onLogin: (password: string, isDemo: boolean) => boolean;
+  onLogin: (password: string, isDemo: boolean, tier?: SubscriptionTier) => boolean;
   t: Translations;
   lang: 'ru' | 'ka';
   onLangChange: (lang: 'ru' | 'ka') => void;
@@ -56,26 +56,26 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t, lang, onLangChan
   const handleAuthAttempt = async () => {
       // 1. Check if it's a hardcoded admin/demo key (Bypass everything)
       if (adminPwd.toLowerCase() === "genesis_prime") {
-          onLogin(adminPwd, false);
+          onLogin(adminPwd, false, 'LAB');
           return;
       }
 
       // 2. Validate format & math (Offline Check)
       setIsVerifying(true);
-      setStatusMessage('Checking Cryptography...');
+      setStatusMessage(t.auth_ui.checking_crypto);
       
       const license = SecurityCore.validateLicense(adminPwd);
       
       if (license.status === 'INVALID') {
           setIsVerifying(false);
-          setStatusMessage('Invalid License Key Format');
+          setStatusMessage(t.auth_ui.invalid_format);
           PlatformBridge.haptic.notification('error');
           return;
       }
 
       if (license.status === 'EXPIRED') {
           setIsVerifying(false);
-          setStatusMessage(lang === 'ru' ? 'LICENSE EXPIRED' : 'ვადაგასული ლიცენზია');
+          setStatusMessage(t.auth_ui.license_expired);
           PlatformBridge.haptic.notification('warning');
           return;
       }
@@ -89,18 +89,22 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t, lang, onLangChan
       if (!isOnline) {
           // OFFLINE MODE LOGIC
           if (!isLeaseValid) {
-              // Red Team Mitigation: Prevent eternal offline use of generated keys
-              setIsVerifying(false);
-              setStatusMessage('SECURITY LEASE EXPIRED. ONLINE SYNC REQUIRED.');
-              PlatformBridge.haptic.notification('error');
+              // AVAILABILITY PATCH #4: Allow emergency access, but warn.
+              setStatusMessage('⚠️ EMERGENCY OFFLINE ACCESS (LEASE EXPIRED)');
+              PlatformBridge.haptic.notification('warning');
+              
+              setTimeout(() => {
+                  StorageService.save(STORAGE_KEYS.SESSION, 'true');
+                  onLogin('genesis_lab_entry', false, license.tier as SubscriptionTier); 
+              }, 1200);
               return;
           }
           
-          // Allow access if lease is valid, but warn
-          setStatusMessage('OFFLINE MODE: VALIDATING VIA CACHE...');
+          // Allow access if lease is valid
+          setStatusMessage(t.auth_ui.offline_mode);
           setTimeout(() => {
               StorageService.save(STORAGE_KEYS.SESSION, 'true');
-              onLogin('genesis_lab_entry', false); 
+              onLogin('genesis_lab_entry', false, license.tier as SubscriptionTier); 
               PlatformBridge.haptic.notification('warning');
           }, 800);
           return;
@@ -113,19 +117,18 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t, lang, onLangChan
       setIsVerifying(false);
 
       if (remote.status === 'REVOKED') {
-          setStatusMessage('LICENSE REVOKED BY ISSUER');
+          setStatusMessage(t.auth_ui.revoked);
           PlatformBridge.haptic.notification('error');
           return;
       }
 
       if (remote.maintenance) {
-          setStatusMessage(remote.message || 'SYSTEM MAINTENANCE MODE');
+          setStatusMessage(remote.message || t.auth_ui.maintenance);
           PlatformBridge.haptic.notification('warning');
           return;
       }
 
       // Success (Valid Math + Not Revoked + Not Maintenance)
-      // Save broadcast message if any
       if (remote.message) {
           localStorage.setItem('genesis_system_message', remote.message);
       } else {
@@ -136,7 +139,8 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t, lang, onLangChan
       localStorage.setItem('genesis_last_handshake', Date.now().toString());
 
       StorageService.save(STORAGE_KEYS.SESSION, 'true');
-      onLogin('genesis_lab_entry', false); 
+      // Pass the extracted tier to the App
+      onLogin('genesis_lab_entry', false, license.tier as SubscriptionTier); 
       PlatformBridge.haptic.notification('success');
   };
 
@@ -192,13 +196,13 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t, lang, onLangChan
                   disabled={isVerifying}
                   className="w-full py-4 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all disabled:opacity-50"
                >
-                  {isVerifying ? 'Verifying...' : 'Authenticate'}
+                  {isVerifying ? t.auth_ui.verifying : t.auth_ui.authenticate}
                </button>
                <button 
                   onClick={() => { setShowAdminInput(false); setStatusMessage(''); }} 
                   className="w-full py-2 text-[10px] text-slate-400 uppercase font-black hover:text-slate-600 transition-colors"
                >
-                  Cancel
+                  {t.auth_ui.cancel}
                </button>
            </div>
         </div>
@@ -223,57 +227,83 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t, lang, onLangChan
           </p>
       </div>
 
-      {/* PRICING DISCOVERY */}
+      {/* MAIN ACTIONS */}
       {!showPricing ? (
-        <div className="w-full px-6 space-y-6 flex-1 flex flex-col">
-            <button 
-                onClick={() => {
-                    PlatformBridge.haptic.impact('light');
-                    setShowPricing(true);
-                }}
-                className="w-full p-4 bg-indigo-50/50 border border-indigo-100 rounded-2xl flex items-center justify-between group active:scale-95 transition-all shadow-sm"
-            >
-                <div className="text-left">
-                    <span className="text-[9px] font-black text-indigo-600 uppercase block">{t.onboarding.promo_title}</span>
-                    <span className="text-[10px] text-slate-500 font-medium">{t.onboarding.promo_desc}</span>
-                </div>
-                <span className="text-indigo-400 opacity-60 group-hover:opacity-100 group-hover:scale-110 transition-all text-xl">💎</span>
-            </button>
-
+        <div className="w-full px-6 space-y-6 flex-1 flex flex-col justify-end pb-8">
+            
+            {/* CLIENT START (FULL MODE) */}
             <div className="space-y-4">
                 {!agreed ? (
                     <div 
-                        className="relative w-full h-20 bg-slate-50 rounded-[2rem] overflow-hidden cursor-pointer touch-none border border-slate-200 shadow-inner"
+                        className="relative w-full h-24 bg-slate-900 rounded-[2rem] overflow-hidden cursor-pointer touch-none border border-slate-700 shadow-2xl group"
                         onMouseDown={startHold} onMouseUp={endHold} onTouchStart={startHold} onTouchEnd={endHold}
                     >
-                        <div className="absolute top-0 left-0 h-full bg-indigo-500 transition-all duration-75" style={{ width: `${holdProgress}%` }}></div>
-                        <div className="absolute inset-0 flex items-center justify-center z-10">
-                            <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${holdProgress > 50 ? 'text-white' : 'text-slate-400'}`}>
+                        <div className="absolute top-0 left-0 h-full bg-indigo-600 transition-all duration-75" style={{ width: `${holdProgress}%` }}></div>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center z-10 space-y-1">
+                            <span className={`text-xs font-black uppercase tracking-widest transition-colors ${holdProgress > 50 ? 'text-white' : 'text-indigo-100'}`}>
                                 {t.onboarding.protocol_btn}
                             </span>
+                            <span className="text-[9px] text-slate-500 font-mono tracking-wider opacity-60 group-hover:opacity-100 transition-opacity">HOLD TO START</span>
                         </div>
                     </div>
                 ) : (
-                    <button onClick={() => onLogin("", true)} className="w-full h-20 bg-slate-950 text-white rounded-[2rem] font-black uppercase text-xs tracking-[0.2em] shadow-xl animate-in hover:bg-slate-900 active:scale-[0.98] transition-all flex flex-col items-center justify-center gap-1">
+                    <button 
+                        onClick={() => onLogin("genesis_client", false)} 
+                        className="w-full h-24 bg-indigo-600 text-white rounded-[2rem] font-black uppercase text-xs tracking-[0.2em] shadow-xl animate-in hover:bg-indigo-700 active:scale-[0.98] transition-all flex flex-col items-center justify-center gap-1"
+                    >
                         <span>{t.onboarding.start_btn}</span>
-                        <span className="text-[9px] text-white/50 tracking-widest">(DEMO MODE)</span>
                     </button>
                 )}
             </div>
 
-            {/* NEW EXPLICIT CODE ENTRY BUTTON */}
-            <div className="text-center pt-2">
+            {/* PRO ZONE DIVIDER */}
+            <div className="flex items-center gap-4 py-2 opacity-50">
+                <div className="h-px bg-slate-200 flex-1"></div>
+                <span className="text-[8px] font-black uppercase text-slate-400 tracking-widest">{t.onboarding.promo_title}</span>
+                <div className="h-px bg-slate-200 flex-1"></div>
+            </div>
+
+            {/* PRO ACTIONS GRID */}
+            <div className="grid grid-cols-2 gap-3">
+                <button 
+                    onClick={() => {
+                        PlatformBridge.haptic.impact('light');
+                        setShowPricing(true);
+                    }}
+                    className="p-4 bg-white border border-slate-200 rounded-2xl flex flex-col items-center justify-center gap-2 active:scale-95 transition-all shadow-sm hover:border-indigo-300 group"
+                >
+                    <span className="text-xl group-hover:scale-110 transition-transform">💎</span>
+                    <span className="text-[9px] font-black text-slate-600 uppercase tracking-tight text-center leading-tight">{t.onboarding.promo_desc}</span>
+                </button>
+
                 <button 
                     onClick={() => setShowAdminInput(true)}
-                    className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-dashed border-slate-300 pb-1 hover:text-indigo-600 hover:border-indigo-600 transition-all"
+                    className="p-4 bg-white border border-slate-200 rounded-2xl flex flex-col items-center justify-center gap-2 active:scale-95 transition-all shadow-sm hover:border-indigo-300 group"
                 >
-                    {t.ui.enter_code_btn}
+                    <span className="text-xl group-hover:scale-110 transition-transform">🔑</span>
+                    <span className="text-[9px] font-black text-slate-600 uppercase tracking-tight text-center leading-tight">{t.ui.enter_code_btn}</span>
                 </button>
             </div>
         </div>
       ) : (
-        <div className="w-full px-6 space-y-4 animate-in">
-            <h3 className="text-xs font-black uppercase text-slate-800 text-center mb-2">{t.onboarding.pricing_btn}</h3>
+        <div className="w-full px-6 space-y-4 animate-in flex-1 flex flex-col pb-8">
+            <h3 className="text-xs font-black uppercase text-slate-800 text-center mb-2 pt-4">{t.onboarding.pricing_btn}</h3>
+            
+            {/* VALUE PROPOSITION BLOCK */}
+            <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-5 space-y-3">
+                <h4 className="text-[10px] font-black uppercase text-indigo-900 tracking-wide flex items-center gap-2">
+                    <span className="text-lg">⚡</span> GENESIS FOR PROS
+                </h4>
+                <ul className="space-y-2">
+                    {[t.onboarding.promo_value_1, t.onboarding.promo_value_2, t.onboarding.promo_value_3].map((val, idx) => (
+                        <li key={idx} className="flex gap-2 items-start text-[10px] text-slate-700 leading-tight font-medium">
+                            <span className="text-indigo-500 font-bold">•</span>
+                            {val}
+                        </li>
+                    ))}
+                </ul>
+            </div>
+
             {[
                 { id: 'SOLO', name: t.onboarding.solo_plan, desc: lang === 'ka' ? "პირადი მოხმარება, 10 კლიენტი" : "Личное использование, 10 клиентов", price: t.onboarding.price_solo },
                 { id: 'CLINICAL', name: t.onboarding.clinical_plan, desc: lang === 'ka' ? "ღრმა დიაგნოსტიკა, 50 კლიენტი" : "Глубокая диагностика, 50 клиентов", price: t.onboarding.price_clinical, highlight: true },
@@ -294,14 +324,17 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t, lang, onLangChan
                     </div>
                 </button>
             ))}
-            <button onClick={() => setShowPricing(false)} className="w-full py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-indigo-600 transition-colors">{t.global.back}</button>
+            
+            <div className="mt-auto">
+                <button onClick={() => setShowPricing(false)} className="w-full py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-indigo-600 transition-colors bg-slate-50 rounded-xl">{t.global.back}</button>
+            </div>
         </div>
       )}
 
-      <footer className="px-6 text-center opacity-30 mt-auto pb-4">
+      <footer className="px-6 text-center opacity-30 pb-4 shrink-0">
           <p className="text-[7px] font-mono text-slate-500 uppercase leading-relaxed max-w-[200px] mx-auto">
             {t.legal_disclaimer} <br/>
-            BUILD: 9.8.7 // SECTOR: 7G
+            BUILD: 9.9.0 // SECTOR: 7G
           </p>
       </footer>
     </div>

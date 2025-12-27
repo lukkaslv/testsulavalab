@@ -75,7 +75,7 @@ export const EvolutionDashboard: React.FC<EvolutionDashboardProps> = memo(({ his
              <div className="space-y-3">
                 <div className="flex justify-between text-[9px] font-black uppercase text-slate-400 tracking-widest">
                     <span>{t.ui.noise_tracking}</span>
-                    <span className="text-red-400 font-mono">TRACKING</span>
+                    <span className="text-red-400 font-mono">{lang === 'ru' ? 'СЛЕЖЕНИЕ' : 'მონიტორინგი'}</span>
                 </div>
                 <Sparkline data={history.evolutionMetrics.entropyTrend} color="#f43f5e" />
              </div>

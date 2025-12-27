@@ -1,8 +1,9 @@
 
-import React, { memo, useMemo } from 'react';
-import { DomainType, Translations, AnalysisResult, ScanHistory } from '../../types';
+import React, { memo, useMemo, useState, useEffect } from 'react';
+import { DomainType, Translations, AnalysisResult, ScanHistory, LifeContext, SubscriptionTier } from '../../types';
 import { DOMAIN_SETTINGS, SYSTEM_METADATA } from '../../constants';
 import { EvolutionDashboard } from '../EvolutionDashboard';
+import { PlatformBridge } from '../../utils/helpers';
 
 export interface NodeUI {
   id: number;
@@ -25,15 +26,57 @@ interface DashboardViewProps {
   onStartNode: (id: number, domain: DomainType) => void;
   onLogout: () => void;
   scanHistory: ScanHistory | null;
-  onResume?: () => void; // New prop for resuming flow
+  onResume?: () => void; 
+  licenseTier?: SubscriptionTier;
 }
+
+const ContextCheckModal = ({ t, onSelect }: { t: Translations, onSelect: (c: LifeContext) => void }) => {
+    const opts = t.context_check.options;
+    return (
+        <div className="absolute inset-0 z-50 bg-white/95 backdrop-blur-md flex flex-col justify-center px-6 animate-in">
+            <div className="space-y-4 mb-8 text-center">
+                <h2 className="text-xl font-black uppercase text-slate-900 tracking-tight">{t.context_check.title}</h2>
+                <p className="text-sm font-medium text-slate-500 leading-relaxed max-w-xs mx-auto">{t.context_check.desc}</p>
+            </div>
+            <div className="grid grid-cols-1 gap-3">
+                {(Object.keys(opts) as LifeContext[]).map(key => (
+                    <button 
+                        key={key} 
+                        onClick={() => {
+                            PlatformBridge.haptic.selection();
+                            onSelect(key);
+                        }}
+                        className="p-4 rounded-2xl border border-slate-200 bg-white shadow-sm active:scale-[0.98] transition-all text-left hover:border-indigo-400 group"
+                    >
+                        <span className="text-[10px] font-black uppercase text-indigo-600 block mb-1 group-hover:text-indigo-800">{opts[key].label}</span>
+                        <span className="text-xs font-medium text-slate-500 leading-tight block">{opts[key].sub}</span>
+                    </button>
+                ))}
+            </div>
+        </div>
+    );
+};
 
 export const DashboardView = memo<DashboardViewProps>(({
   lang, t, isDemo, globalProgress, result, currentDomain, nodes, completedNodeIds,
-  onSetView, onSetCurrentDomain, onStartNode, onLogout, scanHistory, onResume
+  onSetView, onSetCurrentDomain, onStartNode, onLogout, scanHistory, onResume, licenseTier = 'FREE'
 }) => {
   
   const systemMessage = localStorage.getItem('genesis_system_message');
+  const [showContextCheck, setShowContextCheck] = useState(false);
+
+  useEffect(() => {
+      // Trigger context check if not set and session has barely started
+      if (!localStorage.getItem('genesis_context') && globalProgress < 5) {
+          setShowContextCheck(true);
+      }
+  }, [globalProgress]);
+
+  const handleContextSelect = (c: LifeContext) => {
+      localStorage.setItem('genesis_context', c);
+      setShowContextCheck(false);
+      PlatformBridge.haptic.notification('success');
+  };
 
   const humanInsight = useMemo(() => {
     if (!result) return t.dashboard.desc;
@@ -56,15 +99,32 @@ export const DashboardView = memo<DashboardViewProps>(({
       return latest.createdAt ? (Date.now() - latest.createdAt > 7 * 24 * 60 * 60 * 1000) : false;
   }, [scanHistory]);
 
+  const usageStats = useMemo(() => {
+      const limits: Record<SubscriptionTier, number> = { FREE: 1, SOLO: 10, CLINICAL: 50, LAB: 9999 };
+      const used = scanHistory?.scans.length || 0;
+      const limit = limits[licenseTier];
+      const isUnlimited = limit > 9000;
+      return { used, limit, isUnlimited };
+  }, [licenseTier, scanHistory]);
+
   const isSessionActive = globalProgress > 0 && globalProgress < 100 && !result;
 
   return (
-    <div className="space-y-6 animate-in flex flex-col h-full">
+    <div className="space-y-6 animate-in flex flex-col h-full relative">
+      
+      {showContextCheck && <ContextCheckModal t={t} onSelect={handleContextSelect} />}
+
       <header className="space-y-3 shrink-0">
         <div className="flex justify-between items-center px-1">
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2 italic">
-                {t.ui.status_report_title}
-            </h2>
+            <div className="flex flex-col">
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2 italic">
+                    {t.ui.status_report_title}
+                </h2>
+                <span className="text-[8px] font-mono font-bold text-slate-400 uppercase tracking-widest pl-1">
+                    LICENSE: {licenseTier} 
+                    {!usageStats.isUnlimited && <span className={usageStats.used >= usageStats.limit ? 'text-red-500' : 'text-slate-400'}> ({usageStats.used}/{usageStats.limit})</span>}
+                </span>
+            </div>
             <div className="flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-full">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                 <span className="text-[8px] font-mono font-bold text-slate-500 uppercase tracking-tighter">OVERSIGHT_v{SYSTEM_METADATA.VERSION.split('-')[0]}</span>

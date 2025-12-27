@@ -60,11 +60,29 @@ export const PlatformBridge = {
   },
 
   showConfirm: (message: string, callback: (confirmed: boolean) => void) => {
-    if (window.Telegram?.WebApp?.showConfirm) {
-      window.Telegram.WebApp.showConfirm(message, callback);
+    const tg = window.Telegram?.WebApp;
+    // Fix: "Method showPopup is not supported in version 6.0"
+    // We explicitly check for version 6.2+ before calling showPopup.
+    // We avoid calling deprecated showConfirm() on 6.0 via the library wrapper because it might incorrectly map to showPopup.
+    // Fallback to native window.confirm which works in WebViews.
+    
+    if (tg && tg.showPopup && tg.isVersionAtLeast && tg.isVersionAtLeast('6.2')) {
+      tg.showPopup({
+        message: message,
+        buttons: [
+            { type: 'ok', id: 'ok' },
+            { type: 'cancel', id: 'cancel' }
+        ]
+      }, (buttonId: string) => {
+        callback(buttonId === 'ok');
+      });
     } else {
-      const confirmed = window.confirm(message);
-      callback(confirmed);
+      // Fallback for v6.0, v6.1 or non-Telegram
+      // Delaying slightly to ensure main thread isn't blocked if this is called from a tight loop
+      setTimeout(() => {
+          const confirmed = window.confirm(message);
+          callback(confirmed);
+      }, 50);
     }
   },
 

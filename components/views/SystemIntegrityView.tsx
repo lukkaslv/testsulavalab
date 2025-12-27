@@ -100,7 +100,7 @@ export const SystemIntegrityView: React.FC<SystemIntegrityViewProps> = ({ t, onB
   const [isValidating, setIsValidating] = useState(false);
   const [logs, setLogs] = useState<LogEntry[]>([]);
 
-  const lang = t.subtitle.includes('კლინიკური') ? 'ka' : 'ru';
+  const lang = t.subtitle.includes('LUKA') && t.onboarding.title.includes('ნავიგატორი') ? 'ka' : 'ru';
 
   const runValidation = () => {
     setIsValidating(true);
@@ -127,11 +127,11 @@ export const SystemIntegrityView: React.FC<SystemIntegrityViewProps> = ({ t, onB
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded border border-emerald-500/30 flex items-center justify-center text-lg font-black bg-emerald-500/5 shadow-[0_0_15px_rgba(16,185,129,0.1)]">G</div>
           <div>
-            <h1 className="text-xs font-black uppercase tracking-widest">GENESIS_KERNEL_AUDIT</h1>
-            <span className="text-[7px] text-slate-500 font-bold">MODE: LINGUISTIC_OVERSIGHT</span>
+            <h1 className="text-xs font-black uppercase tracking-widest">{t.integrity_audit.title}</h1>
+            <span className="text-[7px] text-slate-500 font-bold">{t.integrity_audit.mode}</span>
           </div>
         </div>
-        <button onClick={onBack} className="bg-emerald-900/20 px-3 py-1.5 rounded border border-emerald-900/30 text-emerald-500 text-[9px] uppercase font-black">EXIT_AUDIT</button>
+        <button onClick={onBack} className="bg-emerald-900/20 px-3 py-1.5 rounded border border-emerald-900/30 text-emerald-500 text-[9px] uppercase font-black">{t.integrity_audit.exit}</button>
       </header>
 
       <nav className="flex gap-2 shrink-0 p-1 bg-slate-900/50 rounded-lg">
@@ -141,7 +141,7 @@ export const SystemIntegrityView: React.FC<SystemIntegrityViewProps> = ({ t, onB
             onClick={() => setActiveTab(tab)}
             className={`flex-1 py-2 rounded transition-all text-[8px] font-black uppercase ${activeTab === tab ? 'bg-emerald-500/20 border border-emerald-500/30 text-emerald-400' : 'text-slate-500'}`}
           >
-            {tab}
+            {t.admin[tab]}
           </button>
         ))}
       </nav>
@@ -150,16 +150,16 @@ export const SystemIntegrityView: React.FC<SystemIntegrityViewProps> = ({ t, onB
         {activeTab === 'health' && (
           <div className="space-y-6 animate-in">
             <section className="bg-emerald-950/10 border border-emerald-900/30 p-5 rounded-2xl space-y-5">
-              <h3 className="text-emerald-500 font-black tracking-widest border-b border-emerald-900/20 pb-2">VITAL_SYSTEM_HEALTH</h3>
+              <h3 className="text-emerald-500 font-black tracking-widest border-b border-emerald-900/20 pb-2">{t.integrity_audit.vital_health}</h3>
               <div className="grid grid-cols-1 gap-4">
                 <div className="flex justify-between items-center p-2 bg-black/30 rounded-lg">
-                  <span className="text-slate-400">CORE_INTEGRITY:</span>
+                  <span className="text-slate-400">{t.integrity_audit.core_integrity}:</span>
                   <span className={report?.status === 'healthy' ? 'text-emerald-400' : 'text-amber-400'}>
                     {report?.status.toUpperCase() || 'CALIBRATING'}
                   </span>
                 </div>
                 <div className="flex justify-between items-center p-2 bg-black/30 rounded-lg">
-                  <span className="text-slate-400">L10N_PARITY:</span>
+                  <span className="text-slate-400">{t.integrity_audit.l10n_parity}:</span>
                   <span className="text-indigo-400">{report?.semanticDensity?.parity}%</span>
                 </div>
               </div>
@@ -170,7 +170,7 @@ export const SystemIntegrityView: React.FC<SystemIntegrityViewProps> = ({ t, onB
         {activeTab === 'integrity' && (
           <div className="space-y-4 animate-in">
              <div className="flex justify-between items-center mb-2">
-                <span className="text-[9px] font-black text-slate-500 uppercase">Config Validation Dossier</span>
+                <span className="text-[9px] font-black text-slate-500 uppercase">{t.integrity_audit.config_dossier}</span>
                 <span className="text-[8px] bg-slate-900 px-2 py-0.5 rounded text-slate-500">{new Date(report?.timestamp || 0).toLocaleTimeString()}</span>
              </div>
             {report?.errors.map((e, idx) => (
@@ -203,7 +203,7 @@ export const SystemIntegrityView: React.FC<SystemIntegrityViewProps> = ({ t, onB
         {activeTab === 'semantic' && (
           <div className="space-y-6 animate-in">
              <div className="bg-indigo-950/10 border border-indigo-900/30 p-5 rounded-2xl space-y-4">
-                <h3 className="text-indigo-400 font-black tracking-widest mb-2 border-b border-indigo-900/20 pb-2">SEMANTIC_AUDIT_REPORT</h3>
+                <h3 className="text-indigo-400 font-black tracking-widest mb-2 border-b border-indigo-900/20 pb-2">{t.integrity_audit.semantic_audit}</h3>
                 <div className="space-y-4">
                    <div className="space-y-1.5">
                       <div className="flex justify-between text-[8px] font-black uppercase text-indigo-300">
@@ -221,7 +221,7 @@ export const SystemIntegrityView: React.FC<SystemIntegrityViewProps> = ({ t, onB
              </div>
              
              <div className="space-y-3">
-                <h4 className="text-[8px] font-black text-slate-600 uppercase tracking-[0.2em] pl-1">TERMINOLOGY_CONTROL</h4>
+                <h4 className="text-[8px] font-black text-slate-600 uppercase tracking-[0.2em] pl-1">{t.integrity_audit.terminology_control}</h4>
                 {['foundation', 'agency', 'entropy'].map(term => (
                    <div key={term} className="flex justify-between items-center p-3 bg-slate-900/40 rounded-xl border border-white/5">
                       <span className="text-indigo-300 font-bold uppercase">{term}</span>

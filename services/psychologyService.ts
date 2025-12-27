@@ -1,6 +1,6 @@
 
-import { BeliefKey, GameHistoryItem, RawAnalysisResult, NeuralCorrelation, DomainType, IntegrityBreakdown, SystemConflict, MetricLevel, ClinicalWarning, AnalysisFlags, PhaseType, SessionPulseNode } from '../types';
-import { SYSTEM_METADATA, STORAGE_KEYS } from '../constants';
+import { BeliefKey, GameHistoryItem, RawAnalysisResult, NeuralCorrelation, DomainType, IntegrityBreakdown, SystemConflict, MetricLevel, ClinicalWarning, AnalysisFlags, PhaseType, SessionPulseNode, LifeContext } from '../types';
+import { SYSTEM_METADATA, STORAGE_KEYS, TOTAL_NODES } from '../constants';
 
 const WEIGHTS: Record<BeliefKey, { f: number; a: number; r: number; e: number }> = {
   'scarcity_mindset':     { f: -4, a: -2, r: -3, e: 4 },
@@ -30,13 +30,10 @@ const WEIGHTS: Record<BeliefKey, { f: number; a: number; r: number; e: number }>
   'default':              { f: 0, a: 0, r: 0, e: 0 } 
 };
 
-// A/B VARIANT OVERRIDES (SLC LOOP)
 const WEIGHT_VARIANT_B: Partial<Record<BeliefKey, Partial<{ f: number; a: number; r: number; e: number }>>> = {
     'imposter_syndrome': { a: 15 }, 
     'ambivalence_loop': { e: 12 }
 };
-
-// --- MATHEMATICAL KERNEL v3.3 (Hydraulic Systemic Coupling) ---
 
 const toLogSpace = (ms: number): number => Math.log(Math.max(1, ms));
 
@@ -78,22 +75,16 @@ const calculateDomainCoherence = (domainItems: GameHistoryItem[]): number => {
     return Math.max(0, 1 - (polarityFlips / maxFlips));
 };
 
-function calculateAdaptiveThresholds(latencies: number[], fatigueFactor: number): { slow: number; median: number } {
-    if (latencies.length < 5) return { slow: 5000, median: 2000 };
-    const sorted = [...latencies].sort((a, b) => a - b);
-    const mid = Math.floor(sorted.length / 2);
-    const medianVal = sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
-    const logMedian = toLogSpace(medianVal);
-    const resistanceLog = logMedian + 0.6; 
-    const resistanceLinear = Math.exp(resistanceLog) * fatigueFactor;
-    return { slow: Math.max(3000, resistanceLinear), median: medianVal };
-}
+const calculateZScore = (value: number, mean: number, stdDev: number): number => {
+    if (stdDev === 0) return 0;
+    return (value - mean) / stdDev;
+};
 
-function getABVariant(userId: string): 'A' | 'B' {
+const getABVariant = (userId: string): 'A' | 'B' => {
     let hash = 0;
     for (let i = 0; i < userId.length; i++) hash = ((hash << 5) - hash) + userId.charCodeAt(i);
     return (Math.abs(hash) % 2 === 0) ? 'A' : 'B';
-}
+};
 
 export function calculateRawMetrics(history: GameHistoryItem[]): RawAnalysisResult & { variantId: string } {
   let f = 50, a = 50, r = 50, e = 15;
@@ -114,49 +105,44 @@ export function calculateRawMetrics(history: GameHistoryItem[]): RawAnalysisResu
 
   const sessionId = localStorage.getItem(STORAGE_KEYS.SESSION) || 'anonymous';
   const variantId = getABVariant(sessionId);
+  const context: LifeContext = (localStorage.getItem('genesis_context') as LifeContext) || 'NORMAL';
 
   let validLatencies: number[] = [];
-  let slidingLatencyWindow: number[] = [];
   let lastDomain: DomainType | null = null;
   let lastLatency = 0;
   let positiveChoicesCount = 0;
   let positiveChoicesLatencySum = 0;
   
-  // ALEXITHYMIA DETECTOR VARS
   let neutralSensationCount = 0;
-  let mismatchCount = 0; // High Latency + Neutral Sensation
+  let mismatchCount = 0; 
 
   if (langHealth.status === 'BETA_RISK' || langHealth.status === 'LEARNING') {
       warnings.push({ type: 'L10N_ACCURACY_LOW', severity: 'LOW', messageKey: 'L10n accuracy under SLC audit.' });
   }
 
-  // Calculate Global Median for normalization
   const allLatencies = history.map(h => h.latency).filter(l => l > 300 && l < 30000);
-  const sessionMedian = median(allLatencies) || 2000;
+  const sessionMean = allLatencies.length > 0 ? allLatencies.reduce((a, b) => a + b, 0) / allLatencies.length : 2000;
+  const sessionStdDev = Math.sqrt(allLatencies.map(x => Math.pow(x - sessionMean, 2)).reduce((a, b) => a + b, 0) / allLatencies.length) || 1;
+
+  let recoverySum = 0;
+  let spikeCount = 0;
 
   history.forEach((h, index) => {
     const fatigueFactor = calculateFatigueAllowance(index, history.length);
-
-    if (h.latency > 300 && h.latency < 30000) {
-        slidingLatencyWindow.push(h.latency);
-        if (slidingLatencyWindow.length > 7) slidingLatencyWindow.shift();
-    }
-    const { slow: adaptiveSlowThreshold, median: medianBaseline } = calculateAdaptiveThresholds(slidingLatencyWindow, fatigueFactor);
+    const zScore = calculateZScore(h.latency, sessionMean, sessionStdDev);
     
-    // --- SESSION PULSE EKG (Dynamic Tension) ---
-    // Calculates the "psychic load" of the specific question.
-    let tension = Math.min(100, (h.latency / (sessionMedian * 1.5)) * 50);
-    // Add Somatic Penalty to Tension
-    if (h.sensation === 's1' || h.sensation === 's4') tension += 30; // Block/Tremor
-    if (h.sensation === 's3') tension += 40; // Freeze is high tension
-    if (h.sensation === 's2') tension -= 10; // Flow/Heat reduces tension
+    let tension = Math.min(100, Math.max(0, (zScore + 2) * 20)); 
+    if (h.sensation === 's1' || h.sensation === 's4') tension += 20; 
+    if (h.sensation === 's3') tension += 30; 
+    if (h.sensation === 's2') tension -= 15; 
     
     sessionPulse.push({
         id: index,
         domain: h.domain,
         tension: Math.round(Math.min(100, Math.max(0, tension))),
-        isBlock: h.latency > adaptiveSlowThreshold * 1.2 || ['s1', 's3', 's4'].includes(h.sensation),
-        isFlow: h.latency < medianBaseline * 0.8 && h.sensation === 's2'
+        isBlock: zScore > 1.5 || ['s1', 's3', 's4'].includes(h.sensation),
+        isFlow: zScore < -0.5 && h.sensation === 's2',
+        zScore: Number(zScore.toFixed(2))
     });
 
     if (h.beliefKey === 'default') {
@@ -172,9 +158,15 @@ export function calculateRawMetrics(history: GameHistoryItem[]): RawAnalysisResu
         w = { ...w, ...WEIGHT_VARIANT_B[beliefKey] };
     }
 
-    // PRIMING EFFECT
+    if (lastLatency > sessionMean + sessionStdDev) {
+        if (h.latency < lastLatency) {
+            recoverySum += (lastLatency - h.latency);
+            spikeCount++;
+        }
+    }
+
     if (lastDomain && lastDomain !== h.domain) {
-        if (h.latency > medianBaseline * 1.6 && h.latency > lastLatency * 1.3) {
+        if (zScore > 1.2) {
              correlations.push({ 
                  nodeId: h.nodeId, 
                  domain: h.domain, 
@@ -192,8 +184,7 @@ export function calculateRawMetrics(history: GameHistoryItem[]): RawAnalysisResu
         positiveChoicesLatencySum += h.latency;
     }
     
-    const latencyRatio = h.latency / medianBaseline;
-    const impactFactor = Math.log(latencyRatio) < -0.4 ? 1.2 : Math.log(latencyRatio) > 0.7 ? 0.8 : 1.0;
+    const impactFactor = zScore > 1 ? 0.8 : 1.0; 
     const friction = calculateEntropyFriction(e);
 
     f = sigmoidUpdate(f, w.f * friction * impactFactor * nodeReliability);
@@ -201,27 +192,24 @@ export function calculateRawMetrics(history: GameHistoryItem[]): RawAnalysisResu
     r = sigmoidUpdate(r, w.r * friction * impactFactor * nodeReliability);
     
     const entropyDelta = w.e > 0 ? w.e : w.e * 0.5;
-    e = Math.max(0, Math.min(100, e + (entropyDelta * latencyFactor(latencyRatio) * nodeReliability)));
+    const resistancePenalty = zScore > 1.0 ? zScore * 2 : 0;
+    e = Math.max(0, Math.min(100, e + (entropyDelta * nodeReliability) + resistancePenalty));
     
-    // SOMATIC PROFILING
     if (h.sensation === 's1' || h.sensation === 's4') somaticProfile.blocks++;
     if (h.sensation === 's2') somaticProfile.resources++;
     if (h.sensation === 's0') neutralSensationCount++;
 
-    // REFLECTION vs FREEZE vs ALEXITHYMIA
-    if (h.latency > adaptiveSlowThreshold) {
+    if (zScore > 1.5) {
         const isSomaticNegative = h.sensation === 's1' || h.sensation === 's3' || h.sensation === 's4';
-        
         if (isSomaticNegative) {
             correlations.push({ nodeId: h.nodeId, domain: h.domain, type: 'resistance', descriptionKey: `correlation_resistance_${beliefKey}` });
-            e = Math.min(100, e + (6 * nodeReliability)); 
+            e = Math.min(100, e + (4 * nodeReliability)); 
         } else if (h.sensation === 's0') {
-            // High Latency + Neutral = Suspicious (Alexithymia Check)
             mismatchCount++;
         }
     }
     
-    if (h.sensation === 's2' && h.latency < medianBaseline * 1.2) {
+    if (h.sensation === 's2' && zScore < 0.5) {
         correlations.push({ nodeId: h.nodeId, domain: h.domain, type: 'resonance', descriptionKey: `correlation_resonance_${beliefKey}` });
     }
 
@@ -237,31 +225,27 @@ export function calculateRawMetrics(history: GameHistoryItem[]): RawAnalysisResu
     validLatencies.push(h.latency);
   });
 
-  // --- HYDRAULIC SYSTEMIC COUPLING (POST-PROCESSING) ---
-  // Expert Critique: "Metrics are interdependent."
-  
-  // 1. Manic Defense (High Agency vs Low Foundation)
   if (a > 75 && f < 40) {
-      e += 15; // Manic defense generates massive internal friction
+      e += 15; 
       warnings.push({ type: 'MANIC_DEFENSE', severity: 'HIGH', messageKey: 'High Agency without Safety = Anxiety' });
-      // Penalize the "Fake" Agency
       a = a * 0.9;
   }
 
-  // 2. Paralyzed Resource (High Resource vs Low Agency)
   if (r > 75 && a < 35) {
-      e += 10; // Stagnation creates rot (entropy)
+      e += 10; 
       warnings.push({ type: 'GOLDEN_CAGE', severity: 'MEDIUM', messageKey: 'High Resource without Action = Stagnation' });
   }
 
-  // 3. Alexithymia / Dissociation Check
   const isAlexithymiaDetected = (neutralSensationCount / history.length > 0.7) && (mismatchCount > 2);
   if (isAlexithymiaDetected) {
-      syncScore = Math.min(syncScore, 45); // Cap Sync if user is numb
+      syncScore = Math.min(syncScore, 45); 
       warnings.push({ type: 'DISSOCIATION', severity: 'HIGH', messageKey: 'Somatic Numbness Detected' });
   }
 
-  // --- STATISTICAL INTEGRITY ---
+  if (context === 'CRISIS' || context === 'HIGH_LOAD') {
+      e = e * 0.85; 
+  }
+
   const foundationCoherence = calculateDomainCoherence(history.filter(h => h.domain === 'foundation'));
   const agencyCoherence = calculateDomainCoherence(history.filter(h => h.domain === 'agency'));
   
@@ -270,28 +254,30 @@ export function calculateRawMetrics(history: GameHistoryItem[]): RawAnalysisResu
       e += 8;       
       warnings.push({ type: 'FRAGMENTATION', severity: 'MEDIUM', messageKey: 'Foundation Splitting Detected' });
   }
-  if (agencyCoherence < 0.6) {
-      a = a * 0.85;
-      e += 8;
-      warnings.push({ type: 'AMBIVALENCE', severity: 'MEDIUM', messageKey: 'Agency Ambivalence Detected' });
-  }
-
+  
   const latencyLogVariance = calculateLogVariance(validLatencies);
   const isVolatile = latencyLogVariance > 0.6; 
 
   const positiveRatio = positiveChoicesCount / Math.max(1, history.length);
   const avgPositiveLatency = positiveChoicesCount > 0 ? positiveChoicesLatencySum / positiveChoicesCount : 0;
-  const globalMedian = median(validLatencies);
   
-  const isSocialDesirabilityBiasDetected = (positiveRatio > 0.75) && (avgPositiveLatency < globalMedian * 0.9);
+  const isSocialDesirabilityBiasDetected = (positiveRatio > 0.75) && (calculateZScore(avgPositiveLatency, sessionMean, sessionStdDev) < -0.5);
 
   let technicalConfidence = 100;
   if (validLatencies.length < 10) technicalConfidence -= 40;
   if (isVolatile) technicalConfidence -= 15;
   if (isSocialDesirabilityBiasDetected) technicalConfidence -= 20;
-  if (isAlexithymiaDetected) technicalConfidence -= 15; // Numbness reduces confidence in self-report
+  if (isAlexithymiaDetected) technicalConfidence -= 15; 
   if (foundationCoherence < 0.7 || agencyCoherence < 0.7) technicalConfidence -= 15;
   
+  // --- SPARSE DATA PENALTY (Fixing The "Short Path" Illusion) ---
+  const dataDensity = history.length / TOTAL_NODES; // e.g. 20/50 = 0.4
+  if (dataDensity < 0.6) {
+      // If we only have 60% of data, confidence drops heavily
+      technicalConfidence *= (0.5 + (dataDensity * 0.5)); // Penalize by up to 50%
+      warnings.push({ type: 'LOW_DATA_DENSITY', severity: 'MEDIUM', messageKey: 'Session incomplete. Metrics are provisional.' });
+  }
+
   const confidenceScore = Math.max(0, Math.min(100, Math.round(technicalConfidence * langHealth.reliability)));
 
   const consistencyFactor = Math.max(0.5, 1 - latencyLogVariance);
@@ -303,8 +289,11 @@ export function calculateRawMetrics(history: GameHistoryItem[]): RawAnalysisResu
   const finalEntropy = Math.round(e);
   const friction = calculateEntropyFriction(finalEntropy);
 
+  const neuroPlasticity = spikeCount > 0 ? Math.min(100, Math.round((recoverySum / spikeCount) / 10)) : 50;
+
   return {
     variantId,
+    context,
     state: { 
         foundation: Math.round(f), 
         agency: Math.round(a), 
@@ -329,8 +318,8 @@ export function calculateRawMetrics(history: GameHistoryItem[]): RawAnalysisResu
     confidenceScore: Math.round(confidenceScore),
     warnings,
     flags: {
-      isAlexithymiaDetected, // Now actively calculated
-      isSlowProcessingDetected: false,
+      isAlexithymiaDetected,
+      isSlowProcessingDetected: sessionMean > 4000,
       isNeuroSyncReliable: !isVolatile && !isAlexithymiaDetected,
       isSocialDesirabilityBiasDetected, 
       processingSpeedCompensation: 1.0,
@@ -339,23 +328,12 @@ export function calculateRawMetrics(history: GameHistoryItem[]): RawAnalysisResu
     },
     skippedCount,
     mathSignature: {
-        sigma: Math.round(latencyLogVariance * 100), 
+        sigma: Math.round(sessionStdDev), 
         friction: Number(friction.toFixed(2)),
-        volatilityScore: Math.max(0, Math.min(100, Math.round(100 - (latencyLogVariance * 100))))
+        volatilityScore: Math.max(0, Math.min(100, Math.round(100 - (latencyLogVariance * 100)))),
+        zScoreProfile: isVolatile ? 'ERRATIC' : sessionMean < 1200 ? 'ACCELERATED' : sessionMean > 4000 ? 'FROZEN' : 'STABLE',
+        neuroPlasticity
     },
     sessionPulse 
   };
-}
-
-const median = (arr: number[]): number => {
-  if (arr.length === 0) return 0;
-  const sorted = [...arr].sort((a, b) => a - b);
-  const mid = Math.floor(sorted.length / 2);
-  return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
-};
-
-function latencyFactor(ratio: number): number {
-    if (ratio > 2.5) return 1.5;
-    if (ratio > 1.5) return 1.2;
-    return 1.0;
 }

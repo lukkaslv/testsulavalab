@@ -48,9 +48,22 @@ export const PatternDetector = {
     }
 
     // 4. Robotic Timing ("Metronome")
+    // DETECTOR PATCH #11: Humanity Bias
+    // If a user has a low standard deviation (very consistent speed) BUT high somatic variety,
+    // they are likely a very focused human (e.g., depressive/slow), not a bot.
+    // Bots usually don't vary somatic inputs meaningfully or just randomize them completely.
     const latencies = history.map(h => h.latency).filter(l => l > 300 && l < 30000);
     const latencyStdDev = calculate_std_dev(latencies);
-    const isRoboticTiming = latencyStdDev < ROBOTIC_TIMING_STD_DEV_THRESHOLD;
+    
+    const uniqueSensations = new Set(history.map(h => h.sensation));
+    const isSomaticMonotony = uniqueSensations.size < SOMATIC_VARIETY_THRESHOLD;
+
+    let isRoboticTiming = latencyStdDev < ROBOTIC_TIMING_STD_DEV_THRESHOLD;
+    
+    // EXCEPTION: High Somatic Variety vetoes Robotic Timing
+    if (uniqueSensations.size >= 4) {
+        isRoboticTiming = false;
+    }
 
     // 7. Inconsistent Rhythm (Spoofing attempt)
     // Checking if user suddenly changes behavior from very fast to very slow
@@ -59,10 +72,6 @@ export const PatternDetector = {
     const avg1 = firstHalf.reduce((a,b) => a+b, 0) / firstHalf.length;
     const avg2 = secondHalf.reduce((a,b) => a+b, 0) / secondHalf.length;
     const isInconsistentRhythm = (avg1 / avg2 > CHAOTIC_RHYTHM_THRESHOLD) || (avg2 / avg1 > CHAOTIC_RHYTHM_THRESHOLD);
-
-    // 5. Somatic Monotony
-    const uniqueSensations = new Set(history.map(h => h.sensation));
-    const isSomaticMonotony = uniqueSensations.size < SOMATIC_VARIETY_THRESHOLD;
     
     const isHighSkipRate = (history.filter(h => h.beliefKey === 'default').length / Math.max(totalAnswers, TOTAL_NODES)) >= HIGH_SKIP_RATE_THRESHOLD;
 

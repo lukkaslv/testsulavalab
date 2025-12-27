@@ -6,7 +6,7 @@ import { MODULE_REGISTRY, TOTAL_NODES, ONBOARDING_NODES_COUNT, DOMAIN_SETTINGS }
 import { translations } from './translations';
 import { calculateRawMetrics } from './services/psychologyService.ts';
 import { DiagnosticEngine } from './services/diagnosticEngine.ts';
-import { DomainType, Translations, AnalysisResult, GameHistoryItem, ScanHistory, DataCorruptionError } from './types.ts';
+import { DomainType, Translations, AnalysisResult, GameHistoryItem, ScanHistory, DataCorruptionError, SubscriptionTier } from './types.ts';
 import { StorageService, STORAGE_KEYS, SessionState } from './services/storageService.ts';
 import { resolvePath, PlatformBridge } from './utils/helpers.ts';
 import { useTestEngine } from './hooks/useTestEngine.ts';
@@ -39,6 +39,7 @@ const App: React.FC = () => {
   const [completedNodeIds, setCompletedNodeIds] = useState<number[]>([]);
   const [isDemo, setIsDemo] = useState(false);
   const [isPro, setIsPro] = useState(false);
+  const [licenseTier, setLicenseTier] = useState<SubscriptionTier>('FREE');
   const [bootShown, setBootShown] = useState(() => sessionStorage.getItem('genesis_boot_seen') === 'true');
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [scanHistory, setScanHistory] = useState<ScanHistory | null>(null);
@@ -136,8 +137,26 @@ const App: React.FC = () => {
     setScanHistory(loadedScanHistory);
 
     const sessionAuth = localStorage.getItem(STORAGE_KEYS.SESSION);
-    if (sessionAuth === 'true') { setView('dashboard'); setIsDemo(false); setIsPro(true); }
-    else if (sessionAuth === 'demo') { setView('dashboard'); setIsDemo(true); setIsPro(false); }
+    const savedTier = localStorage.getItem('genesis_tier') as SubscriptionTier || 'FREE';
+    
+    if (sessionAuth === 'true') { 
+        setView('dashboard'); 
+        setIsDemo(false); 
+        setIsPro(true); 
+        setLicenseTier(savedTier);
+    }
+    else if (sessionAuth === 'client') { 
+        setView('dashboard'); 
+        setIsDemo(false); 
+        setIsPro(false); 
+        setLicenseTier('FREE'); 
+    }
+    else if (sessionAuth === 'demo') { 
+        setView('dashboard'); 
+        setIsDemo(true); 
+        setIsPro(false); 
+        setLicenseTier('FREE'); 
+    }
   }, [lang]);
 
   const nodes = useMemo(() => {
@@ -155,21 +174,38 @@ const App: React.FC = () => {
     return allNodes;
   }, [completedNodeIds, isDemo]);
 
-  const handleLogin = useCallback((password: string, demo = false): boolean => {
+  const handleLogin = useCallback((password: string, demo = false, tier: SubscriptionTier = 'FREE'): boolean => {
     PlatformBridge.haptic.impact('light');
+    
+    // Explicit Client Mode (Non-Demo, Non-Pro)
+    if (password === "genesis_client") {
+        localStorage.setItem(STORAGE_KEYS.SESSION, 'client');
+        setIsDemo(false);
+        setIsPro(false);
+        setLicenseTier('FREE');
+        localStorage.removeItem('genesis_tier');
+        setView(bootShown ? 'dashboard' : 'boot');
+        return true;
+    }
+
     if (demo) {
         localStorage.setItem(STORAGE_KEYS.SESSION, 'demo');
         setIsDemo(true);
         setIsPro(false);
+        setLicenseTier('FREE');
+        localStorage.removeItem('genesis_tier');
         setView(bootShown ? 'dashboard' : 'boot');
         return true;
     }
+    
     const cleanPassword = password.toLowerCase().trim();
     if (cleanPassword === "genesis_prime") { setIsPro(true); setView('admin'); return true; }
     if (cleanPassword === "genesis_lab_entry") {
       localStorage.setItem(STORAGE_KEYS.SESSION, 'true');
+      localStorage.setItem('genesis_tier', tier);
       setIsDemo(false);
       setIsPro(true);
+      setLicenseTier(tier);
       setView(bootShown ? 'dashboard' : 'boot');
       return true;
     }
@@ -179,9 +215,11 @@ const App: React.FC = () => {
 
   const handleLogout = useCallback(() => {
      localStorage.removeItem(STORAGE_KEYS.SESSION);
+     localStorage.removeItem('genesis_tier');
      sessionStorage.removeItem('genesis_boot_seen');
      setBootShown(false);
      setIsPro(false);
+     setLicenseTier('FREE');
      setView('auth');
   }, []);
 
@@ -190,12 +228,14 @@ const App: React.FC = () => {
       StorageService.clear();
       sessionStorage.removeItem('genesis_boot_seen');
       localStorage.removeItem(STORAGE_KEYS.SESSION);
+      localStorage.removeItem('genesis_tier');
       setBootShown(false);
       setCompletedNodeIds([]);
       setHistory([]);
       setDataStatus('ok');
       setIsDemo(false);
       setIsPro(false);
+      setLicenseTier('FREE');
       setView('auth');
       PlatformBridge.haptic.notification('success');
     };
@@ -214,6 +254,22 @@ const App: React.FC = () => {
 
   // CLINICAL BRIDGE: Allows starting a new cycle without losing auth or history
   const handleNewCycle = useCallback(() => {
+      // LIMIT ENFORCEMENT CHECK
+      const limits: Record<SubscriptionTier, number> = { FREE: 1, SOLO: 10, CLINICAL: 50, LAB: 9999 };
+      const currentCount = scanHistory?.scans.length || 0;
+      const limit = limits[licenseTier];
+
+      if (currentCount >= limit) {
+          PlatformBridge.haptic.notification('error');
+          PlatformBridge.showConfirm(
+              lang === 'ru' 
+                ? `Лимит лицензии ${licenseTier} исчерпан (${currentCount}/${limit}). Пожалуйста, обновите тариф.` 
+                : `ლიმიტი ამოწურულია.`,
+              () => {} 
+          );
+          return;
+      }
+
       PlatformBridge.showConfirm(
           lang === 'ru' ? "Архивировать текущий результат и начать новый цикл?" : "დავაარქივოთ და დავიწყოთ ახალი ციკლი?",
           (confirmed) => {
@@ -232,7 +288,7 @@ const App: React.FC = () => {
               }
           }
       );
-  }, [lang]);
+  }, [lang, licenseTier, scanHistory]);
 
   const handleContinue = useCallback(() => {
     if (adaptiveState.isComplete) { setView('results'); return; }
@@ -274,11 +330,11 @@ const App: React.FC = () => {
     switch (view) {
       case 'auth': return <AuthView onLogin={handleLogin} t={t} lang={lang} onLangChange={setLang} />;
       case 'boot': return <BootView isDemo={isDemo} onComplete={() => { sessionStorage.setItem('genesis_boot_seen', 'true'); setBootShown(true); setView('dashboard'); }} t={t} />;
-      case 'dashboard': return <DashboardView lang={lang} t={t} isDemo={isDemo} globalProgress={globalProgress} result={result} currentDomain={currentDomain} nodes={nodes} completedNodeIds={completedNodeIds} onSetView={setView as any} onSetCurrentDomain={onSetCurrentDomain => setCurrentDomain(onSetCurrentDomain)} onStartNode={engine.startNode} onLogout={handleLogout} scanHistory={scanHistory} onResume={handleContinue} />;
+      case 'dashboard': return <DashboardView lang={lang} t={t} isDemo={isDemo} globalProgress={globalProgress} result={result} currentDomain={currentDomain} nodes={nodes} completedNodeIds={completedNodeIds} onSetView={setView as any} onSetCurrentDomain={onSetCurrentDomain => setCurrentDomain(onSetCurrentDomain)} onStartNode={engine.startNode} onLogout={handleLogout} scanHistory={scanHistory} onResume={handleContinue} licenseTier={licenseTier} />;
       case 'test': return !activeModule ? null : <TestView t={t} activeModule={activeModule} currentId={engine.state.currentId} scene={MODULE_REGISTRY[activeModule]?.[engine.state.currentId]} onChoice={engine.handleChoice} onExit={() => setView('dashboard')} getSceneText={getSceneText} adaptiveState={adaptiveState} />;
       case 'body_sync': return <BodySyncView lang={lang} t={t} onSync={engine.syncBodySensation} />;
       case 'reflection': return <ReflectionView lang={lang} t={t} sensation={history[history.length - 1]?.sensation} />;
-      case 'results': if (!result) return null; return result.validity === 'INVALID' ? <InvalidResultsView t={t} onReset={() => handleReset(true)} patternFlags={result.patternFlags} /> : <ResultsView lang={lang} t={t} result={result} isGlitchMode={!!isGlitchMode} onContinue={handleContinue} onShare={handleShare} onBack={() => setView('dashboard')} getSceneText={getSceneText} adaptiveState={adaptiveState} onOpenBriefExplainer={() => setView('brief_explainer')} onNewCycle={handleNewCycle} />;
+      case 'results': if (!result) return null; return result.validity === 'INVALID' ? <InvalidResultsView t={t} onReset={() => handleReset(true)} patternFlags={result.patternFlags} /> : <ResultsView lang={lang} t={t} result={result} isGlitchMode={!!isGlitchMode} onContinue={handleContinue} onShare={handleShare} onBack={() => setView('dashboard')} getSceneText={getSceneText} adaptiveState={adaptiveState} onOpenBriefExplainer={() => setView('brief_explainer')} onNewCycle={handleNewCycle} isPro={isPro} />;
       case 'compatibility': return <CompatibilityView lang={lang} userResult={result} isProSession={isPro} onUnlockPro={() => setIsPro(true)} t={t} onBack={() => setView('dashboard')} />;
       case 'guide': return <GuideView t={t} onBack={() => setView('dashboard')} />;
       case 'brief_explainer': return <BriefExplainerView t={t} onBack={() => setView('results')} />;

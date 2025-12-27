@@ -20,7 +20,8 @@ interface ResultsViewProps {
   getSceneText: (path: string) => string;
   adaptiveState: AdaptiveState;
   onOpenBriefExplainer: () => void;
-  onNewCycle?: () => void; // New prop for restarting
+  onNewCycle?: () => void; 
+  isPro?: boolean; // New prop to control visibility
 }
 
 const DeltaBadge = ({ current, previous, inverse = false }: { current: number, previous: number | undefined, inverse?: boolean }) => {
@@ -37,7 +38,7 @@ const DeltaBadge = ({ current, previous, inverse = false }: { current: number, p
 };
 
 // --- NEW COMPONENT: SESSION EKG (The Heartbeat of the Session) ---
-const SessionPulseGraph: React.FC<{ pulse: SessionPulseNode[], t: Translations }> = memo(({ pulse, t }) => {
+const SessionPulseGraph: React.FC<{ pulse: SessionPulseNode[], t: Translations, locked?: boolean }> = memo(({ pulse, t, locked }) => {
     if (!pulse || pulse.length < 5) return null;
     
     // Interactive State
@@ -52,13 +53,24 @@ const SessionPulseGraph: React.FC<{ pulse: SessionPulseNode[], t: Translations }
 
     return (
         <div className="bg-slate-50 border border-slate-100 p-5 rounded-[2rem] space-y-4 shadow-sm relative overflow-hidden group">
+            {/* LOCKED OVERLAY - THE HOOK */}
+            {locked && (
+                <div className="absolute inset-0 z-50 backdrop-blur-md bg-white/60 flex flex-col items-center justify-center text-center p-6 transition-all">
+                    <div className="w-12 h-12 bg-slate-900 rounded-full flex items-center justify-center text-xl mb-3 shadow-xl animate-pulse">🔒</div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-900">{t.results.encrypted_overlay}</span>
+                    <span className="text-[9px] font-medium text-slate-600 mt-2 max-w-[200px] leading-relaxed">
+                        {t.results.encrypted_desc}
+                    </span>
+                </div>
+            )}
+
             {/* READOUT HEADER */}
-            <div className="flex justify-between items-start relative z-10 min-h-[2rem]">
+            <div className={`flex justify-between items-start relative z-10 min-h-[2rem] ${locked ? 'blur-sm opacity-50' : ''}`}>
                 <div className="flex flex-col">
                     <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                        <span className="text-red-500 animate-pulse">❤</span> {t.results.session_ekg_title}
+                        <span className="text-red-500 animate-pulse">❤</span> {t.ekg.title}
                     </span>
-                    <span className="text-[8px] font-mono text-slate-300">N={pulse.length} // MAX_TENSION: {breakdownNode.tension}%</span>
+                    <span className="text-[8px] font-mono text-slate-300">N={pulse.length} // MAX: {breakdownNode.tension}%</span>
                 </div>
                 
                 {/* DYNAMIC READOUT */}
@@ -70,13 +82,13 @@ const SessionPulseGraph: React.FC<{ pulse: SessionPulseNode[], t: Translations }
                         </span>
                     </div>
                     <span className={`text-[9px] font-mono font-bold ${activeNode.tension > 70 ? 'text-red-500' : 'text-slate-400'}`}>
-                        TENSION: {activeNode.tension}% {activeNode.isBlock ? '(BLOCK)' : activeNode.isFlow ? '(FLOW)' : ''}
+                        {t.ekg.tension}: {activeNode.tension}% {activeNode.isBlock ? `(${t.ekg.block})` : activeNode.isFlow ? `(${t.ekg.flow})` : ''}
                     </span>
                 </div>
             </div>
 
             {/* GRAPH AREA */}
-            <div className="relative h-28 w-full z-10 mt-2" onMouseLeave={() => setFocusedNode(null)}>
+            <div className={`relative h-28 w-full z-10 mt-2 ${locked ? 'blur-sm opacity-50 pointer-events-none' : ''}`} onMouseLeave={() => setFocusedNode(null)}>
                 {/* THRESHOLD LINES */}
                 <div className="absolute top-[30%] left-0 w-full h-px border-t border-dashed border-red-500/20 pointer-events-none"></div>
                 <div className="absolute top-[70%] left-0 w-full h-px border-t border-dashed border-emerald-500/20 pointer-events-none"></div>
@@ -117,15 +129,15 @@ const SessionPulseGraph: React.FC<{ pulse: SessionPulseNode[], t: Translations }
                 </div>
             </div>
 
-            <div className="flex justify-between text-[8px] text-slate-400 font-mono relative z-10 pt-2 border-t border-slate-100">
-                <span>START</span>
+            <div className={`flex justify-between text-[8px] text-slate-400 font-mono relative z-10 pt-2 border-t border-slate-100 ${locked ? 'blur-sm opacity-50' : ''}`}>
+                <span>{t.ekg.start}</span>
                 <span className="text-red-400">
-                    BREAKDOWN AT {Math.round((breakdownNode.id / pulse.length) * 100)}% Timeline
+                    {t.ekg.breakdown} {Math.round((breakdownNode.id / pulse.length) * 100)}%
                 </span>
-                <span>END</span>
+                <span>{t.ekg.end}</span>
             </div>
             
-            <p className="text-[9px] text-slate-500 italic leading-tight relative z-10">
+            <p className={`text-[9px] text-slate-500 italic leading-tight relative z-10 ${locked ? 'blur-sm opacity-50' : ''}`}>
                 {t.results.session_ekg_desc}
             </p>
         </div>
@@ -199,37 +211,29 @@ const PatternCard: React.FC<{ beliefKey: BeliefKey, t: Translations }> = ({ beli
 };
 
 const ClientGuideCard: React.FC<{ t: Translations, lang: 'ru' | 'ka', result: AnalysisResult, onShare: () => void, copySuccess: boolean }> = ({ t, lang, result, onShare, copySuccess }) => {
-    
-    // Deterministic summary generation
-    const getSummary = () => {
-        if (result.state.foundation < 40) {
-            return lang === 'ru' 
-                ? "Ваша система в режиме выживания. Главный приоритет сейчас — восстановление безопасности."
-                : "თქვენი სისტემა გადარჩენის რეჟიმშია. მთავარი პრიორიტეტი უსაფრთხოების აღდგენაა.";
-        }
-        if (result.state.agency > 80 && result.state.foundation < 50) {
-            return lang === 'ru'
-                ? "Вы держитесь на силе воли, но фундамент истощен. Есть риск выгорания."
-                : "თქვენ ნებისყოფით მოძრაობთ, მაგრამ ფუნდამენტი გამოფიტულია. გადაწვის რისკია.";
-        }
-        if (result.state.entropy > 60) {
-            return lang === 'ru'
-                ? "В системе много шума и тревоги. Решения даются сложнее, чем обычно."
-                : "სისტემაში ბევრი ხმაური და შფოთვაა. გადაწყვეტილებების მიღება გართულებულია.";
-        }
-        return lang === 'ru'
-            ? "Система стабильна, но есть точки напряжения, которые стоит обсудить."
-            : "სისტემა სტაბილურია, მაგრამ არის დაძაბულობის წერტილები.";
-    };
-
     return (
         <div className="bg-indigo-50 border border-indigo-100 p-6 rounded-[2rem] space-y-6 shadow-sm">
-            <div className="space-y-2">
-                <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400 flex items-center gap-2">
-                    <span className="text-sm">🧭</span> {t.results.human_readable_summary}
-                </span>
-                <p className="text-sm font-bold text-slate-800 leading-snug">
-                    {getSummary()}
+            <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                    <span className="text-xl">🧑‍⚕️</span>
+                    <h3 className="text-[11px] font-black uppercase tracking-widest text-indigo-900">
+                        {lang === 'ru' ? 'РАСШИФРОВКА ДЛЯ ВАС' : 'თქვენი რეზულტატი'}
+                    </h3>
+                </div>
+                
+                {/* GENERAL SUMMARY (FREE TIER) */}
+                <div className="space-y-3 bg-white p-4 rounded-2xl border border-indigo-50">
+                    <p className="text-xs text-slate-700 leading-relaxed font-medium">
+                        {lang === 'ru' 
+                            ? "Ваш Архетип и базовый профиль определены. Система зафиксировала скрытые паттерны сопротивления, которые могут блокировать ваш рост." 
+                            : "თქვენი არქეტიპი განსაზღვრულია. სისტემამ დააფიქსირა ფარული წინააღმდეგობები."}
+                    </p>
+                </div>
+                
+                <p className="text-[10px] text-indigo-400 italic leading-tight">
+                    {lang === 'ru' 
+                        ? "Полный клинический отчет (графики, нейро-метрики и стратегия) зашифрован. Отправьте код вашему специалисту для расшифровки." 
+                        : "სრული ანალიზი დაშიფრულია. გაუგზავნეთ კოდი სპეციალისტს."}
                 </p>
             </div>
 
@@ -238,37 +242,26 @@ const ClientGuideCard: React.FC<{ t: Translations, lang: 'ru' | 'ka', result: An
                     {t.results.next_steps_title}
                 </span>
                 
-                <div className="space-y-3">
-                    <button onClick={onShare} className={`w-full text-left p-3 rounded-xl border flex items-center gap-3 transition-all active:scale-98 ${copySuccess ? 'bg-emerald-100 border-emerald-200' : 'bg-white border-indigo-100'}`}>
-                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${copySuccess ? 'bg-emerald-500 text-white' : 'bg-indigo-100 text-indigo-600'}`}>1</div>
-                        <div className="flex-1">
-                            <span className="text-[10px] font-bold text-slate-700 block">{t.results.step_1}</span>
-                            <span className="text-[9px] font-mono text-slate-400 block">{result.shareCode.substring(0, 12)}...</span>
-                        </div>
-                        {copySuccess && <span className="text-emerald-600 font-bold text-xs">✓</span>}
-                    </button>
-
-                    <div className="w-full text-left p-3 rounded-xl border bg-white border-slate-100 flex items-center gap-3 opacity-80">
-                        <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs bg-slate-100 text-slate-500">2</div>
-                        <span className="text-[10px] font-medium text-slate-600">{t.results.step_2}</span>
+                <button onClick={onShare} className={`w-full text-left p-4 rounded-xl border flex items-center gap-3 transition-all active:scale-98 ${copySuccess ? 'bg-emerald-600 border-emerald-500 shadow-lg' : 'bg-slate-900 border-slate-800 shadow-lg'}`}>
+                    <div className="flex-1">
+                        <span className={`text-[10px] font-bold block mb-1 ${copySuccess ? 'text-emerald-100' : 'text-indigo-200'}`}>
+                            {t.results.step_1}
+                        </span>
+                        <span className="text-[11px] font-mono text-white block tracking-widest">
+                            {result.shareCode.substring(0, 12)}...
+                        </span>
                     </div>
-
-                    <div className="w-full text-left p-3 rounded-xl border bg-white border-slate-100 flex items-center gap-3 opacity-80">
-                        <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs bg-slate-100 text-slate-500">3</div>
-                        <span className="text-[10px] font-medium text-slate-600">{t.results.step_3}</span>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-lg ${copySuccess ? 'bg-white text-emerald-600' : 'bg-white/10 text-white'}`}>
+                        {copySuccess ? '✓' : '📋'}
                     </div>
-                </div>
+                </button>
             </div>
-            
-            <p className="text-[9px] text-slate-400 italic text-center">
-                {t.results.next_steps_body}
-            </p>
         </div>
     );
 };
 
 export const ResultsView = memo<ResultsViewProps>(({ 
-  lang, t, result, isGlitchMode, onContinue, onShare, onBack, getSceneText, onOpenBriefExplainer, onNewCycle
+  lang, t, result, isGlitchMode, onContinue, onShare, onBack, getSceneText, onOpenBriefExplainer, onNewCycle, isPro
 }) => {
   const [showPrep, setShowPrep] = useState(false);
   const [activeMetricHelp, setActiveMetricHelp] = useState<string | null>(null);
@@ -277,6 +270,13 @@ export const ResultsView = memo<ResultsViewProps>(({
 
   const narrative = useMemo(() => generateClinicalNarrative(result, lang), [result, lang]);
   const clientBrief = narrative.level1;
+
+  // SAFETY OVERRIDE (ETHICS PATCH #3): If critical, show content regardless of Pro
+  const isCritical = result.state.foundation < 30 || result.state.entropy > 70;
+  
+  // LOGIC TO BLUR/LOCK CONTENT
+  // We unlock if user is Pro OR if the condition is Critical (Safety First)
+  const isLocked = !isPro && !isCritical;
 
   const history: ScanHistory = useMemo(() => StorageService.getScanHistory(), []);
   const previousScan = useMemo(() => {
@@ -294,6 +294,45 @@ export const ResultsView = memo<ResultsViewProps>(({
       setTimeout(() => setCopySuccess(false), 2000);
   };
 
+  // INSIGHT TEASER: Give them ONE interesting thing
+  const insightTeaser = useMemo(() => {
+      if (result.conflicts.length > 0) {
+          return {
+              type: 'CONFLICT',
+              text: lang === 'ru' 
+                  ? `Обнаружен конфликт: ${result.conflicts[0].key}. Ваша воля блокируется страхом.` 
+                  : `კონფლიქტი: ${result.conflicts[0].key}.`
+          };
+      } else if (result.somaticDissonance.length > 0) {
+          return {
+              type: 'BODY_MIND',
+              text: lang === 'ru'
+                  ? `Тело говорит "Нет", когда ум говорит "Да". Паттерн: ${t.beliefs[result.somaticDissonance[0]]}`
+                  : `სხეული ამბობს "არა". პატერნი: ${result.somaticDissonance[0]}`
+          };
+      }
+      return null;
+  }, [result, lang, t]);
+
+  // SAFETY PROTOCOL FOR CRITICAL STATES (EXTREME)
+  // Only for completely broken system, otherwise show standard Safety Override
+  if (result.state.foundation < 15 && result.state.entropy > 85) {
+      return (
+          <div className="flex flex-col items-center justify-center h-full p-6 text-center bg-indigo-50/50">
+              <div className="p-6 bg-white rounded-3xl shadow-xl space-y-4 max-w-sm border border-indigo-100">
+                  <div className="text-4xl">🍵</div>
+                  <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight">Системная Пауза</h2>
+                  <p className="text-sm text-slate-600 leading-relaxed font-medium">
+                      Система зафиксировала высокий уровень напряжения. Данные скрыты протоколом безопасности.
+                  </p>
+                  <button onClick={handleCopyCode} className={`w-full py-4 rounded-xl font-black uppercase text-xs tracking-widest mt-4 transition-all ${copySuccess ? 'bg-emerald-500 text-white' : 'bg-indigo-600 text-white shadow-lg'}`}>
+                      {copySuccess ? 'Скопировано' : 'Скопировать Код'}
+                  </button>
+              </div>
+          </div>
+      );
+  }
+
   if (!disclaimerAccepted) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-8 animate-in px-4 text-center">
@@ -309,78 +348,86 @@ export const ResultsView = memo<ResultsViewProps>(({
     );
   }
 
-  const sessionPrepQuestions = SessionPrepService.generate(result, t);
-
   return (
     <div className={`space-y-10 pb-32 animate-in px-1 pt-2 font-sans ${isGlitchMode ? 'glitch' : ''}`}>
       
       <header className="dark-glass-card p-8 rounded-[2.5rem] shadow-2xl space-y-6 relative overflow-hidden border-b-4 border-indigo-500/30">
         <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
         
-        {/* BIO SIGNATURE: The Digital Fingerprint (Layer 4 Defense) */}
+        {/* BIO SIGNATURE: ALWAYS VISIBLE (It's cool) */}
         <div className="absolute top-4 right-4 opacity-40 mix-blend-screen pointer-events-none">
-            <BioSignature 
-                f={result.state.foundation} 
-                a={result.state.agency} 
-                r={result.state.resource} 
-                e={result.state.entropy} 
-                width={80} 
-                height={40}
-            />
+            <BioSignature f={result.state.foundation} a={result.state.agency} r={result.state.resource} e={result.state.entropy} width={80} height={40} />
         </div>
 
         <div className="relative z-10 space-y-4">
             <div className="flex justify-between items-center">
-              <span className="text-[10px] font-black text-indigo-400 border-indigo-500/20 uppercase tracking-[0.4em] bg-white/5 px-3 py-1.5 rounded-full border">BLUEPRINT</span>
-              <span className={`text-[10px] font-mono font-bold ${result.confidenceScore > 80 ? 'text-emerald-400' : 'text-amber-400'}`}>{result.confidenceScore}% CONFIDENCE</span>
+              <span className="text-[10px] font-black text-indigo-400 border-indigo-500/20 uppercase tracking-[0.4em] bg-white/5 px-3 py-1.5 rounded-full border">{t.results.blueprint}</span>
+              <span className={`text-[10px] font-mono font-bold ${result.confidenceScore > 80 ? 'text-emerald-400' : 'text-amber-400'}`}>{result.confidenceScore}% {t.results.confidence}</span>
             </div>
             <div className="space-y-1">
               <h1 className="text-4xl font-black italic uppercase text-white leading-none tracking-tighter">{archetype.title}</h1>
               <p className="text-sm text-slate-400 font-medium leading-relaxed opacity-85 pt-2 border-l-2 border-indigo-500/50 pl-4">{archetype.desc}</p>
             </div>
+            {/* RADAR: Visible to everyone, but detailed numbers hidden if locked */}
             <div className="pt-4">
                 <RadarChart points={result.graphPoints} onLabelClick={(m) => setActiveMetricHelp(m)} lang={lang} />
             </div>
         </div>
       </header>
 
-      {/* NEW ACTION COMPASS - HUMAN TRANSLATION LAYER */}
+      {/* ACTION COMPASS - HUMAN TRANSLATION LAYER */}
       <ClientGuideCard t={t} lang={lang} result={result} onShare={handleCopyCode} copySuccess={copySuccess} />
 
-      <section className="bg-white border border-slate-100 p-6 rounded-[2.5rem] space-y-4 shadow-sm relative overflow-hidden">
+      <section className={`bg-white border border-slate-100 p-6 rounded-[2.5rem] space-y-4 shadow-sm relative overflow-hidden ${isCritical ? 'border-red-500/30 bg-red-50/10' : ''}`}>
           <div className={`absolute top-0 left-0 w-full h-1 ${clientBrief.tone === 'alert' ? 'bg-amber-400' : 'bg-indigo-400'}`}></div>
           <div className="flex justify-between items-start">
               <div>
-                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">STATUS</span>
-                  <h3 className="text-lg font-black uppercase text-slate-900 leading-tight">{clientBrief.statusTag}</h3>
+                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{t.results.status}</span>
+                  <h3 className={`text-lg font-black uppercase leading-tight ${isCritical ? 'text-red-700' : 'text-slate-900'}`}>{clientBrief.statusTag}</h3>
               </div>
               {clientBrief.tone === 'alert' && <span className="text-xl">🛡️</span>}
           </div>
           <p className="text-sm font-medium text-slate-600 leading-relaxed">{clientBrief.summary}</p>
-          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-              <span className="text-[8px] font-black uppercase tracking-widest text-indigo-400 block mb-1">{lang === 'ru' ? 'ФОКУС СЕССИИ' : 'სესიის ფოკუსი'}</span>
-              <p className="text-[11px] font-bold text-slate-800 italic">"{clientBrief.focusQuestion}"</p>
-          </div>
+          
+          {/* THE HOOK OR SAFETY OVERRIDE */}
+          {isCritical ? (
+              <div className="bg-red-50 border border-red-200 p-3 rounded-xl mt-2 animate-pulse">
+                  <span className="text-[8px] font-black uppercase tracking-widest text-red-500 block mb-1">⚠️ {t.results.safety_override}</span>
+                  <p className="text-[10px] text-red-900 font-bold leading-tight">
+                      {lang === 'ru' ? "Обнаружен риск срыва адаптации. Пожалуйста, обсудите эти результаты со специалистом как можно скорее." : "აღმოჩენილია რისკი."}
+                  </p>
+              </div>
+          ) : (
+              insightTeaser && isLocked && (
+                  <div className="bg-indigo-50 border border-indigo-100 p-3 rounded-xl mt-2 animate-in">
+                      <span className="text-[8px] font-black uppercase tracking-widest text-indigo-400 block mb-1">🔍 {t.results.preview_insight}</span>
+                      <p className="text-[10px] text-indigo-900 font-bold italic leading-tight">
+                          "{insightTeaser.text}"
+                      </p>
+                  </div>
+              )
+          )}
       </section>
 
-      {/* SESSION EKG (NEW) */}
-      <SessionPulseGraph pulse={result.sessionPulse} t={t} />
+      {/* SESSION EKG (LOCKED FOR CLIENTS) */}
+      <SessionPulseGraph pulse={result.sessionPulse} t={t} locked={isLocked} />
 
-      {/* PSYCHOMETRIC SIGNATURE (For Mathematicians) */}
+      {/* PSYCHOMETRIC SIGNATURE (For Mathematicians) - BLURRED FOR CLIENTS */}
       {result.mathSignature && (
-          <section className="px-2">
+          <section className={`px-2 ${isLocked ? 'blur-sm opacity-50 select-none' : ''}`}>
               <div className="p-4 bg-slate-900/5 border border-slate-900/10 rounded-2xl flex items-center justify-between">
                   <div className="flex flex-col">
                       <span className="text-[8px] font-black uppercase text-slate-400 tracking-widest mb-1">
-                          {lang === 'ru' ? 'ПСИХОМЕТРИЧЕСКАЯ ПОДПИСЬ' : 'ფსიქომეტრიული ხელმოწერა'}
+                          {t.results.psychometric_signature}
                       </span>
                       <div className="flex gap-4 font-mono text-[10px] font-bold text-slate-600">
                           <span>σ: {result.mathSignature.sigma}ms</span>
                           <span>μ: {result.mathSignature.friction}</span>
+                          <span>NP: {result.mathSignature.neuroPlasticity}</span>
                       </div>
                   </div>
                   <div className="text-right">
-                      <span className="text-[8px] font-black uppercase text-slate-400 tracking-widest mb-1">CONSISTENCY</span>
+                      <span className="text-[8px] font-black uppercase text-slate-400 tracking-widest mb-1">{t.results.consistency}</span>
                       <div className={`text-[12px] font-black ${result.mathSignature.volatilityScore > 80 ? 'text-emerald-600' : 'text-amber-600'}`}>
                           {result.mathSignature.volatilityScore}%
                       </div>
@@ -389,7 +436,8 @@ export const ResultsView = memo<ResultsViewProps>(({
           </section>
       )}
 
-      <EvolutionDashboard history={history} lang={lang} />
+      {/* EVOLUTION DASHBOARD - HIDDEN FOR CLIENTS (They haven't done multiple usually) */}
+      {!isLocked && <EvolutionDashboard history={history} lang={lang} />}
 
       {/* NEW CYCLE TRIGGER */}
       {onNewCycle && (
@@ -416,6 +464,7 @@ export const ResultsView = memo<ResultsViewProps>(({
           </section>
       )}
 
+      {/* PATTERNS & SIGNALS - VISIBLE BUT ABSTRACT */}
       {(result.activePatterns && result.activePatterns.length > 0) && (
           <section className="space-y-4">
               <div className="flex items-center justify-between px-2">
@@ -430,20 +479,7 @@ export const ResultsView = memo<ResultsViewProps>(({
           </section>
       )}
 
-      {(result.correlations && result.correlations.length > 0) && (
-          <section className="space-y-4">
-              <div className="flex items-center gap-2 px-2">
-                  <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-900">{t.results.decoder_title}</h3>
-                  <span className="text-[8px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded font-mono font-bold">{result.correlations.length} SIGNALS</span>
-              </div>
-              <div className="space-y-2">
-                  {result.correlations.map((item, idx) => (
-                      <SignalDecoderItem key={idx} item={item} t={t} />
-                  ))}
-              </div>
-          </section>
-      )}
-
+      {/* DETAILED METRICS - LOCKED VALUES FOR CLIENTS */}
       <div className="space-y-6 px-2">
          {[
             { label: t.results.integrity, value: result.integrity, origin: t.results.origin_measured, color: 'bg-emerald-500', key: 'integrity', previous: previousScan?.integrity },
@@ -460,7 +496,10 @@ export const ResultsView = memo<ResultsViewProps>(({
                     </div>
                     <div className="flex items-center">
                         <DeltaBadge current={m.value} previous={m.previous} />
-                        <span className="text-lg font-black text-slate-900 ml-2">{m.value}%</span>
+                        {/* HIDE VALUE FOR CLIENTS, UNLESS CRITICAL */}
+                        <span className="text-lg font-black text-slate-900 ml-2">
+                            {isLocked ? '***' : `${m.value}%`}
+                        </span>
                     </div>
                 </div>
                 <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
@@ -474,26 +513,6 @@ export const ResultsView = memo<ResultsViewProps>(({
             </div>
          ))}
       </div>
-
-      <section className="bg-indigo-950 p-8 rounded-[2.5rem] border border-white/10 space-y-5 shadow-2xl">
-          <button onClick={() => { setShowPrep(!showPrep); PlatformBridge.haptic.impact('light'); }} className="w-full flex justify-between items-center text-left">
-            <div className="flex flex-col">
-                <h3 className="text-[11px] font-black uppercase tracking-[0.4em] text-indigo-400">{t.results.session_prep}</h3>
-                <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mt-1">{t.results.session_prep_desc}</span>
-            </div>
-            <span className={`text-white/40 transition-transform ${showPrep ? 'rotate-180' : ''}`}>▾</span>
-          </button>
-          {showPrep && (
-            <div className="space-y-4 animate-in">
-                {sessionPrepQuestions.map((q, i) => (
-                  <div key={i} className="flex gap-4 p-4 bg-white/5 rounded-2xl border border-white/10">
-                     <span className="text-[10px] font-mono font-black text-indigo-400">Q{i+1}</span>
-                     <p className="text-[11px] text-white/90 font-medium leading-relaxed italic">{q}</p>
-                  </div>
-                ))}
-            </div>
-          )}
-      </section>
 
       <div className="grid grid-cols-2 gap-3 pt-6">
           <button onClick={onShare} className="py-5 bg-slate-950 text-white rounded-[2rem] font-black uppercase text-[10px] tracking-widest shadow-lg active:scale-95 transition-all">{t.results.share_button}</button>
