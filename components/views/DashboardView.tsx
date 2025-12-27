@@ -1,3 +1,4 @@
+
 import { memo, useMemo, useState, useEffect } from 'react';
 import { DomainType, Translations, AnalysisResult, ScanHistory, LifeContext, SubscriptionTier } from '../../types';
 import { DOMAIN_SETTINGS, SYSTEM_METADATA } from '../../constants';
@@ -407,10 +408,10 @@ export const DashboardView = memo<DashboardViewProps>((props) => {
   const [showContextCheck, setShowContextCheck] = useState(false);
 
   useEffect(() => {
-      if (!localStorage.getItem('genesis_context') && props.globalProgress < 5) {
+      if (!props.isPro && !localStorage.getItem('genesis_context') && props.globalProgress < 5) {
           setShowContextCheck(true);
       }
-  }, [props.globalProgress]);
+  }, [props.isPro, props.globalProgress]);
 
   const handleContextSelect = (c: LifeContext) => {
       localStorage.setItem('genesis_context', c);

@@ -13,18 +13,33 @@ interface CompatibilityViewProps {
   onBack: () => void;
 }
 
-const NarrativeSection = ({ title, content, highlight = false, alert = false, special = false, icon, proNote, lang }: { title: string, content: string, highlight?: boolean, alert?: boolean, special?: boolean, icon?: string, proNote?: string, lang: 'ru' | 'ka' }) => (
-    <div className={`space-y-2 ${highlight ? 'bg-indigo-500/5 p-4 rounded-xl border border-indigo-500/10' : alert ? 'bg-red-950/20 p-4 rounded-xl border border-red-900/30' : special ? 'bg-emerald-950/10 p-4 rounded-xl border border-emerald-900/20' : 'py-3 border-b border-slate-800/50'}`}>
-        <h4 className={`text-[9px] font-black uppercase tracking-widest pb-1 flex items-center gap-2 ${alert ? 'text-red-400' : special ? 'text-emerald-400' : highlight ? 'text-indigo-300' : 'text-slate-500'}`}>
-            {icon && <span className="text-sm opacity-80">{icon}</span>}
-            {title}
-        </h4>
-        <div className="whitespace-pre-wrap text-[11px] text-slate-300 leading-relaxed font-mono pl-1 opacity-90">
-            {content}
+// FIX: Made the 'children' prop optional to handle cases where the section might be empty.
+const CollapsibleSection = ({ title, children, defaultOpen = false, icon, level = 1 }: { title: string, children?: React.ReactNode, defaultOpen?: boolean, icon?: string, level?: number }) => {
+    const [isOpen, setIsOpen] = useState(defaultOpen);
+
+    const headerStyles = level === 1 
+        ? `text-[9px] font-black uppercase tracking-[0.2em] pl-1`
+        : `text-[8px] font-black uppercase tracking-widest pb-1 flex items-center gap-2`;
+
+    const iconStyle = level === 1 ? `text-lg` : `text-sm`;
+
+    return (
+        <div>
+            <button 
+                onClick={() => setIsOpen(!isOpen)} 
+                className={`w-full flex justify-between items-center text-left py-2 group ${level === 1 ? 'border-b border-slate-800/50' : ''}`}
+            >
+                <h4 className={`${headerStyles} ${level === 1 ? 'text-indigo-400' : 'text-slate-500'}`}>
+                    {icon && <span className={`${iconStyle} opacity-80`}>{icon}</span>}
+                    {title}
+                </h4>
+                <span className={`text-xl transition-transform duration-300 ${isOpen ? 'rotate-180' : 'rotate-0'}`}>{isOpen ? '−' : '+'}</span>
+            </button>
+            {isOpen && <div className="pt-4 animate-in">{children}</div>}
         </div>
-        {proNote && <ExpertNote content={proNote} lang={lang} />}
-    </div>
-);
+    );
+};
+
 
 const ExpertNote = ({ content, lang }: { content: string, lang: 'ru' | 'ka' }) => (
     <div className="mt-3 p-3 bg-indigo-500/5 border-l-2 border-indigo-500/40 rounded-r-lg relative overflow-hidden group">
@@ -37,7 +52,6 @@ const ExpertNote = ({ content, lang }: { content: string, lang: 'ru' | 'ka' }) =
 );
 
 const NeuralHeatmap = ({ result, t }: { result: AnalysisResult, t: Translations }) => {
-    // Simulated pause detection for LAB
     const pauseZones = result.sessionPulse.filter(p => p.tension > 65);
     return (
         <div className="bg-slate-900/50 border border-indigo-500/30 p-4 rounded-2xl space-y-3">
@@ -297,61 +311,42 @@ export const CompatibilityView: React.FC<CompatibilityViewProps> = ({ lang, lice
                     </div>
                 </div>
 
-                <div>
-                    <h4 className={`text-[9px] font-black uppercase tracking-[0.2em] pl-1 mb-2 ${isLab ? 'text-emerald-600' : 'text-indigo-400'}`}>{ph.session_arc}</h4>
+                <CollapsibleSection title={ph.session_arc}>
                     <SessionArc steps={interpretation.narrative.sessionFlow} />
-                </div>
+                </CollapsibleSection>
 
                 {isLab && (
-                    <div className="space-y-4 animate-in">
-                        <div className="bg-emerald-950/10 p-4 rounded-xl border border-emerald-500/30 space-y-4">
-                            <h4 className="text-[9px] font-black uppercase text-emerald-400 tracking-widest flex justify-between">
-                                <span>{t.ui.semantic_audit_title}</span>
-                                <span className="text-emerald-600">OVERSIGHT ACTIVE</span>
-                            </h4>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-1">
-                                    <span className="text-[7px] text-slate-500 uppercase">{t.ui.reliability_index}</span>
-                                    <p className="text-[12px] text-white font-bold">{clientResult.confidenceScore}%</p>
-                                </div>
-                                <div className="space-y-1">
-                                    <span className="text-[7px] text-slate-500 uppercase">{t.ui.semantic_drift}</span>
-                                    <p className="text-[12px] text-red-400 font-bold">{100 - clientResult.confidenceScore}%</p>
+                    <CollapsibleSection title={ph.signal_check}>
+                        <div className="space-y-4">
+                            <NeuralHeatmap result={clientResult} t={t} />
+                            <div className="bg-black/40 p-4 rounded-xl border border-white/5">
+                                <h4 className="text-[9px] font-black uppercase text-slate-500 tracking-widest mb-3">{t.ui.differential_matrix}</h4>
+                                <div className="space-y-2">
+                                    {interpretation.narrative.differentialHypotheses.map((h, i) => (
+                                        <div key={i} className="space-y-1">
+                                            <div className="flex justify-between text-[9px]">
+                                                <span className="text-emerald-200">{h.label}</span>
+                                                <span className="text-emerald-500 font-mono">w={(h.probability * 10).toFixed(1)}</span>
+                                            </div>
+                                            <div className="h-1 bg-slate-900 rounded-full overflow-hidden">
+                                                <div className="h-full bg-emerald-500" style={{ width: `${h.probability * 100}%` }}></div>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
                         </div>
-
-                        <NeuralHeatmap result={clientResult} t={t} />
-                        
-                        <div className="bg-black/40 p-4 rounded-xl border border-white/5">
-                            <h4 className="text-[9px] font-black uppercase text-slate-500 tracking-widest mb-3">{t.ui.differential_matrix}</h4>
-                            <div className="space-y-2">
-                                {interpretation.narrative.differentialHypotheses.map((h, i) => (
-                                    <div key={i} className="space-y-1">
-                                        <div className="flex justify-between text-[9px]">
-                                            <span className="text-emerald-200">{h.label}</span>
-                                            <span className="text-emerald-500 font-mono">w={(h.probability * 10).toFixed(1)}</span>
-                                        </div>
-                                        <div className="h-1 bg-slate-900 rounded-full overflow-hidden">
-                                            <div className="h-full bg-emerald-500" style={{ width: `${h.probability * 100}%` }}></div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
+                    </CollapsibleSection>
                 )}
 
-                <div className="space-y-3">
-                    <h4 className={`text-[9px] font-black uppercase tracking-[0.2em] pl-1 ${isLab ? 'text-emerald-600' : 'text-indigo-400'}`}>{ph.evolution_vector}</h4>
+                <CollapsibleSection title={ph.evolution_vector}>
                     <SupervisionCard title={ph.target_state} type="target" proNote={interpretation.narrative.evolutionProcess} lang={lang}>
                         <p className={`text-[10px] font-bold leading-relaxed ${isLab ? 'text-white' : 'text-indigo-100'}`}>{interpretation.narrative.evolutionGoal}</p>
                     </SupervisionCard>
-                </div>
+                </CollapsibleSection>
 
-                <div className="space-y-3">
-                    <h4 className={`text-[9px] font-black uppercase tracking-[0.2em] pl-1 ${isLab ? 'text-emerald-800' : 'text-slate-600'}`}>{ph.supervision_layer}</h4>
-                    {!systemReport ? (
+                <CollapsibleSection title={ph.supervision_layer} defaultOpen={true}>
+                     {!systemReport ? (
                         <button onClick={runSupervisorProtocol} disabled={loadingReport} className={`w-full py-3 border rounded-xl text-[9px] font-black uppercase transition-all flex items-center justify-center gap-2 ${isLab ? 'bg-emerald-600/20 border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/30' : 'bg-emerald-950/30 border-emerald-500/30 text-emerald-400 hover:bg-emerald-950/50'}`}>
                             {loadingReport ? pt.calculating : `⚡ ${pt.run_protocol}`}
                         </button>
@@ -360,37 +355,33 @@ export const CompatibilityView: React.FC<CompatibilityViewProps> = ({ lang, lice
                             <div className="whitespace-pre-wrap text-[11px] text-emerald-100 leading-relaxed font-mono opacity-90">{systemReport}</div>
                         </SupervisionCard>
                     )}
-                    
-                    <div className="grid grid-cols-1 gap-3">
+                    <div className="grid grid-cols-1 gap-3 mt-4">
                         <SupervisionCard title={ph.shadow_contract} type="secret" proNote={interpretation.narrative.shadowContractExpl} lang={lang}>
                             <p className="text-[8px] text-indigo-400 uppercase font-black mb-1">{pt.shadow_mechanic}:</p>
                             <p className={`text-[10px] italic leading-relaxed ${isLab ? 'text-emerald-100' : 'text-slate-300'}`}>"{interpretation.narrative.shadowContract}"</p>
                         </SupervisionCard>
                     </div>
-                </div>
-
-                <div className={`space-y-4 pt-4 border-t ${isLab ? 'border-emerald-900/50' : 'border-slate-800'}`}>
-                    <NarrativeSection title={ph.deep_analysis} content={interpretation.narrative.deepAnalysis} highlight proNote={interpretation.narrative.deepExpl} lang={lang} />
-                    <NarrativeSection title={ph.behavior_markers} content={interpretation.narrative.behavioralMarkers} icon="👀" proNote={interpretation.narrative.behaviorExpl} lang={lang} />
-                    
-                    <div className={`p-4 rounded-xl border-l-2 ${isLab ? 'bg-black/60 border-emerald-500' : 'bg-amber-950/10 border-amber-500/50'}`}>
-                        <h4 className={`text-[9px] font-black uppercase tracking-widest mb-2 flex items-center gap-2 ${isLab ? 'text-emerald-400' : 'text-amber-500'}`}><span>⚡</span> {pt.clinical_hypotheses}</h4>
-                        <div className="whitespace-pre-wrap text-[11px] text-slate-300 leading-relaxed font-mono opacity-90 mb-3">{interpretation.narrative.clinicalHypotheses}</div>
-                        <ExpertNote content={interpretation.narrative.hypoExpl} lang={lang} />
-                    </div>
-
-                    <div className={`p-4 rounded-xl border ${isLab ? 'bg-black/80 border-emerald-500/50' : 'bg-emerald-950/20 border-emerald-500/30'}`}>
-                         <h4 className={`text-[9px] font-black uppercase tracking-widest mb-3 ${isLab ? 'text-emerald-400' : 'text-emerald-400'}`}>{ph.clinical_interventions}</h4>
-                         <div className="space-y-3">
-                            {interpretation.narrative.interventions.map((int, i) => (
-                                <div key={i} className={`p-2 rounded border ${isLab ? 'bg-emerald-950/10 border-emerald-500/20' : 'bg-black/40 border-emerald-500/20'}`}>
-                                    <span className="text-[7px] text-emerald-500 uppercase font-black block mb-1">{int.type} // {int.purpose}</span>
-                                    <p className="text-[10px] text-emerald-100 italic leading-snug">"{int.text}"</p>
-                                </div>
-                            ))}
-                         </div>
-                    </div>
-                </div>
+                </CollapsibleSection>
+                
+                <CollapsibleSection title={ph.deep_analysis}>
+                     <div className="space-y-4">
+                        <div className="bg-indigo-950/20 border border-indigo-500/30 p-4 rounded-xl">
+                             <h4 className="text-[9px] font-black uppercase text-indigo-300 tracking-widest mb-2">{ph.deep_analysis}</h4>
+                             <p className="whitespace-pre-wrap text-[11px] text-slate-300 leading-relaxed font-mono opacity-90">{interpretation.narrative.deepAnalysis}</p>
+                             <ExpertNote content={interpretation.narrative.deepExpl} lang={lang}/>
+                        </div>
+                        <div className="p-4 rounded-xl border border-slate-800">
+                             <h4 className="text-[9px] font-black uppercase text-slate-500 tracking-widest mb-2">{ph.behavior_markers}</h4>
+                             <p className="whitespace-pre-wrap text-[11px] text-slate-300 leading-relaxed font-mono opacity-90">{interpretation.narrative.behavioralMarkers}</p>
+                             <ExpertNote content={interpretation.narrative.behaviorExpl} lang={lang}/>
+                        </div>
+                        <div className="p-4 rounded-xl border border-slate-800">
+                            <h4 className={`text-[9px] font-black uppercase tracking-widest mb-2 flex items-center gap-2 text-amber-500`}><span>⚡</span> {pt.clinical_hypotheses}</h4>
+                            <p className="whitespace-pre-wrap text-[11px] text-slate-300 leading-relaxed font-mono opacity-90 mb-3">{interpretation.narrative.clinicalHypotheses}</p>
+                            <ExpertNote content={interpretation.narrative.hypoExpl} lang={lang} />
+                        </div>
+                     </div>
+                </CollapsibleSection>
 
                 <div className="pt-6 border-t border-slate-800 text-center space-y-4">
                      <p className="text-[8px] text-slate-600 uppercase max-w-[220px] mx-auto border border-slate-800 p-2 rounded leading-relaxed">{t.clinical_decoder.disclaimer}</p>

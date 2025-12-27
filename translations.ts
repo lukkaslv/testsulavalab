@@ -165,6 +165,9 @@ const ru: Translations = {
     reason_robotic: "Сверхвысокая точность тайминга (Искусственный ритм).",
     reason_skip: "Высокий уровень игнорирования значимых стимулов.",
     reason_early_termination: "Недостаточный объем данных для вывода.",
+    // FIX: Added missing translation keys for invalid result reasons.
+    reason_flatline: "Отсутствие вариативности в ответах (флэтлайн).",
+    reason_somatic: "Монотонные соматические ответы (тело 'молчит').",
     recommendation: "Требуется спонтанность. Пожалуйста, сбросьте сессию и отвечайте быстрее.",
     reset_button: "Восстановить целостность"
   },
@@ -366,6 +369,9 @@ const ka: Translations = {
     reason_robotic: "ტაიმინგის ზემაღალი სიზუსტე (ხელოვნური რიტმი).",
     reason_skip: "მნიშვნელოვანი სტიმულების იგნორირების მაღალი დონე.",
     reason_early_termination: "მონაცემების არასაკმარისი მოცულობა დასკვნისთვის.",
+    // FIX: Added missing translation keys for invalid result reasons.
+    reason_flatline: "პასუხებში ვარიაციის არარსებობა.",
+    reason_somatic: "მონოტონური სომატური პასუხები.",
     recommendation: "საჭიროა სპონტანურობა. გთხოვთ, გადატვირთოთ სესია და უპასუხოთ უფრო სწრაფად.",
     reset_button: "მთლიანობის აღდგენა"
   },
