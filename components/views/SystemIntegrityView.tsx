@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { LogLevel, LogEntry, IntegrityReport, ConfigError, Translations } from '../../types';
 import { logger } from '../../services/systemLogger';
-import { MODULE_REGISTRY, ALL_BELIEFS, DOMAIN_SETTINGS } from '../../constants';
+import { MODULE_REGISTRY, ALL_BELIEFS, DOMAIN_SETTINGS, TOTAL_NODES } from '../../constants';
 import { translations } from '../../translations';
 
 interface SystemIntegrityViewProps {
@@ -38,10 +38,21 @@ function validateConfigIntegrity(lang: 'ru' | 'ka'): IntegrityReport {
 
   const currentTranslations = translations[lang];
   const missingScenes: string[] = [];
+  const sceneDescriptions = new Set<string>();
+  let duplicateCount = 0;
+
   DOMAIN_SETTINGS.forEach(d => {
     for (let i = 0; i < d.count; i++) {
       const key = `${d.key}_${i}`;
-      if (!currentTranslations.scenes[key]) missingScenes.push(key);
+      const scene = currentTranslations.scenes[key];
+      if (!scene) {
+          missingScenes.push(key);
+      } else {
+          if (sceneDescriptions.has(scene.desc)) {
+              duplicateCount++;
+          }
+          sceneDescriptions.add(scene.desc);
+      }
     }
   });
 
@@ -62,6 +73,21 @@ function validateConfigIntegrity(lang: 'ru' | 'ka'): IntegrityReport {
   const ruCount = JSON.stringify(translations.ru).length;
   const kaCount = JSON.stringify(translations.ka).length;
   const parity = Math.round((kaCount / ruCount) * 100);
+  
+  // Uniqueness Score
+  const uniqueScore = Math.round(((TOTAL_NODES - duplicateCount) / TOTAL_NODES) * 100);
+  if (uniqueScore < 80) {
+      warnings.push({
+          severity: 'low',
+          type: 'semantic_duplication',
+          details: `High repetition detected (${duplicateCount} duplicates). Uniqueness: ${uniqueScore}%`,
+          fix: 'Add more unique scenarios to BELIEF_SCENARIOS in translations.ts',
+          file: 'translations.ts',
+          impact: 'User engagement may drop due to perceived repetition.'
+      });
+  } else {
+      healthy.push(`Content Uniqueness: ${uniqueScore}% (Healthy)`);
+  }
 
   const status = errors.length > 0 ? 'error' : warnings.length > 0 ? 'warning' : 'healthy';
 
@@ -154,6 +180,15 @@ export const SystemIntegrityView: React.FC<SystemIntegrityViewProps> = ({ t, onB
                 </div>
                 <p className="text-slate-300 text-[9px] italic leading-tight">{e.details}</p>
                 <div className="text-emerald-400 bg-black/40 p-2 rounded text-[8px] font-mono">PATCH_REQ: {e.fix}</div>
+              </div>
+            ))}
+            {report?.warnings.map((w, idx) => (
+              <div key={idx} className="bg-amber-950/10 border border-amber-900/30 p-4 rounded-xl space-y-2">
+                <div className="flex justify-between text-amber-400 font-black">
+                  <span>⚠️ {w.type.toUpperCase()}</span>
+                </div>
+                <p className="text-slate-300 text-[9px] italic leading-tight">{w.details}</p>
+                <div className="text-emerald-400 bg-black/40 p-2 rounded text-[8px] font-mono">SUGGESTION: {w.fix}</div>
               </div>
             ))}
             {report?.healthy.map((h, idx) => (

@@ -1,47 +1,93 @@
 
-import { Translations } from './types';
+import { Translations, BeliefKey } from './types';
 
-// Clinical focus for psychologists and their clients.
+// PRE-DEFINED PATTERN CONTENT
+// This maps specific psychological beliefs to concrete scenarios.
+// This ensures that if a Node measures "Scarcity", the question is ACTUALLY about Scarcity.
+const BELIEF_SCENARIOS: Record<string, { q: string, a: string[] }[]> = {
+    'family_loyalty': [
+        { q: "Вы добились успеха, которого не было у ваших родителей. Чувство?", a: ["Вина / Неловкость", "Желание спрятать успех", "Гордость и благодарность"] },
+        { q: "Родственники просят денег в долг, но вы не хотите давать. Ваши действия?", a: ["Дам, чтобы не обиделись", "Совру, что нет денег", "Откажу прямо"] }
+    ],
+    'scarcity_mindset': [
+        { q: "Неожиданная премия. Первая мысль?", a: ["Отложить на черный день", "Раздать долги / Купить нужное", "Инвестировать / Порадовать себя"] },
+        { q: "Вы видите очень дорогую, но качественную вещь. Реакция?", a: ["'Это не для меня'", "'Слишком дорого'", "'Как я могу это получить?'"] }
+    ],
+    'fear_of_punishment': [
+        { q: "Вы допустили ошибку в важном проекте. Что в теле?", a: ["Сжатие / Ужас", "Желание обвинить других", "Фокус на решении"] },
+        { q: "На вас пристально смотрит авторитетная фигура.", a: ["Хочется исчезнуть", "Агрессия / Вызов", "Спокойный контакт"] }
+    ],
+    'imposter_syndrome': [
+        { q: "Вас публично похвалили за отличный результат.", a: ["'Мне просто повезло'", "'Скоро они поймут, что я не такой'", "Принимаю с удовольствием"] },
+        { q: "Вам предлагают позицию, до которой вы 'не доросли'.", a: ["Откажусь от страха", "Соглашусь и буду тревожиться", "Соглашусь и научусь"] }
+    ],
+    'hard_work_only': [
+        { q: "Деньги достались вам легко (подарок/удача).", a: ["Нужно быстро от них избавиться", "Чувство тревоги", "Радость и легкость"] },
+        { q: "Вы отдыхаете, пока другие работают.", a: ["Стыд / Вина", "Раздражение на других", "Наслаждение отдыхом"] }
+    ],
+    'money_is_danger': [
+        { q: "У вас на руках крупная сумма наличных.", a: ["Страх ограбления/потери", "Желание быстрее потратить", "Ощущение безопасности"] },
+        { q: "Богатые люди в вашем представлении...", a: ["Опасные / Воры", "Несчастные / Одинокие", "Свободные / Могущественные"] }
+    ],
+    'self_permission': [
+        { q: "Вы хотите купить что-то 'бесполезное', но приятное.", a: ["Запрещаю себе", "Покупаю и мучаюсь виной", "Покупаю с радостью"] },
+        { q: "У вас есть свободный час только для себя.", a: ["Занимаю делами", "Листаю соцсети (автопилот)", "Делаю то, что наполняет"] }
+    ],
+    'capacity_expansion': [
+        { q: "Ваш доход вырос в 10 раз за месяц. Ваша реакция?", a: ["Паника / Ступор", "Сразу все потрачу", "Спокойное расширение"] },
+        { q: "Вам предлагают масштабный проект, меняющий жизнь.", a: ["'Я не справлюсь'", "'Нужно подумать'", "'Да, я готов'"] }
+    ],
+    // Default/Fallback scenarios for specific domains if BeliefKey is generic
+    'foundation_generic': [
+        { q: "Критическая ситуация. Реакция тела?", a: ["Замирание", "Суета", "Мобилизация"] },
+        { q: "Ощущение опоры под ногами прямо сейчас.", a: ["Ее нет / Ватные ноги", "Напряжение в ногах", "Устойчивость"] }
+    ],
+    'agency_generic': [
+        { q: "Нужно принять решение за 5 секунд.", a: ["Ступор", "Панический выбор", "Четкое решение"] },
+        { q: "Препятствие на пути к цели.", a: ["Отказ от цели", "Поиск виноватых", "Поиск обходного пути"] }
+    ]
+};
+
 const createPlaceholderScenes = (lang: 'ru' | 'ka') => {
-    const scenes: Record<string, any> = {
-      "foundation_0": {
-          title: lang === 'ru' ? "Точка Входа" : "შესვლის წერტილი",
-          desc: lang === 'ru' ? "Вы неожиданно получаете крупную сумму. Первое чувство в теле?" : "მოულოდნელად იღებთ დიდ თანხას. პირველი შეგრძნება სხეულში?",
-          c1: lang === 'ru' ? "Желание спрятать (Лояльность)" : "დამალვის სურვილი",
-          c2: lang === 'ru' ? "Растерянность (Автопилот)" : "დაბნეულობა",
-          c3: lang === 'ru' ? "Спокойное принятие (Разрешение)" : "მშვიდი მიღება"
-      },
-      "foundation_1": {
-          title: lang === 'ru' ? "Граница Видимости" : "ხილვადობის საზღვარი",
-          desc: lang === 'ru' ? "О вашем успехе узнали все близкие. Ваша первая мысль?" : "თქვენი წარმატების შესახებ ყველამ გაიგო. თქვენი პირველი აზრი?",
-          c1: lang === 'ru' ? "Будут завидовать (Страх)" : "შემშურდებათ",
-          c2: lang === 'ru' ? "Нужно оправдаться (Труд)" : "თავი უნდა ვიმართლო",
-          c3: lang === 'ru' ? "Это естественно (Право)" : "ეს ბუნებრივია"
-      },
-      "foundation_2": {
-          title: lang === 'ru' ? "Ресурсная Емкость" : "რესურსული ტევადობა",
-          desc: lang === 'ru' ? "Предложили проект мечты с высоким риском. Реакция?" : "შემოგთავაზეს ოცნების პროექტი მაღალი რისკით. რეაქცია?",
-          c1: lang === 'ru' ? "Слишком опасно (Дефицит)" : "ზედმეტად სახიფათოა",
-          c2: lang === 'ru' ? "Соглашусь, но буду страдать (Границы)" : "დავთანხმდები",
-          c3: lang === 'ru' ? "Иду в расширение (Емкость)" : "მივდივარ გაფართოებაზე"
-      }
-    };
-
+    const scenes: Record<string, any> = {};
     const domains = ['foundation', 'agency', 'money', 'social', 'legacy'];
     const counts = [15, 10, 10, 10, 5];
+    
+    // Explicit mapping derived from constants.ts NODE_CONFIGS to ensure content integrity
+    // This simulates the logic without importing constants.ts to avoid circular deps
+    const nodeBeliefMap: Record<string, string> = {
+        "foundation_0": "family_loyalty", "foundation_1": "fear_of_punishment", "foundation_2": "scarcity_mindset",
+        "foundation_3": "fear_of_conflict", "foundation_4": "betrayal_trauma", "foundation_5": "body_mind_conflict",
+        "money_0": "money_is_danger", "money_1": "impulse_spend", "money_2": "shame_of_success", "money_3": "resource_toxicity",
+        "agency_0": "imposter_syndrome", "agency_1": "ambivalence_loop", "agency_2": "golden_cage", "agency_3": "imposter_syndrome"
+    };
 
     domains.forEach((d, dIdx) => {
         for (let i = 0; i < counts[dIdx]; i++) {
             const key = `${d}_${i}`;
-            if (!scenes[key]) {
-                scenes[key] = {
-                    title: lang === 'ru' ? `Исследование: ${d} #${i}` : `კვლევა: ${d} #${i}`,
-                    desc: lang === 'ru' ? "Системный вопрос для калибровки внутреннего состояния." : "სისტემური კითხვა შინაგანი მდგომარეობის კალიბრაციისთვის.",
-                    c1: lang === 'ru' ? "Вариант А" : "ვარიანტი ა",
-                    c2: lang === 'ru' ? "Вариант Б" : "ვარიანტი ბ",
-                    c3: lang === 'ru' ? "Вариант В" : "ვარიანტი გ"
-                };
+            const beliefKey = nodeBeliefMap[key] || 'default';
+            
+            // 1. Try to find a scenario for the specific belief
+            let scenarioPool = BELIEF_SCENARIOS[beliefKey];
+            
+            // 2. If not found, fall back to domain generic
+            if (!scenarioPool) {
+                scenarioPool = BELIEF_SCENARIOS[`${d}_generic`] || BELIEF_SCENARIOS['foundation_generic'];
             }
+
+            // 3. Cycle through available scenarios to avoid repetition within the same belief type
+            const scenario = scenarioPool[i % scenarioPool.length];
+
+            // Localize on the fly (Simple toggle for demo, usually full dict required)
+            const isKa = lang === 'ka';
+            
+            scenes[key] = {
+                title: isKa ? `მოდული: ${d.toUpperCase()}` : `Модуль: ${d.toUpperCase()}`,
+                desc: isKa ? `(KA translation pending) ${scenario.q}` : scenario.q,
+                c1: isKa ? `ვარიანტი A` : scenario.a[0],
+                c2: isKa ? `ვარიანტი B` : scenario.a[1],
+                c3: isKa ? `ვარიანტი C` : scenario.a[2]
+            };
         }
     });
     return scenes;
@@ -108,7 +154,11 @@ const ru: Translations = {
     code_input_placeholder: "Лицензия или Пароль",
     auth_title: "Авторизация",
     resume_session_title: "Сессия активна", 
-    resume_session_btn: "Продолжить"
+    resume_session_btn: "Продолжить",
+    start_new_cycle_btn: "Начать новый цикл", 
+    new_cycle_desc: "Архивировать текущий результат и начать с чистого листа",
+    session_ekg_title: "Кардиограмма сессии (EKG)",
+    session_ekg_desc: "Динамика напряжения и сопротивления в реальном времени."
   },
   admin: {
     kernel: "Ядро",
@@ -292,8 +342,6 @@ const ru: Translations = {
     session_prep: "Подготовка к сессии",
     session_prep_desc: "Ключевые вопросы для терапии",
     status: "Статус системы",
-    
-    // NEW KEYS FOR ACTION COMPASS
     next_steps_title: "Что делать дальше?",
     next_steps_body: "Это не диагноз, а карта для вашего психолога.",
     step_1: "Скопируйте Clinical ID (код выше).",
@@ -653,8 +701,6 @@ const ka: Translations = {
     session_prep: "სესიისთვის მომზადება",
     session_prep_desc: "საკვანძო კითხვები თერაპიისთვის",
     status: "სისტემის სტატუსი",
-
-    // NEW KEYS FOR ACTION COMPASS
     next_steps_title: "რა გავაკეთო?",
     next_steps_body: "ეს არ არის დიაგნოზი, არამედ რუკა თქვენი ფსიქოლოგისთვის.",
     step_1: "დააკოპირეთ Clinical ID (კოდი ზემოთ).",

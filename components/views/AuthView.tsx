@@ -254,8 +254,9 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t, lang, onLangChan
                         </div>
                     </div>
                 ) : (
-                    <button onClick={() => onLogin("", true)} className="w-full h-20 bg-slate-950 text-white rounded-[2rem] font-black uppercase text-xs tracking-[0.2em] shadow-xl animate-in hover:bg-slate-900 active:scale-[0.98] transition-all">
-                        {t.onboarding.start_btn}
+                    <button onClick={() => onLogin("", true)} className="w-full h-20 bg-slate-950 text-white rounded-[2rem] font-black uppercase text-xs tracking-[0.2em] shadow-xl animate-in hover:bg-slate-900 active:scale-[0.98] transition-all flex flex-col items-center justify-center gap-1">
+                        <span>{t.onboarding.start_btn}</span>
+                        <span className="text-[9px] text-white/50 tracking-widest">(DEMO MODE)</span>
                     </button>
                 )}
             </div>
