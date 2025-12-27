@@ -97,7 +97,7 @@ const ValidityPanel = ({ result }: { result: AnalysisResult }) => {
                 {flags.isAlexithymiaDetected && (
                     <div className="flex gap-2 items-center text-[9px] text-slate-300">
                         <span>🧊</span> 
-                        <span><strong>Somatic Blindness:</strong> User reports 'Neutral' >75%. Sync metric unreliable.</span>
+                        <span><strong>Somatic Blindness:</strong> User reports 'Neutral' &gt;75%. Sync metric unreliable.</span>
                     </div>
                 )}
                 {flags.isSocialDesirabilityBiasDetected && (
