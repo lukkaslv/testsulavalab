@@ -16,6 +16,7 @@ interface DashboardViewProps {
   lang: 'ru' | 'ka';
   t: Translations;
   isDemo: boolean;
+  isPro: boolean; // Added isPro flag
   globalProgress: number;
   result: AnalysisResult | null;
   currentDomain: DomainType | null;
@@ -58,7 +59,7 @@ const ContextCheckModal = ({ t, onSelect }: { t: Translations, onSelect: (c: Lif
 };
 
 export const DashboardView = memo<DashboardViewProps>(({
-  lang, t, globalProgress, result, currentDomain, nodes,
+  lang, t, isPro, globalProgress, result, currentDomain, nodes,
   onSetView, onSetCurrentDomain, onStartNode, scanHistory, onResume, licenseTier = 'FREE'
 }) => {
   
@@ -119,10 +120,12 @@ export const DashboardView = memo<DashboardViewProps>(({
                 <h2 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2 italic">
                     {t.ui.status_report_title}
                 </h2>
-                <span className="text-[8px] font-mono font-bold text-slate-400 uppercase tracking-widest pl-1">
-                    LICENSE: {licenseTier} 
-                    {!usageStats.isUnlimited && <span className={usageStats.used >= usageStats.limit ? 'text-red-500' : 'text-slate-400'}> ({usageStats.used}/{usageStats.limit})</span>}
-                </span>
+                {isPro && (
+                    <span className="text-[8px] font-mono font-bold text-slate-400 uppercase tracking-widest pl-1">
+                        LICENSE: {licenseTier} 
+                        {!usageStats.isUnlimited && <span className={usageStats.used >= usageStats.limit ? 'text-red-500' : 'text-slate-400'}> ({usageStats.used}/{usageStats.limit})</span>}
+                    </span>
+                )}
             </div>
             <div className="flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-full">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -173,6 +176,7 @@ export const DashboardView = memo<DashboardViewProps>(({
         )}
       </header>
 
+      {/* Evolution view also restricted slightly in visual noise for clients */}
       <EvolutionDashboard history={scanHistory} lang={lang} />
 
       <section 
@@ -216,14 +220,17 @@ export const DashboardView = memo<DashboardViewProps>(({
          </div>
       </section>
 
-      <div className="grid grid-cols-2 gap-3 px-1">
-          <button 
-            onClick={() => onSetView('compatibility')} 
-            className="py-4 bg-slate-900 rounded-2xl flex flex-col items-center justify-center px-4 active:scale-95 transition-all shadow-lg border border-slate-800"
-          >
-             <span className="text-xl mb-1">📟</span>
-             <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">{t.dashboard.open_terminal}</span>
-          </button>
+      <div className={`grid gap-3 px-1 ${isPro ? 'grid-cols-2' : 'grid-cols-1'}`}>
+          {/* Pro Terminal Button - HIDDEN FOR CLIENTS */}
+          {isPro && (
+            <button 
+                onClick={() => onSetView('compatibility')} 
+                className="py-4 bg-slate-900 rounded-2xl flex flex-col items-center justify-center px-4 active:scale-95 transition-all shadow-lg border border-slate-800"
+            >
+                <span className="text-xl mb-1">📟</span>
+                <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">{t.dashboard.open_terminal}</span>
+            </button>
+          )}
 
           <button 
             onClick={() => onSetView('guide')} 

@@ -1,6 +1,8 @@
+
 import React, { memo, useEffect, useRef } from 'react';
 import { translations } from '../translations';
 import { SYSTEM_METADATA } from '../constants';
+import { PlatformBridge } from '../utils/helpers';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -84,7 +86,12 @@ export const Layout = memo<LayoutProps>(({
   const toggleLang = () => {
     const nextLang = lang === 'ru' ? 'ka' : 'ru';
     onLangChange(nextLang);
-    window.Telegram?.WebApp?.HapticFeedback?.impactOccurred?.('light');
+    PlatformBridge.haptic.impact('light');
+  };
+
+  const handleResetClick = () => {
+      PlatformBridge.haptic.impact('medium');
+      onReset();
   };
 
   return (
@@ -102,7 +109,7 @@ export const Layout = memo<LayoutProps>(({
           <button onClick={onSoundToggle} className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all ${soundEnabled ? 'bg-indigo-600 text-white' : 'bg-slate-50 text-slate-400 border border-slate-100'}`}>
             {soundEnabled ? '🔊' : '🔇'}
           </button>
-          <button onClick={toggleLang} className="px-3 h-9 flex items-center justify-center rounded-xl bg-slate-50 border border-slate-100 font-black text-[10px] text-slate-800">
+          <button onClick={toggleLang} className="px-3 h-9 flex items-center justify-center rounded-xl bg-slate-50 border border-slate-100 font-black text-[10px] text-slate-800 active:scale-95 transition-transform">
             {lang === 'ru' ? 'RU' : 'KA'}
           </button>
         </div>
@@ -115,7 +122,10 @@ export const Layout = memo<LayoutProps>(({
             <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest">{t.ui.system_build}</span>
             <span className="text-[9px] font-mono font-bold text-slate-400">v{SYSTEM_METADATA.VERSION}</span>
         </div>
-        <button onClick={onReset} className="text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100 hover:bg-slate-100 transition-colors">
+        <button 
+          onClick={handleResetClick} 
+          className="text-[9px] font-black text-red-500 uppercase tracking-widest bg-red-50/50 px-3 py-1.5 rounded-lg border border-red-100 hover:bg-red-100 active:scale-95 transition-all"
+        >
           {t.ui.reset_session_btn}
         </button>
       </footer>

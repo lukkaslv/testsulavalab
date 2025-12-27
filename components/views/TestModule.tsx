@@ -1,6 +1,7 @@
-import { memo } from 'react';
+import React, { memo, useState } from 'react';
 import { DomainType, Translations, Choice, Scene, AdaptiveState } from '../../types';
 import { AdaptiveProgressBar } from '../AdaptiveProgressBar';
+import { PlatformBridge } from '../../utils/helpers';
 
 interface TestViewProps {
   t: Translations;
@@ -17,6 +18,20 @@ export const TestView = memo<TestViewProps>(({ t, activeModule, currentId, scene
   const numericId = parseInt(currentId);
   const isCalibration = numericId < 3;
   const isAdaptive = adaptiveState.clarity > 20;
+
+  const [selectedChoiceId, setSelectedChoiceId] = useState<string | null>(null);
+
+  const handleChoiceClick = (c: Choice) => {
+    if (selectedChoiceId) return; // Prevent double clicks
+    
+    setSelectedChoiceId(c.id);
+    PlatformBridge.haptic.impact('medium');
+    
+    // Give time for visual feedback before proceeding
+    setTimeout(() => {
+        onChoice(c);
+    }, 150);
+  };
 
   const showComment = numericId > 0 && (numericId % 7 === 0 || numericId % 11 === 0);
   const commentIndex = (numericId * 3) % t.system_commentary.length;
@@ -76,28 +91,48 @@ export const TestView = memo<TestViewProps>(({ t, activeModule, currentId, scene
             {getSceneText(scene.titleKey)}
         </h3>
         
-        <div className="bg-white p-6 rounded-[2rem] text-slate-600 font-medium border border-slate-100 shadow-xl relative overflow-hidden">
+        <div className="bg-white p-7 rounded-[2rem] text-slate-600 font-semibold border border-slate-100 shadow-xl relative overflow-hidden">
              <div className="absolute top-0 right-0 p-6 opacity-5 text-indigo-500 text-6xl font-black select-none pointer-events-none">?</div>
-             <p className="relative z-10 text-lg leading-relaxed text-justify hyphens-auto">
+             <p className="relative z-10 text-xl leading-relaxed text-left hyphens-auto">
                 {getSceneText(scene.descKey)}
              </p>
         </div>
       </div>
 
       <div className="space-y-3 shrink-0 pb-6">
-        {scene.choices.map((c, i) => (
-          <button key={c.id} onClick={() => onChoice(c)} className="w-full p-5 text-left bg-white border border-slate-200 rounded-[1.5rem] shadow-sm font-bold text-xs uppercase flex items-center gap-4 active:scale-[0.98] active:bg-indigo-50 active:border-indigo-200 transition-all group">
-            <span className="w-8 h-8 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 font-mono text-[10px] group-hover:bg-indigo-500 group-hover:text-white transition-colors">0{i+1}</span>
-            <span className="flex-1 text-slate-700 leading-snug group-hover:text-indigo-900 transition-colors">{getSceneText(c.textKey)}</span>
-            <span className="opacity-0 group-hover:opacity-100 text-indigo-500 transition-opacity">➜</span>
-          </button>
-        ))}
-        <button 
-            onClick={() => onChoice({ id: `${currentId}_skip`, textKey: '', beliefKey: 'default', position: -1 })}
-            className="w-full p-4 text-center bg-slate-100 border border-slate-200 rounded-[1.5rem] shadow-sm font-bold text-xs uppercase text-slate-500 active:scale-[0.98] transition-all hover:border-slate-300"
-        >
-            {t.ui.skip_button}
-        </button>
+        {scene.choices.map((c, i) => {
+          const isSelected = selectedChoiceId === c.id;
+          return (
+            <button 
+                key={c.id} 
+                onClick={() => handleChoiceClick(c)} 
+                className={`w-full p-6 text-left border rounded-[1.5rem] shadow-sm font-bold text-sm uppercase flex items-center gap-4 transition-all duration-150 active:scale-[0.97] group 
+                ${isSelected 
+                    ? 'bg-indigo-600 border-indigo-500 text-white scale-[0.98] ring-4 ring-indigo-500/20' 
+                    : 'bg-white border-slate-200 text-slate-700 hover:border-indigo-300 active:bg-indigo-50'}`}
+            >
+                <span className={`w-9 h-9 rounded-xl border flex items-center justify-center font-mono text-[11px] transition-colors
+                    ${isSelected ? 'bg-indigo-500 border-indigo-400 text-white' : 'bg-slate-50 border-slate-100 text-slate-400'}`}>
+                    0{i+1}
+                </span>
+                <span className={`flex-1 leading-snug ${isSelected ? 'text-white' : 'text-slate-700'}`}>
+                    {getSceneText(c.textKey)}
+                </span>
+                <span className={`transition-opacity ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                    {isSelected ? '✓' : '➜'}
+                </span>
+            </button>
+          );
+        })}
+        
+        {!selectedChoiceId && (
+            <button 
+                onClick={() => handleChoiceClick({ id: `${currentId}_skip`, textKey: '', beliefKey: 'default', position: -1 })}
+                className="w-full p-4 text-center bg-slate-100 border border-slate-200 rounded-[1.5rem] shadow-sm font-black text-[10px] uppercase text-slate-500 active:scale-[0.98] transition-all hover:border-slate-300"
+            >
+                {t.ui.skip_button}
+            </button>
+        )}
       </div>
     </div>
   );
@@ -127,7 +162,7 @@ export const BodySyncView = memo<BodySyncViewProps>(({ lang, t, onSync }) => {
            <div className="w-28 h-28 rounded-full bg-slate-950 flex flex-col items-center justify-center text-indigo-400 border-4 border-slate-100 shadow-2xl z-10 relative overflow-hidden">
              <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4xKSIvPjwvc3ZnPg==')] opacity-20"></div>
              <span className="text-3xl mb-1 animate-pulse">📡</span>
-             <span className="text-[8px] font-mono uppercase tracking-widest text-indigo-400/70">{lang === 'ka' ? 'კავშირი' : 'UPLINK'}</span>
+             <span className="text-[8px] font-mono uppercase tracking-widest text-indigo-400/70">{lang === 'ka' ? 'კავშირი' : 'СВЯЗЬ'}</span>
              
              <svg className="absolute inset-0 w-full h-full animate-spin-slow opacity-30" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="1" strokeDasharray="5,5" />
@@ -145,7 +180,7 @@ export const BodySyncView = memo<BodySyncViewProps>(({ lang, t, onSync }) => {
               <button 
                 key={s} 
                 onClick={() => onSync(s)}
-                className="p-4 bg-white border border-slate-200 rounded-2xl shadow-sm font-bold text-[10px] uppercase hover:border-indigo-500 transition-all active:scale-95 text-slate-700"
+                className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm font-black text-[11px] uppercase hover:border-indigo-500 transition-all active:scale-95 text-slate-700"
               >
                  {t.sync[s as keyof typeof t.sync]}
               </button>

@@ -143,6 +143,12 @@ export interface Translations {
       close_session: string;
       clinical_hypotheses: string;
       verdict_protocol: string;
+      client_id_label: string;
+      signal_quality: string;
+      shadow_mechanic: string;
+      alliance_label: string;
+      contract_label: string;
+      resistance_label: string;
   };
   pro_headers: Record<string, string>;
   phases: Record<string, string>;
@@ -192,7 +198,6 @@ export interface SessionPulseNode {
     zScore: number; 
 }
 
-// FIX: Added missing types for AnalysisResult and RawAnalysisResult
 export interface ClinicalWarning { type: string; severity: 'LOW' | 'MEDIUM' | 'HIGH'; messageKey: string; }
 export type TaskKey = string;
 export interface ProtocolStep { day: number; phase: PhaseType; taskKey: TaskKey; targetMetricKey: string; }
@@ -215,7 +220,6 @@ export interface NeuralCorrelation { nodeId: string; domain: DomainType; type: '
 export interface SystemConflict { key: string; severity: 'high' | 'medium' | 'low'; domain: DomainType; }
 export interface IntegrityBreakdown { coherence: number; sync: number; stability: number; label: string; description: string; status: MetricLevel; }
 
-// FIX: Added missing structural types for services
 export interface GameHistoryItem {
     beliefKey: string;
     sensation: string;

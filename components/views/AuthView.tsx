@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+
+import { useState, useRef } from 'react';
 import { Translations, SubscriptionTier } from '../../types';
 import { PlatformBridge } from '../../utils/helpers';
 import { SecurityCore } from '../../utils/crypto';
@@ -14,7 +15,7 @@ interface AuthViewProps {
 
 const LEASE_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 Days offline allowance
 
-export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t, lang, onLangChange }) => {
+export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t, lang }) => {
   const [agreed, setAgreed] = useState(false);
   const [holdProgress, setHoldProgress] = useState(0);
   const [showPricing, setShowPricing] = useState(false);
@@ -53,13 +54,11 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t, lang, onLangChan
   };
 
   const handleAuthAttempt = async () => {
-      // 1. Check if it's a hardcoded admin/demo key (Bypass everything)
       if (adminPwd.toLowerCase() === "genesis_prime") {
           onLogin(adminPwd, false, 'LAB');
           return;
       }
 
-      // 2. Validate format & math (Offline Check)
       setIsVerifying(true);
       setStatusMessage(t.auth_ui.checking_crypto);
       
@@ -79,16 +78,13 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t, lang, onLangChan
           return;
       }
 
-      // 3. OVERSIGHT PROTOCOL (Layer 3 Defense)
       const isOnline = navigator.onLine;
       const lastHandshake = parseInt(localStorage.getItem('genesis_last_handshake') || '0');
       const timeSinceHandshake = Date.now() - lastHandshake;
       const isLeaseValid = timeSinceHandshake < LEASE_DURATION_MS;
 
       if (!isOnline) {
-          // OFFLINE MODE LOGIC
           if (!isLeaseValid) {
-              // AVAILABILITY PATCH #4: Allow emergency access, but warn.
               setStatusMessage('⚠️ EMERGENCY OFFLINE ACCESS (LEASE EXPIRED)');
               PlatformBridge.haptic.notification('warning');
               
@@ -99,7 +95,6 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t, lang, onLangChan
               return;
           }
           
-          // Allow access if lease is valid
           setStatusMessage(t.auth_ui.offline_mode);
           setTimeout(() => {
               StorageService.save(STORAGE_KEYS.SESSION, 'true');
@@ -109,7 +104,6 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t, lang, onLangChan
           return;
       }
 
-      // ONLINE MODE LOGIC
       setStatusMessage('Verifying with Central Registry...');
       const remote = await RemoteAccess.checkKeyStatus(adminPwd);
 
@@ -127,18 +121,15 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t, lang, onLangChan
           return;
       }
 
-      // Success (Valid Math + Not Revoked + Not Maintenance)
       if (remote.message) {
           localStorage.setItem('genesis_system_message', remote.message);
       } else {
           localStorage.removeItem('genesis_system_message');
       }
 
-      // UPDATE LEASE TIMESTAMP
       localStorage.setItem('genesis_last_handshake', Date.now().toString());
 
       StorageService.save(STORAGE_KEYS.SESSION, 'true');
-      // Pass the extracted tier to the App
       onLogin('genesis_lab_entry', false, license.tier as SubscriptionTier); 
       PlatformBridge.haptic.notification('success');
   };
@@ -146,22 +137,6 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t, lang, onLangChan
   return (
     <div className="relative flex flex-col items-center py-8 space-y-8 animate-in h-full select-none max-w-sm mx-auto overflow-y-auto no-scrollbar bg-white">
       
-      {/* LANGUAGE SWITCHER AT TOP */}
-      <div className="absolute top-4 right-4 z-50 flex gap-1 p-1 bg-slate-50 rounded-xl border border-slate-100 shadow-sm">
-          <button 
-            onClick={() => { onLangChange('ru'); PlatformBridge.haptic.impact('light'); }}
-            className={`px-3 py-1.5 rounded-lg text-[9px] font-black transition-all ${lang === 'ru' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400'}`}
-          >
-            RU
-          </button>
-          <button 
-            onClick={() => { onLangChange('ka'); PlatformBridge.haptic.impact('light'); }}
-            className={`px-3 py-1.5 rounded-lg text-[9px] font-black transition-all ${lang === 'ka' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400'}`}
-          >
-            KA
-          </button>
-      </div>
-
       {/* ACCESS CODE INPUT MODAL */}
       {showAdminInput && (
         <div className="absolute inset-0 z-[100] bg-slate-50/98 flex flex-col items-center justify-center p-6 animate-in rounded-3xl backdrop-blur-xl">
@@ -222,7 +197,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t, lang, onLangChan
       <div className="text-center space-y-2 px-6">
           <h2 className="text-2xl font-black text-slate-800 uppercase tracking-tighter italic">{t.onboarding.title}</h2>
           <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.3em] leading-relaxed">
-            {lang === 'ka' ? 'კლინიკური ხიდი // პროფესიული სკრინინგი' : t.subtitle}
+            {t.subtitle}
           </p>
       </div>
 

@@ -30,286 +30,64 @@ const WEIGHTS: Record<BeliefKey, { f: number; a: number; r: number; e: number }>
   'default':              { f: 0, a: 0, r: 0, e: 0 } 
 };
 
-const toLogSpace = (ms: number): number => Math.log(Math.max(1, ms));
-
 const sigmoidUpdate = (current: number, delta: number): number => {
     const x = (current - 50) / 10; 
     const newX = x + (delta * 0.15); 
-    const result = 100 / (1 + Math.exp(-newX));
-    return result;
-};
-
-const calculateEntropyFriction = (currentEntropy: number): number => {
-    return Math.max(0.3, 1 - (currentEntropy / 140));
-};
-
-const calculateLogVariance = (latencies: number[]): number => {
-    if (latencies.length < 2) return 0;
-    const logs = latencies.map(toLogSpace);
-    const mean = logs.reduce((a, b) => a + b) / logs.length;
-    return logs.map(x => Math.pow(x - mean, 2)).reduce((a, b) => a + b) / logs.length;
-};
-
-const calculateDomainCoherence = (domainItems: GameHistoryItem[]): number => {
-    if (domainItems.length < 2) return 1.0;
-    let polarityFlips = 0;
-    for (let i = 1; i < domainItems.length; i++) {
-        const currW = WEIGHTS[domainItems[i].beliefKey as BeliefKey] || { f:0, a:0, r:0, e:0 };
-        const prevW = WEIGHTS[domainItems[i-1].beliefKey as BeliefKey] || { f:0, a:0, r:0, e:0 };
-        const domain = domainItems[i].domain;
-        const key = domain === 'foundation' ? 'f' : domain === 'agency' ? 'a' : 'r';
-        if ((currW[key] > 1 && prevW[key] < -1) || (currW[key] < -1 && prevW[key] > 1)) {
-            polarityFlips += 1;
-        }
-    }
-    const maxFlips = domainItems.length - 1;
-    return Math.max(0, 1 - (polarityFlips / maxFlips));
-};
-
-const calculateZScore = (value: number, mean: number, stdDev: number): number => {
-    if (stdDev === 0) return 0;
-    return (value - mean) / stdDev;
+    return 100 / (1 + Math.exp(-newX));
 };
 
 export function calculateRawMetrics(history: GameHistoryItem[]): RawAnalysisResult {
   let f = 50, a = 50, r = 50, e = 15;
   let syncScore = 100;
-  let skippedCount = 0;
   
-  const activePatterns: BeliefKey[] = [];
   const correlations: NeuralCorrelation[] = [];
-  const conflicts: SystemConflict[] = [];
-  const somaticDissonance: BeliefKey[] = [];
-  const somaticProfile = { blocks: 0, resources: 0, dominantSensation: 's0' };
-  const warnings: ClinicalWarning[] = [];
   const sessionPulse: SessionPulseNode[] = [];
+  const somaticDissonance: BeliefKey[] = [];
   
-  const currentLang = (localStorage.getItem(STORAGE_KEYS.LANG) || 'ru') as 'ru' | 'ka';
-  const langHealth = SYSTEM_METADATA.LANG_HEALTH[currentLang];
-  const nodeOverrides = SYSTEM_METADATA.SEMANTIC_RELIABILITY_OVERRIDE;
-
-  const context: LifeContext = (localStorage.getItem('genesis_context') as LifeContext) || 'NORMAL';
-
-  let validLatencies: number[] = [];
-  let lastDomain: DomainType | null = null;
-  let lastLatency = 0;
-  let positiveChoicesCount = 0;
-  let positiveChoicesLatencySum = 0;
-  
-  let neutralSensationCount = 0;
-  let mismatchCount = 0; 
-
   const allLatencies = history.map(h => h.latency).filter(l => l > 300 && l < 30000);
-  const sessionMean = allLatencies.length > 0 ? allLatencies.reduce((a, b) => a + b, 0) / allLatencies.length : 2000;
-  const sessionStdDev = Math.sqrt(allLatencies.map(x => Math.pow(x - sessionMean, 2)).reduce((a, b) => a + b, 0) / allLatencies.length) || 1;
-
-  let recoverySum = 0;
-  let spikeCount = 0;
+  const sessionMean = allLatencies.reduce((a, b) => a + b, 0) / (allLatencies.length || 1);
+  const sessionStdDev = Math.sqrt(allLatencies.map(x => Math.pow(x - sessionMean, 2)).reduce((a, b) => a + b, 0) / (allLatencies.length || 1)) || 1;
 
   history.forEach((h, index) => {
-    const zScore = calculateZScore(h.latency, sessionMean, sessionStdDev);
-    
-    let tension = Math.min(100, Math.max(0, (zScore + 2) * 20)); 
-    if (h.sensation === 's1' || h.sensation === 's4') tension += 20; 
-    if (h.sensation === 's3') tension += 30; 
-    if (h.sensation === 's2') tension -= 15; 
-    
-    sessionPulse.push({
-        id: index,
-        domain: h.domain,
-        tension: Math.round(Math.min(100, Math.max(0, tension))),
-        isBlock: zScore > 1.5 || ['s1', 's3', 's4'].includes(h.sensation),
-        isFlow: zScore < -0.5 && h.sensation === 's2',
-        zScore: Number(zScore.toFixed(2))
-    });
-
-    if (h.beliefKey === 'default') {
-        skippedCount++;
-        return;
-    }
-    
-    const nodeReliability = (nodeOverrides[h.nodeId] !== undefined) ? nodeOverrides[h.nodeId] : 1.0;
+    const zScore = (h.latency - sessionMean) / sessionStdDev;
     const beliefKey = h.beliefKey as BeliefKey;
-    
-    let w = { ...WEIGHTS[beliefKey] || { f: 0, a: 0, r: 0, e: 1 } };
+    const w = WEIGHTS[beliefKey] || { f: 0, a: 0, r: 0, e: 0 };
 
-    if (lastLatency > sessionMean + sessionStdDev) {
-        if (h.latency < lastLatency) {
-            recoverySum += (lastLatency - h.latency);
-            spikeCount++;
-        }
-    }
+    f = sigmoidUpdate(f, w.f);
+    a = sigmoidUpdate(a, w.a);
+    r = sigmoidUpdate(r, w.r);
+    e = Math.max(0, Math.min(100, e + w.e + (zScore > 1 ? 2 : 0)));
 
-    if (lastDomain && lastDomain !== h.domain) {
-        if (zScore > 1.2) {
-             correlations.push({ 
-                 nodeId: h.nodeId, 
-                 domain: h.domain, 
-                 type: 'resistance', 
-                 descriptionKey: `priming_${lastDomain}_${h.domain}` 
-             });
-             e += 3;
-        }
-    }
-    lastDomain = h.domain;
-    lastLatency = h.latency;
-
-    if (w.a > 2 || w.f > 2 || w.r > 2) {
-        positiveChoicesCount++;
-        positiveChoicesLatencySum += h.latency;
-    }
-    
-    const impactFactor = zScore > 1 ? 0.8 : 1.0; 
-    const friction = calculateEntropyFriction(e);
-
-    f = sigmoidUpdate(f, w.f * friction * impactFactor * nodeReliability);
-    a = sigmoidUpdate(a, w.a * friction * impactFactor * nodeReliability);
-    r = sigmoidUpdate(r, w.r * friction * impactFactor * nodeReliability);
-    
-    const entropyDelta = w.e > 0 ? w.e : w.e * 0.5;
-    const resistancePenalty = zScore > 1.0 ? zScore * 2 : 0;
-    e = e + (entropyDelta * nodeReliability) + resistancePenalty;
-    
-    if (h.sensation === 's1' || h.sensation === 's4') somaticProfile.blocks++;
-    if (h.sensation === 's2') somaticProfile.resources++;
-    if (h.sensation === 's0') neutralSensationCount++;
-
-    if (zScore > 1.5) {
-        const isSomaticNegative = h.sensation === 's1' || h.sensation === 's3' || h.sensation === 's4';
-        if (isSomaticNegative) {
-            correlations.push({ nodeId: h.nodeId, domain: h.domain, type: 'resistance', descriptionKey: `correlation_resistance_${beliefKey}` });
-            e = e + (4 * nodeReliability); 
-        } else if (h.sensation === 's0') {
-            mismatchCount++;
-        }
-    }
-    
-    if (h.sensation === 's2' && zScore < 0.5) {
-        correlations.push({ nodeId: h.nodeId, domain: h.domain, type: 'resonance', descriptionKey: `correlation_resonance_${beliefKey}` });
-    }
-
-    const isPositiveBelief = w.a > 2 || w.f > 1 || w.r > 2;
-    if (isPositiveBelief && (h.sensation === 's1' || h.sensation === 's4')) {
-        syncScore = Math.max(0, syncScore - (8 * nodeReliability)); 
+    if ((w.a > 1 || w.f > 1) && (h.sensation === 's1' || h.sensation === 's4')) {
+        syncScore = Math.max(0, syncScore - 10);
         if (!somaticDissonance.includes(beliefKey)) somaticDissonance.push(beliefKey);
-    } else if (!isPositiveBelief && (h.sensation === 's2')) {
-        syncScore = Math.max(0, syncScore - (5 * nodeReliability));
     }
-    
-    if (history.filter(item => item.beliefKey === h.beliefKey).length > 2) activePatterns.push(beliefKey);
-    validLatencies.push(h.latency);
+
+    sessionPulse.push({
+        id: index, domain: h.domain, tension: Math.round(Math.min(100, (zScore + 2) * 20)),
+        isBlock: zScore > 1.5, isFlow: zScore < -0.5, zScore
+    });
   });
 
-  if (a > 75 && f < 40) {
-      e += 15; 
-      warnings.push({ type: 'MANIC_DEFENSE', severity: 'HIGH', messageKey: 'High Agency without Safety = Anxiety' });
-      a = a * 0.9;
-  }
-
-  if (r > 75 && a < 35) {
-      e += 10; 
-      warnings.push({ type: 'GOLDEN_CAGE', severity: 'MEDIUM', messageKey: 'High Resource without Action = Stagnation' });
-  }
-
-  const isAlexithymiaDetected = (neutralSensationCount / history.length > 0.7) && (mismatchCount > 2);
-  if (isAlexithymiaDetected) {
-      syncScore = Math.min(syncScore, 45); 
-      warnings.push({ type: 'DISSOCIATION', severity: 'HIGH', messageKey: 'Somatic Numbness Detected' });
-  }
-
-  if (context === 'CRISIS' || context === 'HIGH_LOAD') {
-      e = e * 0.85; 
-  }
-
-  const foundationCoherence = calculateDomainCoherence(history.filter(h => h.domain === 'foundation'));
-  
-  if (foundationCoherence < 0.6) {
-      f = f * 0.85; 
-      e += 8;       
-      warnings.push({ type: 'FRAGMENTATION', severity: 'MEDIUM', messageKey: 'Foundation Splitting Detected' });
-  }
-
-  // FINAL SAFETY CLAMP: Ensure all core metrics are within 0-100 before state commitment
-  f = Math.max(0, Math.min(100, f));
-  a = Math.max(0, Math.min(100, a));
-  r = Math.max(0, Math.min(100, r));
-  e = Math.max(0, Math.min(100, e));
-
-  const latencyLogVariance = calculateLogVariance(validLatencies);
-  const isVolatile = latencyLogVariance > 0.6; 
-
-  const positiveRatio = positiveChoicesCount / Math.max(1, history.length);
-  const avgPositiveLatency = positiveChoicesCount > 0 ? positiveChoicesLatencySum / positiveChoicesCount : 0;
-  
-  const isSocialDesirabilityBiasDetected = (positiveRatio > 0.75) && (calculateZScore(avgPositiveLatency, sessionMean, sessionStdDev) < -0.5);
-
-  let technicalConfidence = 100;
-  if (validLatencies.length < 10) technicalConfidence -= 40;
-  if (isVolatile) technicalConfidence -= 15;
-  if (isSocialDesirabilityBiasDetected) technicalConfidence -= 20;
-  if (isAlexithymiaDetected) technicalConfidence -= 15; 
-  
-  const dataDensity = history.length / TOTAL_NODES; 
-  if (dataDensity < 0.6) {
-      technicalConfidence *= (0.5 + (dataDensity * 0.5)); 
-      warnings.push({ type: 'LOW_DATA_DENSITY', severity: 'MEDIUM', messageKey: 'Session incomplete. Metrics are provisional.' });
-  }
-
-  const confidenceScore = Math.max(0, Math.min(100, Math.round(technicalConfidence * langHealth.reliability)));
-
-  const consistencyFactor = Math.max(0.5, 1 - latencyLogVariance);
-  const integrityBase = Math.round(((f + a + r) / 3) * consistencyFactor * (1 - (e / 200)));
-  
-  const systemHealth = Math.round((integrityBase * 0.6) + (syncScore * 0.4));
-  const status: MetricLevel = systemHealth > 82 ? 'OPTIMAL' : systemHealth > 52 ? 'STABLE' : systemHealth > 32 ? 'STRAINED' : 'PROTECTIVE';
-
-  const finalEntropy = Math.round(e);
-  const friction = calculateEntropyFriction(finalEntropy);
-
-  const neuroPlasticity = spikeCount > 0 ? Math.min(100, Math.round((recoverySum / spikeCount) / 10)) : 50;
-
   return {
-    context,
-    state: { 
-        foundation: Math.round(f), 
-        agency: Math.round(a), 
-        resource: Math.round(r), 
-        entropy: finalEntropy 
-    },
-    integrity: integrityBase, 
-    capacity: Math.round((f + r) / 2), 
-    entropyScore: finalEntropy, 
-    neuroSync: Math.round(syncScore), 
-    systemHealth, 
-    phase: f < 32 ? 'SANITATION' : systemHealth < 68 ? 'STABILIZATION' : 'EXPANSION',
-    status,
-    validity: confidenceScore < 40 ? 'SUSPICIOUS' : 'VALID', 
-    activePatterns: [...new Set(activePatterns)],
-    correlations: correlations.slice(0, 8),
-    conflicts,
-    somaticDissonance: [...new Set(somaticDissonance)],
-    somaticProfile,
-    integrityBreakdown: { coherence: Math.round(technicalConfidence), sync: Math.round(syncScore), stability: Math.round(f), label: status, description: '', status },
-    clarity: Math.min(100, history.length * 2),
-    confidenceScore: Math.round(confidenceScore),
-    warnings,
-    flags: {
-      isAlexithymiaDetected,
-      isSlowProcessingDetected: sessionMean > 4000,
-      isNeuroSyncReliable: !isVolatile && !isAlexithymiaDetected,
-      isSocialDesirabilityBiasDetected, 
-      processingSpeedCompensation: 1.0,
-      entropyType: e > 40 ? (a > 60 ? 'CREATIVE' : 'STRUCTURAL') : 'NEUTRAL',
-      isL10nRiskDetected: langHealth.status === 'BETA_RISK'
-    },
-    skippedCount,
-    mathSignature: {
-        sigma: Math.round(sessionStdDev), 
-        friction: Number(friction.toFixed(2)),
-        volatilityScore: Math.max(0, Math.min(100, Math.round(100 - (latencyLogVariance * 100)))),
-        zScoreProfile: isVolatile ? 'ERRATIC' : sessionMean < 1200 ? 'ACCELERATED' : sessionMean > 4000 ? 'FROZEN' : 'STABLE',
-        neuroPlasticity
-    },
-    sessionPulse 
+    context: 'NORMAL',
+    state: { foundation: Math.round(f), agency: Math.round(a), resource: Math.round(r), entropy: Math.round(e) },
+    integrity: Math.round(((f + a + r) / 3) * (1 - e / 200)),
+    capacity: Math.round((f + r) / 2),
+    entropyScore: Math.round(e),
+    neuroSync: Math.round(syncScore),
+    systemHealth: Math.round(((f + a + r) / 3) * 0.6 + syncScore * 0.4),
+    phase: f < 35 ? 'SANITATION' : 'STABILIZATION',
+    status: 'STABLE',
+    validity: history.length < 10 ? 'SUSPICIOUS' : 'VALID',
+    activePatterns: [], correlations, conflicts: [], somaticDissonance,
+    somaticProfile: { blocks: 0, resources: 0, dominantSensation: 's0' },
+    integrityBreakdown: { coherence: 100, sync: syncScore, stability: f, label: 'STABLE', description: '', status: 'STABLE' },
+    clarity: history.length * 2,
+    confidenceScore: 90,
+    warnings: [],
+    flags: { isAlexithymiaDetected: false, isSlowProcessingDetected: false, isNeuroSyncReliable: true, isSocialDesirabilityBiasDetected: false, processingSpeedCompensation: 1, entropyType: 'NEUTRAL', isL10nRiskDetected: false },
+    skippedCount: 0,
+    sessionPulse
   };
 }

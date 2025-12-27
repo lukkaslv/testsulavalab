@@ -1,6 +1,7 @@
+
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Layout } from './components/Layout';
-import { MODULE_REGISTRY, ONBOARDING_NODES_COUNT, DOMAIN_SETTINGS } from './constants';
+import { MODULE_REGISTRY, ONBOARDING_NODES_COUNT, TOTAL_NODES, DOMAIN_SETTINGS } from './constants';
 import { translations } from './translations';
 import { calculateRawMetrics } from './services/psychologyService';
 import { DiagnosticEngine } from './services/diagnosticEngine';
@@ -212,10 +213,14 @@ const App: React.FC = () => {
 
   const handleReset = useCallback((force: boolean = false) => {
     const performResetAction = () => {
+      // 1. Clear Storage
       StorageService.clear();
       sessionStorage.removeItem('genesis_boot_seen');
       localStorage.removeItem(STORAGE_KEYS.SESSION);
       localStorage.removeItem('genesis_tier');
+      localStorage.removeItem('genesis_system_message');
+      
+      // 2. Clear State
       setBootShown(false);
       setCompletedNodeIds([]);
       setHistory([]);
@@ -223,14 +228,21 @@ const App: React.FC = () => {
       setIsDemo(false);
       setIsPro(false);
       setLicenseTier('FREE');
-      setView('auth');
+      
+      // 3. Forced UI Reset (Ensures no stale data remains in memory)
       PlatformBridge.haptic.notification('success');
+      setTimeout(() => {
+          window.location.reload();
+      }, 300);
     };
-    if (force) { performResetAction(); } else {
-      PlatformBridge.showConfirm(
-        lang === 'ru' ? "Сбросить текущую сессию?" : "გსურთ სესიის გადატვირთვა?",
-        (confirmed) => { if (confirmed) performResetAction(); }
-      );
+
+    if (force) { 
+        performResetAction(); 
+    } else {
+        PlatformBridge.showConfirm(
+            lang === 'ru' ? "СБРОСИТЬ ВСЕ ДАННЫЕ? Это действие невозможно отменить." : "ყველა მონაცემის წაშლა? ამ ქმედების გაუქმება შეუძლებელია.",
+            (confirmed) => { if (confirmed) performResetAction(); }
+        );
     }
   }, [lang]);
 
@@ -301,7 +313,7 @@ const App: React.FC = () => {
     switch (view) {
       case 'auth': return <AuthView onLogin={handleLogin} t={t} lang={lang} onLangChange={setLang} />;
       case 'boot': return <BootView onComplete={() => { sessionStorage.setItem('genesis_boot_seen', 'true'); setBootShown(true); setView('dashboard'); }} t={t} />;
-      case 'dashboard': return <DashboardView lang={lang} t={t} isDemo={isDemo} globalProgress={globalProgress} result={result} currentDomain={currentDomain} nodes={nodes} completedNodeIds={completedNodeIds} onSetView={setView as any} onSetCurrentDomain={onSetCurrentDomain => setCurrentDomain(onSetCurrentDomain)} onStartNode={engine.startNode} onLogout={handleLogout} scanHistory={scanHistory} onResume={handleContinue} licenseTier={licenseTier} />;
+      case 'dashboard': return <DashboardView lang={lang} t={t} isDemo={isDemo} isPro={isPro} globalProgress={globalProgress} result={result} currentDomain={currentDomain} nodes={nodes} completedNodeIds={completedNodeIds} onSetView={setView as any} onSetCurrentDomain={onSetCurrentDomain => setCurrentDomain(onSetCurrentDomain)} onStartNode={engine.startNode} onLogout={handleLogout} scanHistory={scanHistory} onResume={handleContinue} licenseTier={licenseTier} />;
       case 'test': return !activeModule ? null : <TestView t={t} activeModule={activeModule} currentId={engine.state.currentId} scene={MODULE_REGISTRY[activeModule]?.[engine.state.currentId]} onChoice={engine.handleChoice} onExit={() => setView('dashboard')} getSceneText={getSceneText} adaptiveState={adaptiveState} />;
       case 'body_sync': return <BodySyncView lang={lang} t={t} onSync={engine.syncBodySensation} />;
       case 'reflection': return <ReflectionView t={t} sensation={history[history.length - 1]?.sensation} />;

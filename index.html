@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ru">
   <head>
@@ -28,28 +29,30 @@
         margin: 0; 
         line-height: 1.6;
         -webkit-font-smoothing: antialiased;
+        font-size: 16px;
       }
 
-      /* Premium Georgian Harmony - White Team Approved */
+      /* Professional Mkhedruli Harmony Protocol */
       [lang="ka"] {
         line-height: 1.85 !important;
         letter-spacing: -0.01em !important;
         font-feature-settings: "case" 1, "ss01" 1;
       }
 
-      [lang="ka"] h1, [lang="ka"] h2, [lang="ka"] h3 {
+      [lang="ka"] h1, [lang="ka"] h2, [lang="ka"] h3, [lang="ka"] h4 {
         font-weight: 800 !important; 
         letter-spacing: -0.02em !important;
         line-height: 1.4 !important;
+        padding-bottom: 0.1em;
       }
 
-      [lang="ka"] p, [lang="ka"] button, [lang="ka"] span {
+      [lang="ka"] p, [lang="ka"] span {
         font-weight: 500 !important;
-        font-size: 0.96em !important;
       }
 
-      [lang="ka"] .font-mono {
-        letter-spacing: 0.05em !important;
+      /* Global scale up for mobile readability */
+      @media (max-width: 640px) {
+        body { font-size: 17px; }
       }
 
       /* Noise Overlay */
@@ -60,7 +63,7 @@
         background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
         pointer-events: none;
         z-index: 1000;
-        opacity: 0.4;
+        opacity: 0.3;
       }
 
       #root { height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
@@ -92,25 +95,6 @@
       
       button, .card-interactive {
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-      }
-
-      .origin-label {
-        font-size: 7px;
-        letter-spacing: 0.15em;
-        font-weight: 900;
-        text-transform: uppercase;
-        padding: 2px 6px;
-        border-radius: 4px;
-      }
-
-      @keyframes shake {
-        10%, 90% { transform: translate3d(-1px, 0, 0); }
-        20%, 80% { transform: translate3d(2px, 0, 0); }
-        30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-        40%, 60% { transform: translate3d(4px, 0, 0); }
-      }
-      .animate-shake {
-        animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both;
       }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">

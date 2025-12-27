@@ -29,7 +29,6 @@ export const resolvePath = (obj: Record<string, any>, path: string): string => {
   
   if (typeof current === 'string') return current;
   if (typeof current === 'object' && current !== null) {
-    // If we resolved to an object but expected a string (like a task object)
     return `[OBJECT_ERROR: ${path}]`;
   }
   
@@ -37,8 +36,6 @@ export const resolvePath = (obj: Record<string, any>, path: string): string => {
 };
 
 // --- PLATFORM BRIDGE ---
-// Abstracts the Telegram SDK dependencies to allow functioning in standard web browsers.
-
 type HapticStyle = 'light' | 'medium' | 'heavy' | 'rigid' | 'soft';
 type NotificationType = 'error' | 'success' | 'warning';
 
@@ -61,29 +58,28 @@ export const PlatformBridge = {
 
   showConfirm: (message: string, callback: (confirmed: boolean) => void) => {
     const tg = window.Telegram?.WebApp;
-    // Fix: "Method showPopup is not supported in version 6.0"
-    // We explicitly check for version 6.2+ before calling showPopup.
-    // We avoid calling deprecated showConfirm() on 6.0 via the library wrapper because it might incorrectly map to showPopup.
-    // Fallback to native window.confirm which works in WebViews.
     
-    if (tg && tg.showPopup && tg.isVersionAtLeast && tg.isVersionAtLeast('6.2')) {
-      tg.showPopup({
-        message: message,
-        buttons: [
-            { type: 'ok', id: 'ok' },
-            { type: 'cancel', id: 'cancel' }
-        ]
-      }, (buttonId: string) => {
-        callback(buttonId === 'ok');
-      });
-    } else {
-      // Fallback for v6.0, v6.1 or non-Telegram
-      // Delaying slightly to ensure main thread isn't blocked if this is called from a tight loop
-      setTimeout(() => {
-          const confirmed = window.confirm(message);
-          callback(confirmed);
-      }, 50);
+    // Attempting Telegram native popup first for version 6.2+
+    try {
+      if (tg && tg.isVersionAtLeast && tg.isVersionAtLeast('6.2') && tg.showPopup) {
+        tg.showPopup({
+          message: message,
+          buttons: [
+              { type: 'destructive', id: 'ok', text: 'OK' },
+              { type: 'cancel', id: 'cancel', text: 'Cancel' }
+          ]
+        }, (buttonId: string) => {
+          callback(buttonId === 'ok');
+        });
+        return;
+      }
+    } catch (e) {
+      console.warn("Telegram showPopup failed, falling back to native confirm");
     }
+
+    // Rock-solid fallback for all browsers and old Telegram clients
+    const confirmed = window.confirm(message);
+    callback(confirmed);
   },
 
   haptic: {
@@ -91,7 +87,6 @@ export const PlatformBridge = {
       if (window.Telegram?.WebApp?.HapticFeedback) {
         window.Telegram.WebApp.HapticFeedback.impactOccurred(style);
       } else if (navigator.vibrate) {
-        // Fallback for standard browsers
         const durations = { light: 10, medium: 20, heavy: 40, rigid: 15, soft: 10 };
         navigator.vibrate(durations[style] || 10);
       }
