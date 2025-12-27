@@ -1,5 +1,4 @@
-
-import React, { memo } from 'react';
+import { memo } from 'react';
 import { Translations } from '../../types';
 
 interface BodySyncViewProps {

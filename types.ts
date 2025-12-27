@@ -143,6 +143,8 @@ export interface Translations {
       clinical_hypotheses: string;
       verdict_protocol: string;
   };
+  // Added pro_headers to Translations interface to fix build errors
+  pro_headers: Record<string, string>;
   phases: Record<string, string>;
   tasks: Record<string, any>;
   scenes: Record<string, { title: string; desc: string; c1: string; c2: string; c3: string }>;
@@ -174,21 +176,20 @@ export type PhaseType = 'SANITATION' | 'STABILIZATION' | 'EXPANSION';
 export type VerdictKey = 'HEALTHY_SCALE' | 'BRILLIANT_SABOTAGE' | 'INVISIBILE_CEILING' | 'LEAKY_BUCKET' | 'PARALYZED_GIANT' | 'FROZEN_POTENTIAL' | 'CRITICAL_DEFICIT';
 
 export interface MathSignature {
-    sigma: number; // Standard Deviation of Latency (Consistency)
-    friction: number; // Entropy Coefficient (Efficiency loss)
-    volatilityScore: number; // 0-100 normalized score
+    sigma: number; 
+    friction: number; 
+    volatilityScore: number; 
     zScoreProfile: 'STABLE' | 'ERRATIC' | 'ACCELERATED' | 'FROZEN';
-    neuroPlasticity: number; // Ability to recover from high-latency spikes
+    neuroPlasticity: number; 
 }
 
-// Session EKG Point
 export interface SessionPulseNode {
     id: number;
     domain: DomainType;
-    tension: number; // 0-100 normalized stress level (latency + somatic)
-    isBlock: boolean; // Did they freeze?
-    isFlow: boolean; // Was it effortless?
-    zScore: number; // Normalized deviation
+    tension: number; 
+    isBlock: boolean; 
+    isFlow: boolean; 
+    zScore: number; 
 }
 
 export interface RawAnalysisResult { state: { foundation: number; agency: number; resource: number; entropy: number }; integrity: number; capacity: number; entropyScore: number; neuroSync: number; systemHealth: number; phase: PhaseType; status: MetricLevel; validity: 'VALID' | 'SUSPICIOUS' | 'INVALID' | 'BREACH'; activePatterns: BeliefKey[]; correlations: NeuralCorrelation[]; conflicts: SystemConflict[]; somaticDissonance: BeliefKey[]; somaticProfile: { blocks: number; resources: number; dominantSensation: string }; integrityBreakdown: IntegrityBreakdown; clarity: number; confidenceScore: number; warnings: ClinicalWarning[]; flags: AnalysisFlags; skippedCount: number; mathSignature?: MathSignature; sessionPulse: SessionPulseNode[]; context: LifeContext; }
@@ -199,7 +200,6 @@ export interface SystemConflict { key: string; severity: 'high' | 'medium' | 'lo
 export interface IntegrityBreakdown { coherence: number; sync: number; stability: number; label: string; description: string; status: MetricLevel; }
 export interface AnalysisFlags { isAlexithymiaDetected: boolean; isSlowProcessingDetected: boolean; isNeuroSyncReliable: boolean; isSocialDesirabilityBiasDetected: boolean; processingSpeedCompensation: number; entropyType: 'NEUTRAL' | 'CREATIVE' | 'STRUCTURAL'; isL10nRiskDetected: boolean; }
 export interface PatternFlags { isMonotonic: boolean; isHighSkipRate: boolean; isFlatline: boolean; isRoboticTiming: boolean; isSomaticMonotony: boolean; isEarlyTermination: boolean; dominantPosition: number | null; }
-// Fixed TaskKey type and applied to ProtocolStep
 export type TaskKey = string;
 export interface ProtocolStep { day: number; phase: PhaseType; taskKey: TaskKey; targetMetricKey: string; }
 export interface ClinicalWarning { type: string; severity: 'LOW' | 'MEDIUM' | 'HIGH'; messageKey: string; }
@@ -226,6 +226,7 @@ export interface SystemicVector {
     origin: string;
     strength: number;
     description: string;
+    proNote: string; // NEW
 }
 
 export interface Intervention {
@@ -248,15 +249,21 @@ export interface ClinicalNarrative {
         generalConfig: string;
         psychodynamicProfile: string; 
         deepAnalysis: string;
+        deepExpl: string; 
         archetypeAnalysis: string;
         clinicalHypotheses: string;
+        hypoExpl: string; 
         activePatterns: string;
         verdictAndRecommendations: string;
         resistanceProfile: string;
         behavioralMarkers: string;
+        behaviorExpl: string; 
         systemicRoot: string;
         therapeuticAlliance: string;
         shadowContract: string;
+        shadowContractExpl: string; 
+        evolutionGoal: string; 
+        evolutionProcess: string; 
         counterTransference: string; 
         therapeuticTrap: string; 
         fragilityPoint: string; 
@@ -268,7 +275,10 @@ export interface ClinicalNarrative {
         clinicalProfile: string;
         systemicVectors: SystemicVector[];
         interventions: Intervention[];
+        interExpl: string; 
         differentialHypotheses: Array<{ label: string; probability: number }>;
+        diffExpl: string; 
+        validityExpl: string; // NEW
     };
 }
 

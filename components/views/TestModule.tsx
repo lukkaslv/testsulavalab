@@ -1,10 +1,6 @@
-
-import React, { memo } from 'react';
+import { memo } from 'react';
 import { DomainType, Translations, Choice, Scene, AdaptiveState } from '../../types';
-import { DOMAIN_SETTINGS, ONBOARDING_NODES_COUNT } from '../../constants';
 import { AdaptiveProgressBar } from '../AdaptiveProgressBar';
-
-// --- COMPONENTS ---
 
 interface TestViewProps {
   t: Translations;
@@ -22,14 +18,12 @@ export const TestView = memo<TestViewProps>(({ t, activeModule, currentId, scene
   const isCalibration = numericId < 3;
   const isAdaptive = adaptiveState.clarity > 20;
 
-  // DETERMINISTIC SYSTEM COMMENTARY
   const showComment = numericId > 0 && (numericId % 7 === 0 || numericId % 11 === 0);
   const commentIndex = (numericId * 3) % t.system_commentary.length;
   const comment = t.system_commentary[commentIndex];
 
   return (
     <div className="space-y-8 py-8 px-4 animate-in flex flex-col h-full">
-      {/* HEADER */}
       <div className="flex justify-between items-center shrink-0">
          <div className="flex items-center gap-3">
              <button onClick={onExit} className="w-10 h-10 flex items-center justify-center bg-slate-100 rounded-full text-slate-500 font-black text-sm hover:bg-slate-200 transition-colors active:scale-90">✕</button>
@@ -42,7 +36,6 @@ export const TestView = memo<TestViewProps>(({ t, activeModule, currentId, scene
          </div>
       </div>
       
-      {/* ADAPTIVE PROGRESS BAR */}
       <AdaptiveProgressBar 
         clarity={adaptiveState.clarity} 
         isAdaptive={isAdaptive} 
@@ -50,7 +43,6 @@ export const TestView = memo<TestViewProps>(({ t, activeModule, currentId, scene
         confidenceScore={adaptiveState.confidenceScore}
       />
 
-      {/* CALIBRATION MODE VISUAL */}
       {isCalibration && (
         <div className="bg-slate-900 p-6 rounded-[2rem] border border-indigo-500/30 space-y-3 relative overflow-hidden group">
             <div className="absolute inset-0 opacity-10 pointer-events-none overflow-hidden">
@@ -70,7 +62,6 @@ export const TestView = memo<TestViewProps>(({ t, activeModule, currentId, scene
         </div>
       )}
 
-      {/* SYSTEM LOG MESSAGE */}
       {showComment && !isCalibration && (
         <div className="bg-indigo-50/50 p-4 rounded-2xl border border-indigo-100/50 animate-pulse flex items-center gap-3 shrink-0">
             <span className="text-lg">📡</span>
@@ -80,7 +71,6 @@ export const TestView = memo<TestViewProps>(({ t, activeModule, currentId, scene
         </div>
       )}
       
-      {/* SCENE CONTENT */}
       <div className="flex-1 flex flex-col justify-center space-y-6">
         <h3 className="text-2xl font-black uppercase text-slate-900 leading-tight tracking-tight">
             {getSceneText(scene.titleKey)}
@@ -94,7 +84,6 @@ export const TestView = memo<TestViewProps>(({ t, activeModule, currentId, scene
         </div>
       </div>
 
-      {/* CHOICES */}
       <div className="space-y-3 shrink-0 pb-6">
         {scene.choices.map((c, i) => (
           <button key={c.id} onClick={() => onChoice(c)} className="w-full p-5 text-left bg-white border border-slate-200 rounded-[1.5rem] shadow-sm font-bold text-xs uppercase flex items-center gap-4 active:scale-[0.98] active:bg-indigo-50 active:border-indigo-200 transition-all group">
@@ -169,12 +158,11 @@ export const BodySyncView = memo<BodySyncViewProps>(({ lang, t, onSync }) => {
 });
 
 interface ReflectionViewProps {
-  lang: 'ru' | 'ka';
   t: Translations;
   sensation: string | undefined;
 }
 
-export const ReflectionView = memo<ReflectionViewProps>(({ lang, t, sensation }) => {
+export const ReflectionView = memo<ReflectionViewProps>(({ t, sensation }) => {
   const feedbackKey = (sensation || 's0') as keyof typeof t.sensation_feedback;
   const message = t.sensation_feedback[feedbackKey] || t.sensation_feedback.s0;
 

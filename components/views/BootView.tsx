@@ -1,14 +1,12 @@
-
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Translations } from '../../types';
 
 interface BootViewProps {
-  isDemo: boolean;
   onComplete: () => void;
   t: Translations;
 }
 
-export const BootView: React.FC<BootViewProps> = ({ isDemo, onComplete, t }) => {
+export const BootView: React.FC<BootViewProps> = ({ onComplete, t }) => {
   const [bootStep, setBootStep] = useState(0);
   const steps = t.boot_sequence;
 

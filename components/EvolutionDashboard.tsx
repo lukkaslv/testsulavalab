@@ -1,6 +1,5 @@
-
 import React, { memo } from 'react';
-import { ScanHistory, Translations } from '../types';
+import { ScanHistory } from '../types';
 import { translations } from '../translations';
 
 interface EvolutionDashboardProps {

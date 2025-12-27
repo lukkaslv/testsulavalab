@@ -1,7 +1,6 @@
-
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Layout } from './components/Layout.tsx';
-import { MODULE_REGISTRY, TOTAL_NODES, ONBOARDING_NODES_COUNT, DOMAIN_SETTINGS } from './constants.ts';
+import { MODULE_REGISTRY, ONBOARDING_NODES_COUNT, DOMAIN_SETTINGS } from './constants.ts';
 // FIXED: Remove .ts extension for consistent module resolution
 import { translations } from './translations';
 import { calculateRawMetrics } from './services/psychologyService.ts';
@@ -48,9 +47,7 @@ const App: React.FC = () => {
   const [history, setHistory] = useState<GameHistoryItem[]>([]);
 
   const engine = useTestEngine({
-    completedNodeIds,
     setCompletedNodeIds: (fn: any) => setCompletedNodeIds(fn),
-    history,
     setHistory: (fn: any) => setHistory(fn),
     setView,
     activeModule,
@@ -214,13 +211,10 @@ const App: React.FC = () => {
   }, [bootShown]);
 
   const handleLogout = useCallback(() => {
-     localStorage.removeItem(STORAGE_KEYS.SESSION);
-     localStorage.removeItem('genesis_tier');
-     sessionStorage.removeItem('genesis_boot_seen');
-     setBootShown(false);
-     setIsPro(false);
-     setLicenseTier('FREE');
+     // User specifically asked to "Exit to Main Menu" instead of resetting session
+     // We don't clear storage here, just return to auth
      setView('auth');
+     PlatformBridge.haptic.impact('medium');
   }, []);
 
   const handleReset = useCallback((force: boolean = false) => {
@@ -323,19 +317,19 @@ const App: React.FC = () => {
     PlatformBridge.openLink(t.results.share_url);
   }, [result, t]);
 
-  const layoutProps = { lang, onLangChange: setLang, soundEnabled, onSoundToggle: () => setSoundEnabled(!soundEnabled), onLogout: handleLogout, onReset: () => handleReset(false) };
+  const layoutProps = { lang, onLangChange: setLang, soundEnabled, onSoundToggle: () => setSoundEnabled(!soundEnabled), onReset: handleLogout };
 
   const renderCurrentView = () => {
     if (dataStatus === 'corrupted') return <DataCorruptionView t={t} onReset={() => handleReset(true)} />;
     switch (view) {
       case 'auth': return <AuthView onLogin={handleLogin} t={t} lang={lang} onLangChange={setLang} />;
-      case 'boot': return <BootView isDemo={isDemo} onComplete={() => { sessionStorage.setItem('genesis_boot_seen', 'true'); setBootShown(true); setView('dashboard'); }} t={t} />;
+      case 'boot': return <BootView onComplete={() => { sessionStorage.setItem('genesis_boot_seen', 'true'); setBootShown(true); setView('dashboard'); }} t={t} />;
       case 'dashboard': return <DashboardView lang={lang} t={t} isDemo={isDemo} globalProgress={globalProgress} result={result} currentDomain={currentDomain} nodes={nodes} completedNodeIds={completedNodeIds} onSetView={setView as any} onSetCurrentDomain={onSetCurrentDomain => setCurrentDomain(onSetCurrentDomain)} onStartNode={engine.startNode} onLogout={handleLogout} scanHistory={scanHistory} onResume={handleContinue} licenseTier={licenseTier} />;
       case 'test': return !activeModule ? null : <TestView t={t} activeModule={activeModule} currentId={engine.state.currentId} scene={MODULE_REGISTRY[activeModule]?.[engine.state.currentId]} onChoice={engine.handleChoice} onExit={() => setView('dashboard')} getSceneText={getSceneText} adaptiveState={adaptiveState} />;
       case 'body_sync': return <BodySyncView lang={lang} t={t} onSync={engine.syncBodySensation} />;
-      case 'reflection': return <ReflectionView lang={lang} t={t} sensation={history[history.length - 1]?.sensation} />;
+      case 'reflection': return <ReflectionView t={t} sensation={history[history.length - 1]?.sensation} />;
       case 'results': if (!result) return null; return result.validity === 'INVALID' ? <InvalidResultsView t={t} onReset={() => handleReset(true)} patternFlags={result.patternFlags} /> : <ResultsView lang={lang} t={t} result={result} isGlitchMode={!!isGlitchMode} onContinue={handleContinue} onShare={handleShare} onBack={() => setView('dashboard')} getSceneText={getSceneText} adaptiveState={adaptiveState} onOpenBriefExplainer={() => setView('brief_explainer')} onNewCycle={handleNewCycle} isPro={isPro} />;
-      case 'compatibility': return <CompatibilityView lang={lang} userResult={result} isProSession={isPro} onUnlockPro={() => setIsPro(true)} t={t} onBack={() => setView('dashboard')} />;
+      case 'compatibility': return <CompatibilityView lang={lang} onUnlockPro={() => setIsPro(true)} t={t} onBack={() => setView('dashboard')} />;
       case 'guide': return <GuideView t={t} onBack={() => setView('dashboard')} />;
       case 'brief_explainer': return <BriefExplainerView t={t} onBack={() => setView('results')} />;
       default: return <AuthView onLogin={handleLogin} t={t} lang={lang} onLangChange={setLang} />;
@@ -345,13 +339,13 @@ const App: React.FC = () => {
   return (
     <div className={`w-full h-full ${isGlitchMode ? 'glitch' : ''}`}>
       {view === 'admin' ? (
-        <AdminPanel t={t} onExit={() => setView('auth')} result={result} history={history} onUnlockAll={engine.forceCompleteAll} glitchEnabled={forceGlitch} onToggleGlitch={() => setForceGlitch(!forceGlitch)} onSetView={setView} />
+        <AdminPanel t={t} onExit={() => setView('auth')} history={history} onUnlockAll={engine.forceCompleteAll} glitchEnabled={forceGlitch} onToggleGlitch={() => setForceGlitch(!forceGlitch)} onSetView={setView} />
       ) : view === 'system_integrity' ? (
         <SystemIntegrityView t={t} onBack={() => setView('admin')} />
       ) : view === 'auth' ? (
         <AuthView onLogin={handleLogin} t={t} lang={lang} onLangChange={setLang} />
       ) : view === 'boot' ? (
-        <BootView isDemo={isDemo} onComplete={() => { sessionStorage.setItem('genesis_boot_seen', 'true'); setBootShown(true); setView('dashboard'); }} t={t} />
+        <BootView onComplete={() => { sessionStorage.setItem('genesis_boot_seen', 'true'); setBootShown(true); setView('dashboard'); }} t={t} />
       ) : (
         <Layout {...layoutProps}>{renderCurrentView()}</Layout>
       )}

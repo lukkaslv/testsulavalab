@@ -1,9 +1,7 @@
 
-import { Translations, BeliefKey } from './types';
+import { Translations } from './types';
 
-// PRE-DEFINED PATTERN CONTENT
 const BELIEF_SCENARIOS: Record<string, { q: string, a: string[] }[]> = {
-    // --- FOUNDATION (Safety, Trust, Body) ---
     'family_loyalty': [
         { q: "Вы добились успеха, которого не было у ваших родителей. Чувство?", a: ["Вина / Неловкость", "Желание спрятать успех", "Гордость и благодарность"] },
         { q: "Родственники просят денег в долг, но вы не хотите давать. Ваши действия?", a: ["Дам, чтобы не обиделись", "Совру, что нет денег", "Откажу прямо"] },
@@ -12,7 +10,7 @@ const BELIEF_SCENARIOS: Record<string, { q: string, a: string[] }[]> = {
     'fear_of_punishment': [
         { q: "Вы допустили ошибку в важном проекте. Первая мысль?", a: ["Сейчас меня уничтожат", "Надо срочно скрыть", "Как это исправить?"] },
         { q: "Авторитетная фигура (босс/ментор) вызывает на разговор.", a: ["Паника / 'Что я натворил?'", "Напряжение / Защита", "Интерес / Диалог"] },
-        { q: "Когда все идет слишком хорошо, вы...", a: ["Жду подвоха", "Саботирую процесс", "Наслаждаюсь"] }
+        { q: "Когда все идет слишком хорошо, вы...", a: ["Jду подвоха", "Саботирую процесс", "Наслаждаюсь"] }
     ],
     'betrayal_trauma': [
         { q: "Близкий человек забыл о важном для вас событии.", a: ["Разрыв отношений / Игнор", "Молчаливая обида", "Спрошу, что случилось"] },
@@ -29,8 +27,6 @@ const BELIEF_SCENARIOS: Record<string, { q: string, a: string[] }[]> = {
         { q: "Ощущение опоры под ногами прямо сейчас.", a: ["Ее нет / Ватные ноги", "Напряжение в ногах", "Устойчивость"] },
         { q: "Мир для вас — это...", a: ["Опасное место", "Поле битвы", "Пространство возможностей"] }
     ],
-
-    // --- MONEY (Resources, Value, Exchange) ---
     'scarcity_mindset': [
         { q: "На счет поступила крупная сумма. Первая реакция?", a: ["Тревога / 'Надо сохранить'", "Желание срочно потратить", "Спокойное удовлетворение"] },
         { q: "Вы видите вещь, которая вам нравится, но она дорогая.", a: ["'Это не для меня'", "Куплю и буду винить себя", "Куплю, если это ценно"] },
@@ -53,11 +49,9 @@ const BELIEF_SCENARIOS: Record<string, { q: string, a: string[] }[]> = {
         { q: "Проверка банковского счета вызывает...", a: ["Тревогу", "Скуку", "Интерес"] },
         { q: "Обсуждение зарплаты с начальством.", a: ["Избегаю до последнего", "Агрессивно требую", "Спокойно обсуждаю ценность"] }
     ],
-
-    // --- AGENCY (Will, Action, Power) ---
     'imposter_syndrome': [
-        { q: "Вас публично похвалили за результат.", a: ["'Им показалось / Повезло'", "Страх разоблачения", "Принимаю ('Я молодец')"] },
-        { q: "Нужно взяться за новую сложную задачу.", a: ["Я не справлюсь", "Нужно еще поучиться", "Интересный вызов"] },
+        { q: "Вас публично похвалили за result. Первая реакция?", a: ["'Им показалось / Повезло'", "Страх разоблачения", "Принимаю ('Я молодец')"] },
+        { q: "Нужно взяться за новую сложную задачу. Ваша мысль?", a: ["Я не справлюсь", "Нужно еще поучиться", "Интересный вызов"] },
         { q: "Сравнение себя с конкурентами вызывает...", a: ["Паралич действий", "Злость и зависть", "Азарт"] }
     ],
     'golden_cage': [
@@ -75,8 +69,6 @@ const BELIEF_SCENARIOS: Record<string, { q: string, a: string[] }[]> = {
         { q: "Препятствие на пути к цели.", a: ["Отказ от цели", "Поиск виноватых", "Поиск обходного пути"] },
         { q: "Вам нужно начать новое дело.", a: ["Жду идеального момента", "Начинаю и бросаю", "Делаю первый шаг"] }
     ],
-
-    // --- SOCIAL (Boundaries, Hierarchy, Role) ---
     'fear_of_conflict': [
         { q: "Вам нахамили в очереди. Реакция?", a: ["Промолчу и уйду", "Вспылю, потом пожалею", "Спокойно обозначу границы"] },
         { q: "Вы не согласны с мнением группы.", a: ["Промолчу", "Соглашусь внешне", "Выскажу свое мнение"] },
@@ -101,8 +93,6 @@ const BELIEF_SCENARIOS: Record<string, { q: string, a: string[] }[]> = {
         { q: "Одиночество для вас — это...", a: ["Изоляция и холод", "Скука", "Время для себя"] },
         { q: "Критика в ваш адрес.", a: ["Разрушает меня", "Вызывает агрессию", "Информация к размышлению"] }
     ],
-
-    // --- LEGACY (Meaning, Time, Death) ---
     'legacy_void': [
         { q: "Смысл вашей деятельности сейчас.", a: ["Выживание / Ипотека", "Доказать кому-то", "Моя личная миссия"] },
         { q: "След, который я хочу оставить.", a: ["Не думал об этом", "Дети и внуки", "Идеи и проекты"] }
@@ -122,32 +112,25 @@ const createPlaceholderScenes = (lang: 'ru' | 'ka') => {
     const domains = ['foundation', 'agency', 'money', 'social', 'legacy'];
     const counts = [15, 10, 10, 10, 5];
     
-    // FULL MAPPING: Ensuring 100% Unique Coverage
-    // Maps node_index to a specific scenario pool
     const nodeBeliefMap: Record<string, string> = {
-        // Foundation (0-14)
         "foundation_0": "foundation_generic", "foundation_1": "foundation_generic", "foundation_2": "body_mind_conflict",
         "foundation_3": "fear_of_punishment", "foundation_4": "betrayal_trauma", "foundation_5": "family_loyalty",
         "foundation_6": "body_mind_conflict", "foundation_7": "fear_of_punishment", "foundation_8": "betrayal_trauma",
         "foundation_9": "family_loyalty", "foundation_10": "body_mind_conflict", "foundation_11": "foundation_generic",
         "foundation_12": "fear_of_punishment", "foundation_13": "betrayal_trauma", "foundation_14": "family_loyalty",
         
-        // Agency (0-9)
         "agency_0": "imposter_syndrome", "agency_1": "ambivalence_loop", "agency_2": "golden_cage", 
         "agency_3": "agency_generic", "agency_4": "imposter_syndrome", "agency_5": "ambivalence_loop",
         "agency_6": "golden_cage", "agency_7": "agency_generic", "agency_8": "imposter_syndrome", "agency_9": "agency_generic",
 
-        // Money (0-9)
         "money_0": "scarcity_mindset", "money_1": "poverty_is_virtue", "money_2": "money_is_danger", 
         "money_3": "impulse_spend", "money_4": "money_generic", "money_5": "scarcity_mindset",
         "money_6": "poverty_is_virtue", "money_7": "money_is_danger", "money_8": "impulse_spend", "money_9": "money_generic",
 
-        // Social (0-9) - EXPANDED
         "social_0": "fear_of_conflict", "social_1": "shame_of_success", "social_2": "social_isolation",
         "social_3": "role_mask", "social_4": "fear_of_conflict", "social_5": "shame_of_success",
         "social_6": "social_isolation", "social_7": "role_mask", "social_8": "fear_of_conflict", "social_9": "shame_of_success",
 
-        // Legacy (0-4) - EXPANDED
         "legacy_0": "legacy_void", "legacy_1": "time_scarcity", "legacy_2": "death_anxiety", 
         "legacy_3": "legacy_void", "legacy_4": "time_scarcity"
     };
@@ -160,8 +143,6 @@ const createPlaceholderScenes = (lang: 'ru' | 'ka') => {
             let scenarioPool = BELIEF_SCENARIOS[beliefKey];
             if (!scenarioPool) scenarioPool = BELIEF_SCENARIOS[`${d}_generic`] || BELIEF_SCENARIOS['foundation_generic'];
             
-            // Cycle through pool to ensure variety even within same key
-            // IMPORTANT: Modulo logic ensures unique selection if pool size matches usage frequency
             const scenario = scenarioPool[i % scenarioPool.length];
             const isKa = lang === 'ka';
             
@@ -211,7 +192,7 @@ const ru: Translations = {
   boot_sequence: ["Инициализация ядра...", "Загрузка модулей...", "Проверка целостности...", "Система готова"],
   ui: {
     system_build: "Сборка системы",
-    reset_session_btn: "Сброс сессии",
+    reset_session_btn: "В меню",
     status_report_title: "Отчет о состоянии",
     module_label: "Модуль",
     progress_label: "Прогресс",
@@ -243,9 +224,9 @@ const ru: Translations = {
     resume_session_title: "Сессия активна", 
     resume_session_btn: "Продолжить",
     start_new_cycle_btn: "Начать новый цикл", 
-    new_cycle_desc: "Архивировать текущий результат и начать с чистого листа",
+    new_cycle_desc: "Архивировать текущий результат and начать с чистого листа",
     session_ekg_title: "Кардиограмма сессии (EKG)",
-    session_ekg_desc: "Динамика напряжения и сопротивления в реальном времени."
+    session_ekg_desc: "Динамика напряжения and сопротивления в реальном времени."
   },
   auth_ui: {
       verifying: "Проверка...",
@@ -330,12 +311,12 @@ const ru: Translations = {
     archetype_label: "Архетип",
     archetype_desc: "Ваш доминирующий паттерн поведения.",
     metrics_title: "Метрики",
-    foundation_desc: "Базовая безопасность и опоры.",
-    agency_desc: "Воля и способность к действию.",
-    resource_desc: "Ваш потенциал и емкость.",
-    entropy_desc: "Уровень шума и тревоги в системе.",
+    foundation_desc: "Базовая безопасность and опоры.",
+    agency_desc: "Воля and способность к действию.",
+    resource_desc: "Ваш потенциал and емкость.",
+    entropy_desc: "Уровень шума and тревоги в системе.",
     neurosync_label: "НейроСинхрон",
-    neurosync_desc: "Связь тела и разума.",
+    neurosync_desc: "Связь тела and разума.",
     latency_label: "Латентность",
     latency_desc: "Время реакции на стимулы.",
     combinations_title: "Комбинации",
@@ -348,21 +329,21 @@ const ru: Translations = {
   },
   clinical_decoder: {
     somatic_dissonance_title: "Соматический диссонанс",
-    somatic_dissonance_desc: "Разрыв между сознательным выбором и реакцией тела.",
+    somatic_dissonance_desc: "Разрыв между сознательным выбором and реакцией тела.",
     disclaimer: "Только для профессионального использования квалифицированным специалистом.",
     analysis_patterns: {
         god_mode_dissociation: "Компенсаторная сверхпродуктивность как защита от травмы.",
         somatic_rebellion: "Тело бунтует против волевого давления.",
         naked_wire: "Высокая чувствительность при полном отсутствии опор.",
         frozen_will: "Паралич воли при критическом уровне внутреннего шума.",
-        intellectual_bypass: "Интеллектуальный обход чувств и ощущений.",
+        intellectual_bypass: "Интеллектуальный обход чувств and ощущений.",
         resource_anxiety: "Тревога, вызванная обладанием ресурсом.",
         foundation_void: "Вакуум в базовой безопасности.",
         manic_defense: "Маниакальная защита через гиперактивность."
     },
     common_hypotheses: {
         anesthesia: { h: "Функциональная анестезия", q: "Что вы перестаете чувствовать, когда вы успешны?" },
-        functional_value: { h: "Функциональная самооценка", q: "Кто вы без ваших достижений и функции?" },
+        functional_value: { h: "Функциональная самооценка", q: "Кто вы без ваших достижений and функции?" },
         visibility_fear: { h: "Страх видимости", q: "Что самое страшное случится, если вас заметят?" },
         adaptation_to_min: { h: "Адаптация к минимуму", q: "Как вы научились выживать на малом?" }
     },
@@ -370,7 +351,7 @@ const ru: Translations = {
         compensatory_overdrive: { title: "Сверхкомпенсация", desc: "Система работает на износ для удержания контроля." },
         critical_deficit: { title: "Критический дефицит", desc: "Система истощена, опоры разрушены." },
         economy_mode: { title: "Режим экономии", desc: "Минимальный расход энергии для выживания." },
-        mobilization: { title: "Мобилизация", desc: "Активный поиск новых опор и ресурсов." },
+        mobilization: { title: "Мобилизация", desc: "Активный поиск новых опор and ресурсов." },
         chaotic: { title: "Хаос", desc: "Высокий уровень неопределенности." },
         chaotic_creative: { title: "Креативный хаос", desc: "Активная пересборка внутренних смыслов." },
         rigid: { title: "Ригидность", desc: "Чрезмерная жесткость структур." }
@@ -397,18 +378,18 @@ const ru: Translations = {
         role_play: "Игра в 'хорошего клиента' для терапевта"
     },
     session_entries: {
-        reality_check: "Проверка реальности и заземление.",
-        decelerate: "Замедление и фокус на дыхании.",
+        reality_check: "Проверка реальности and заземление.",
+        decelerate: "Замедление and фокус на дыхании.",
         security_first: "Приоритет: создание безопасности.",
         body_focus: "Возвращение контакта с телом.",
-        validate_deficit: "Признание и валидация дефицита."
+        validate_deficit: "Признание and валидация дефицита."
     }
   },
   global: {
     back: "Назад",
     complete: "Завершено",
     calibrating: "Калибровка",
-    calib_desc: "Настройка сенсоров системы и базовой линии.",
+    calib_desc: "Настройка сенсоров системы and базовой линии.",
     skip_button: "Пропустить"
   },
   sync: {
@@ -441,6 +422,7 @@ const ru: Translations = {
     insight_coherence: "Высокая когерентность системы.",
     insight_noise: "Обнаружен избыточный шум в каналах.",
     insight_somatic_dissonance: "Зафиксирован соматический диссонанс.",
+    needs_retuning: "Требуется калибровка.",
     retest_ready: "Готовность к повторному тесту",
     retest_desc: "Прошло достаточно времени для новой оценки.",
     select_domain: "Выберите домен",
@@ -482,16 +464,16 @@ const ru: Translations = {
     resume_session_title: "Сессия активна", 
     resume_session_btn: "Продолжить",
     start_new_cycle_btn: "Начать новый цикл", 
-    new_cycle_desc: "Архивировать текущий результат и начать с чистого листа",
+    new_cycle_desc: "Архивировать текущий результат and начать с чистого листа",
     session_ekg_title: "Кардиограмма сессии (EKG)",
-    session_ekg_desc: "Динамика напряжения и сопротивления в реальном времени.",
+    session_ekg_desc: "Динамика напряжения and сопротивления в реальном времени.",
     blueprint: "БЛУПРИНТ",
     confidence: "ДОСТОВЕРНОСТЬ",
     consistency: "СТАБИЛЬНОСТЬ",
     psychometric_signature: "ПСИХОМЕТРИЧЕСКАЯ ПОДПИСЬ",
     encrypted_overlay: "НЕЙРО-ДИНАМИКА ЗАШИФРОВАНА",
     encrypted_desc: "Скрыты точки срыва адаптации. Доступно специалисту.",
-    safety_override: "ПРОТОКОЛ БЕЗОПАСНОСТИ",
+    safety_override: "ПРОТОКОЛ БЕЗОПАСНОЕНИЯ",
     preview_insight: "ПРЕДПРОСМОТР ИНСАЙТА"
   },
   ekg: {
@@ -524,6 +506,19 @@ const ru: Translations = {
       clinical_hypotheses: "КЛИНИЧЕСКИЕ ГИПОТЕЗЫ",
       verdict_protocol: "ВЕРДИКТ И ПРОТОКОЛ"
   },
+  pro_headers: {
+      deep_analysis: "01. ГЛУБИННЫЙ АНАЛИЗ",
+      behavior_markers: "ПОВЕДЕНЧЕСКИЕ МАРКЕРЫ",
+      systemic_vectors: "СИСТЕМНЫЕ ВЕКТОРЫ",
+      differential_diagnosis: "ДИФФЕРЕНЦИАЛЬНАЯ ДИАГНОСТИКА",
+      evolution_vector: "ВЕКТОР ЭВОЛЮЦИИ",
+      target_state: "ЦЕЛЕВОЕ СОСТОЯНИЕ",
+      supervision_layer: "СЛОЙ СУПЕРВИЗИИ",
+      shadow_contract: "ТЕНЕВОЙ КОНТРАКТ",
+      clinical_interventions: "КЛИНИЧЕСКИЕ ИНТЕРВЕНЦИИ",
+      signal_check: "ПРОВЕРКА КАЧЕСТВА СИГНАЛА",
+      systemic_forces: "СИСТЕМНЫЕ СИЛЫ"
+  },
   integrity_audit: {
       title: "АУДИТ ЯДРА GENESIS",
       mode: "РЕЖИМ: ЛИНГВИСТИЧЕСКИЙ НАДЗОР",
@@ -543,7 +538,7 @@ const ru: Translations = {
   tasks: {
       sanitation_1: "Аудит лояльностей",
       sanitation_2: "Соматическая разгрузка",
-      stabilization_1: "Границы и опоры",
+      stabilization_1: "Границы and опоры",
       expansion_1: "Масштабирование воли"
   },
   scenes: createPlaceholderScenes('ru'),
@@ -567,7 +562,7 @@ const ru: Translations = {
     shame_of_success: "стыд успеха",
     hero_martyr: "Герой-мученик",
     latency_resistance: "Латентное сопротивление",
-    body_mind_conflict: "Конфликт души и тела",
+    body_mind_conflict: "Конфликт души and тела",
     ambivalence_loop: "Петля амбивалентности",
     autopilot_mode: "Автопилот",
     golden_cage: "Золотая клетка",
@@ -581,23 +576,23 @@ const ru: Translations = {
   },
   explanations: {
       latency: "Время, необходимое психике для обработки стимула.",
-      resonance: "Совпадение когнитивного ответа и телесного импульса."
+      resonance: "Совпадение когнитивного ответа and телесного импульса."
   },
   pattern_library: {
     default: { protection: "Стабильность", cost: "Застой", antidote: "Движение" },
-    family_loyalty: { protection: "Принадлежность к роду через повторение судьбы", cost: "Запрет на личное счастье и успех", antidote: "Я выбираю свою жизнь с уважением к вашей." },
+    family_loyalty: { protection: "Принадлежность к роду через повторение судьбы", cost: "Запрет на личное счастье and успех", antidote: "Я выбираю свою жизнь с уважением к вашей." },
   },
   archetypes: {
-    THE_ARCHITECT: { title: "Архитектор", desc: "Строит системы и структуры.", quote: "Порядок в системе — порядок в жизни.", superpower: "Структурирование", shadow: "Ригидность" },
+    THE_ARCHITECT: { title: "Архитектор", desc: "Строит системы and структуры.", quote: "Порядок в системе — порядок в жизни.", superpower: "Структурирование", shadow: "Ригидность" },
     THE_DRIFTER: { title: "Скиталец", desc: "Ищет путь, избегая привязанностей.", quote: "Путь открывается идущему.", superpower: "Поиск", shadow: "Нестабильность" },
     THE_BURNED_HERO: { title: "Выгоревший герой", desc: "Спас всех ценой собственного ресурса.", quote: "Я все сделаю сам, любой ценой.", superpower: "Самоотверженность", shadow: "Истощение" },
     THE_GOLDEN_PRISONER: { title: "Золотой узник", desc: "Заперт в комфорте, боится потерять стабильность.", quote: "Мне здесь хорошо, но очень тесно.", superpower: "Стабильность", shadow: "Застой" },
     THE_CHAOS_SURFER: { title: "Серфер хаоса", desc: "Управляет неопределенностью на интуиции.", quote: "Лови волну, пока она есть.", superpower: "Гибкость", shadow: "Дезорганизация" },
-    THE_GUARDIAN: { title: "Хранитель", desc: "Оберегает существующие границы и ценности.", quote: "Ни шагу назад от того, что имеем.", superpower: "Защита", shadow: "Изоляция" }
+    THE_GUARDIAN: { title: "Хранитель", desc: "Оберегает существующие границы and ценности.", quote: "Ни шагу назад от того, что имеем.", superpower: "Защита", shadow: "Изоляция" }
   },
   verdicts: {
     HEALTHY_SCALE: { label: "Здоровый баланс", impact: "Система в ресурсном состоянии." },
-    CRITICAL_DEFICIT: { label: "Системный Сброс", impact: "Необходима полная перезагрузка опор." },
+    CRITICAL_DEFICIT: { label: "Систემный Сброс", impact: "Необходима полная перезагрузка опор." },
     BRILLIANT_SABOTAGE: { label: "Блестящий саботаж", impact: "Скрытое сопротивление росту." },
     INVISIBILE_CEILING: { label: "Невидимый потолок", impact: "Ограничение масштаба." },
     LEAKY_BUCKET: { label: "Дырявое ведро", impact: "Потеря ресурса через тревогу." },
@@ -605,12 +600,12 @@ const ru: Translations = {
     FROZEN_POTENTIAL: { label: "Замерзший потенциал", impact: "Стагнация на всех уровнях." }
   },
   metric_definitions: {
-    foundation: "Ваша внутренняя безопасность и опоры.",
-    integrity: "Общая целостность и устойчивость системы."
+    foundation: "Ваша внутренняя безопасность and опоры.",
+    integrity: "Общая целостность and устойчивость системы."
   },
   conflicts: {
-      foundation_agency: "Конфликт Безопасности и Действия",
-      agency_resource: "Конфликт Воли и Емкости"
+      foundation_agency: "Конфликт Безопасности and Действия",
+      agency_resource: "Конфликт Воли and Емкости"
   },
   system_commentary: ["Сигнал стабилен", "Анализ латентности продолжается", "Обнаружен паттерн сопротивления"],
   auth_hint: "Используйте ваш ключ доступа для дешифровки данных.",
@@ -621,7 +616,7 @@ const ru: Translations = {
   session_prep_templates: {
       low_foundation_pattern: "Как паттерн '{{pattern}}' влияет на ваше чувство безопасности?",
       low_foundation_generic: "Что сейчас является вашей главной опорой?",
-      conflict: "Как вы ощущаете конфликт между сфер {{metric1}} и {{metric2}}?",
+      conflict: "Как вы ощущаете конфликт между сфер {{metric1}} and {{metric2}}?",
       somatic_dissonance: "Ваше тело реагирует на '{{pattern}}' напряжением. О чем этот сигнал?",
       pattern_interaction: "Как '{{pattern1}}' подкрепляет '{{pattern2}}' в вашей жизни?",
       default_latency: "Мы заметили задержку при ответе на вопросы о тени вашего архетипа ({{archetype_shadow}}). Что там скрыто?",
@@ -633,7 +628,7 @@ const ru: Translations = {
   interventions: {},
   directives: {},
   interferences: {},
-  correlation_types: {}
+  correlation_types: {},
 };
 
 const ka: Translations = {
@@ -658,7 +653,7 @@ const ka: Translations = {
   },
   invalid_results: {
     title: "პროტოკოლის დარღვევა",
-    message: "სისტემამ დააფიქსირა არატიპიური პატერნები, რაც მიუთითებს მონაცემების შესაძლო მანიპულაციაზე.",
+    message: "სკრინინგის დროს სისტემამ დააფიქსირა არატიპიური პატერნები, რაც მიუთითებს მონაცემების შესაძლო მანიპულაციაზე.",
     reason_monotonic: "განმეორებადი არჩევანი (მექანიკური პატერნი).",
     reason_robotic: "ზეზუსტი ტაიმინგი (ხელოვნური რიტმი).",
     reason_rhythm: "არასტაბილური კოგნიტური რიტმი.",
@@ -670,7 +665,7 @@ const ka: Translations = {
   boot_sequence: ["ბირთვის ინიციალიზაცია...", "მოდულების ჩატვირთვა...", "მთლიანობის შემოწმება...", "სისტემა მზად არის"],
   ui: {
     system_build: "სისტემის ვერსია",
-    reset_session_btn: "სესიის გადატვირთვა",
+    reset_session_btn: "მთავარი",
     status_report_title: "მდგომარეობის ანგარიში",
     module_label: "მოდული",
     progress_label: "პროგრესი",
@@ -739,7 +734,7 @@ const ka: Translations = {
     license_key: "ლიცენზიის გასაღები",
     tier_label: "ლიცენზიის ტიპი",
     status_active: "აქტიური",
-    status_expired: "ვადაგასული",
+    status_expired: "ვადაგული",
     upgrade_btn: "განახლება",
     panel_title: "მართვის პანელი",
     oversight_layer: "ზედამხედველობა",
@@ -811,13 +806,13 @@ const ka: Translations = {
     disclaimer: "მხოლოდ პროფესიული გამოყენებისთვის კვალიფიციური სპეციალისტის მიერ.",
     analysis_patterns: {
         god_mode_dissociation: "Компенсаторная сверхпродуктивность как защита от травмы.",
-        somatic_rebellion: "Тело бунтует против волевого давления.",
-        naked_wire: "Высокая чувствительность при полном отсутствии опор.",
-        frozen_will: "Паралич воли при критическом уровне внутреннего шума.",
-        intellectual_bypass: "Интеллектуальный обход чувств и ощущений.",
-        resource_anxiety: "Тревога, вызванная обладанием ресурсом.",
-        foundation_void: "Вакуум в базовой безопасности.",
-        manic_defense: "Маниакальная защита через гиперактивность."
+        somatic_rebellion: "Тело буნტობდეს ნების წინააღმდეგ.",
+        naked_wire: "მაღალი მგრძნობელობა საყრდენების არარსებობისას.",
+        frozen_will: "ნების პარალიზი შინაგანი ხმაურის ფონზე.",
+        intellectual_bypass: "ინტელექტუალური გვერდის ავლა შეგრძნებებისთვის.",
+        resource_anxiety: "რესურსის ფლობით გამოწვეული შფოთვა.",
+        foundation_void: "ვაკუუმი ბაზისურ უსაფრთხოებაში.",
+        manic_defense: "მანიაკალური დაცვა ჰიპერაქტიურობით."
     },
     common_hypotheses: {
         anesthesia: { h: "ფუნქციური ანესთეზია", q: "რისი გრძნობა გიწყდებათ, როცა წარმატებული ხართ?" },
@@ -845,7 +840,7 @@ const ka: Translations = {
         THE_DRIFTER: { strategy: "ადაპტაცია", func: "მოქნილობა", limit: "ბუნდოვანება" },
         THE_BURNED_HERO: { strategy: "თავგანწირვა", func: "გმირობა", limit: "გადაწვა" },
         THE_GOLDEN_PRISONER: { strategy: "დაგროვება", func: "სტაბილურობა", limit: "სტაგნაცია" },
-        THE_CHAOS_SURFER: { strategy: "იმპროვიзация", func: "დრაივი", limit: "დეზორგანიზაცია" },
+        THE_CHAOS_SURFER: { strategy: "იმპროვიზაცია", func: "დრაივი", limit: "დეზორგანიზაცია" },
         THE_GUARDIAN: { strategy: "შენარჩუნება", func: "უსაფრთხოება", limit: "ცვლილებების შიში" }
     },
     risks: {
@@ -853,7 +848,7 @@ const ka: Translations = {
         normalization: "დეფიციტური მდგომარეობის ნორმალიზაცია",
         intellectualization: "უნაყოფო მსჯელობებში წასვლა",
         premature_action: "ნაადრევი ან იმპულსური ქმედება",
-        role_play: "Игра в 'хорошего клиента' для терапевта"
+        role_play: "Игра в 'хорошего клиента' для тераეფტა"
     },
     session_entries: {
         reality_check: "რეალობის შემოწმება და დამიწება.",
@@ -983,6 +978,19 @@ const ka: Translations = {
       clinical_hypotheses: "კლინიკური ჰიპოთეზები",
       verdict_protocol: "ვერდიქტი და პროტოკოლი"
   },
+  pro_headers: {
+      deep_analysis: "01. სიღრმისეული ანალიზი",
+      behavior_markers: "ქცევითი მარკერები",
+      systemic_vectors: "სისტემური ვექტორები",
+      differential_diagnosis: "დიფერენციალური დიაგნოსტიკა",
+      evolution_vector: "ევოლუციის ვექტორი",
+      target_state: "სამიზნე მდგომარეობა",
+      supervision_layer: "ზედამხედველობის შრე",
+      shadow_contract: "ჩრდილოვანი კონტრაქტი",
+      clinical_interventions: "კლინიკური ინტერვენციები",
+      signal_check: "სიგნალის ხარისხი",
+      systemic_forces: "სისტემური ძალები"
+  },
   integrity_audit: {
       title: "ბირთვის აუდიტი (GENESIS)",
       mode: "რეჟიმი: ლინგვისტური ზედამხედველობა",
@@ -1092,7 +1100,7 @@ const ka: Translations = {
   interventions: {},
   directives: {},
   interferences: {},
-  correlation_types: {}
+  correlation_types: {},
 };
 
 export const translations: Record<string, Translations> = { ru, ka };

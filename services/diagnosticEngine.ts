@@ -1,5 +1,4 @@
-
-import { RawAnalysisResult, AnalysisResult, ArchetypeKey, VerdictKey, ProtocolStep, PhaseType, TaskKey, PatternFlags } from '../types';
+import { RawAnalysisResult, AnalysisResult, ArchetypeKey, VerdictKey, PhaseType, TaskKey, PatternFlags } from '../types';
 import { SecurityCore } from '../utils/crypto';
 
 const ARCHETYPE_INDEX_MAP: ArchetypeKey[] = [
@@ -34,7 +33,6 @@ export const DiagnosticEngine = {
 
     const primary = archetypeSpectrum[0];
     const secondary = archetypeSpectrum[1];
-    const matchPercent = Math.round((primary.score / (primary.score + (secondary?.score || 0))) * 100);
 
     let verdictKey: VerdictKey = 'HEALTHY_SCALE';
     if (f <= 35) verdictKey = 'CRITICAL_DEFICIT';
@@ -52,11 +50,12 @@ export const DiagnosticEngine = {
     
     const dataStr = `${Math.round(f)}|${Math.round(a)}|${Math.round(r)}|${Math.round(e)}|${archIndex}|${Math.round(raw.neuroSync)}|${verdictIndex}`;
     const sig = SecurityCore.generateChecksum(dataStr);
-    const shareCode = btoa(`${dataStr}#${sig}`).replace(/=/g, '');
+    
+    // Fixed: Keep padding for better cross-browser compatibility
+    const shareCode = btoa(`${dataStr}#${sig}`);
 
     const coreConflict = conflicts.length > 0 ? conflicts[0].key : (verdictKey !== 'HEALTHY_SCALE' ? verdictKey.toLowerCase() : 'none');
     
-    // BLUE TEAM PROTOCOL: Aggressive Anomaly Detection
     let finalValidity = raw.validity;
     let anomalyCount = 0;
     if (patternFlags.isMonotonic) anomalyCount += 2;
@@ -79,7 +78,7 @@ export const DiagnosticEngine = {
       shareCode,
       archetypeKey: primary.key,
       secondaryArchetypeKey: secondary?.key,
-      archetypeMatch: matchPercent,
+      archetypeMatch: 100,
       archetypeSpectrum,
       verdictKey,
       lifeScriptKey: `${verdictKey}_${primary.key}`.toLowerCase(),

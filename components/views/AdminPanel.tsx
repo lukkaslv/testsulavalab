@@ -1,6 +1,5 @@
-
 import React, { useState, memo, useMemo, useEffect, useRef } from 'react';
-import { Translations, AnalysisResult, GameHistoryItem, LicenseInfo, SubscriptionTier, LicenseRecord } from '../../types';
+import { Translations, GameHistoryItem, LicenseRecord } from '../../types';
 import { PlatformBridge } from '../../utils/helpers';
 import { SecurityCore } from '../../utils/crypto';
 import { StorageService, STORAGE_KEYS } from '../../services/storageService';
@@ -8,7 +7,6 @@ import { StorageService, STORAGE_KEYS } from '../../services/storageService';
 interface AdminPanelProps {
   t: Translations;
   onExit: () => void;
-  result: AnalysisResult | null;
   history: GameHistoryItem[];
   onUnlockAll: () => void;
   glitchEnabled: boolean;
@@ -16,7 +14,7 @@ interface AdminPanelProps {
   onSetView: (view: any) => void;
 }
 
-export const AdminPanel = memo<AdminPanelProps>(({ t, onExit, result, history, onUnlockAll, glitchEnabled, onToggleGlitch, onSetView }) => {
+export const AdminPanel = memo<AdminPanelProps>(({ t, onExit, history, onUnlockAll, glitchEnabled, onToggleGlitch, onSetView }) => {
   const [activeTab, setActiveTab] = useState<'kernel' | 'registry' | 'telemetry' | 'integrity'>('kernel');
   const [genTier, setGenTier] = useState<string>('CLINICAL');
   const [genDays, setGenDays] = useState<number>(30);

@@ -1,11 +1,9 @@
-
-import { AnalysisResult, ScanHistory, DataCorruptionError, SystemLogEntry, TelemetryEvent, FeedbackEntry, LicenseRecord } from '../types';
+import { AnalysisResult, ScanHistory, SystemLogEntry, TelemetryEvent, FeedbackEntry, LicenseRecord } from '../types';
 import { STORAGE_KEYS } from '../constants';
 import { SecurityCore } from '../utils/crypto';
 
 export { STORAGE_KEYS };
 
-// Session key derived from the environment/password (Internal use)
 const INTERNAL_KEY = "genesis_stable_v3";
 
 export interface SessionState {
@@ -20,7 +18,7 @@ const getStorageProvider = () => {
     window.localStorage.removeItem(testKey);
     return window.localStorage;
   } catch (e) {
-    return null; // Fallback handled in logic
+    return null; 
   }
 };
 
@@ -30,27 +28,16 @@ const loadHistory = (): ScanHistory => {
   const item = provider?.getItem(STORAGE_KEYS.SCAN_HISTORY);
   if (!item) return { scans: [], latestScan: null, evolutionMetrics: { entropyTrend: [], integrityTrend: [], dates: [] } };
   
-  // Try decrypting with Device Binding
   const decrypted = SecurityCore.safeDecode(item, INTERNAL_KEY);
   
   if (decrypted) {
-      // Chain of Custody Validation
-      // If history exists, verify that the timeline is mathematically consistent
-      // (Advanced feature for v3.1: currently we just trust the decode if checksum passes)
       return decrypted;
   }
 
-  // FALLBACK: Migration from Old System (Non-Device Bound)
-  // If safeDecode fails, it might be because the data was saved before we added Device Fingerprinting.
-  // We try to "rescue" the data by parsing it as raw JSON or old format, then re-save it securely.
   try {
-    // Attempt 1: Raw JSON (Dev mode legacy)
     const raw = JSON.parse(item);
-    // If successful, immediately upgrade security
-    // We don't save here to avoid side-effects in getter, but next save will fix it.
     if (raw.scans) return raw;
   } catch (e) {
-     // Data is truly dead or from another device
      console.error("StorageService: History unrecoverable.");
   }
 
@@ -60,10 +47,7 @@ const loadHistory = (): ScanHistory => {
 export const StorageService = {
   save: (key: string, data: unknown) => {
     try {
-      // Encrypt sensitive diagnostic data
       const isSensitive = [STORAGE_KEYS.SCAN_HISTORY, STORAGE_KEYS.SESSION_STATE, STORAGE_KEYS.TELEMETRY_DATA, 'genesis_license_registry'].includes(key as any);
-      
-      // If sensitive, use Device-Bound Encryption
       const payload = isSensitive ? SecurityCore.safeEncode(data, INTERNAL_KEY) : JSON.stringify(data);
       provider?.setItem(key, payload);
     } catch (e) {
@@ -80,11 +64,7 @@ export const StorageService = {
         const decrypted = SecurityCore.safeDecode(item, INTERNAL_KEY);
         if (decrypted) return decrypted as T;
         
-        // If decryption failed, it implies data corruption OR device mismatch.
-        // We return fallback to prevent crashing, but log the incident.
         console.warn(`StorageService: Access Denied for ${key} (Integrity/Device Mismatch)`);
-        // Optional: Throw error if strict security is needed
-        // if (key === STORAGE_KEYS.SCAN_HISTORY) throw new DataCorruptionError("History integrity compromised");
         return fallback; 
     }
 
@@ -95,7 +75,6 @@ export const StorageService = {
     }
   },
 
-  // LICENSE REGISTRY MANAGEMENT
   saveLicenseRecord: (record: LicenseRecord) => {
       const registry = StorageService.load<LicenseRecord[]>('genesis_license_registry', []);
       registry.unshift(record);
@@ -141,10 +120,6 @@ export const StorageService = {
     const history = loadHistory();
     const deterministicResult: AnalysisResult = { ...result, timestamp: Date.now() };
     
-    // CHAIN OF CUSTODY (Integrity Link)
-    // To prevent deletion of past bad results, we can implement a hash link here in future versions.
-    // For now, Device Binding ensures that the history array implies a continuous session on this device.
-    
     history.scans.push(deterministicResult);
     history.latestScan = deterministicResult;
     history.evolutionMetrics.entropyTrend.push(deterministicResult.entropyScore);
@@ -169,13 +144,11 @@ export const StorageService = {
     } catch (e) {}
   },
 
-  // Added injectState to handle clinical recovery of session state
   injectState: (json: string): boolean => {
     try {
       const data = JSON.parse(json);
       if (!data || typeof data !== 'object') return false;
 
-      // Handle raw session state injection
       if (data.history && Array.isArray(data.history)) {
           StorageService.save(STORAGE_KEYS.SESSION_STATE, {
               nodes: data.nodes || [],
@@ -184,7 +157,6 @@ export const StorageService = {
           return true;
       }
 
-      // Handle evolution bundle or recognized keys
       let injected = false;
       Object.entries(data).forEach(([key, value]) => {
           if (Object.values(STORAGE_KEYS).includes(key as any)) {

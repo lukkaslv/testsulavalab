@@ -1,13 +1,11 @@
-
 import React from 'react';
-import { Contradiction, Translations } from '../types';
+import { Contradiction } from '../types';
 
 interface ContradictionInsightsProps {
   contradictions: Contradiction[];
-  t: Translations;
 }
 
-export const ContradictionInsights: React.FC<ContradictionInsightsProps> = ({ contradictions, t }) => {
+export const ContradictionInsights: React.FC<ContradictionInsightsProps> = ({ contradictions }) => {
   if (contradictions.length === 0) return null;
 
   return (

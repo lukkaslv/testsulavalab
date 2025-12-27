@@ -1,5 +1,4 @@
-
-import { BeliefKey, GameHistoryItem, RawAnalysisResult, NeuralCorrelation, DomainType, IntegrityBreakdown, SystemConflict, MetricLevel, ClinicalWarning, AnalysisFlags, PhaseType, SessionPulseNode, LifeContext } from '../types';
+import { BeliefKey, GameHistoryItem, RawAnalysisResult, NeuralCorrelation, DomainType, SystemConflict, MetricLevel, ClinicalWarning, SessionPulseNode, LifeContext } from '../types';
 import { SYSTEM_METADATA, STORAGE_KEYS, TOTAL_NODES } from '../constants';
 
 const WEIGHTS: Record<BeliefKey, { f: number; a: number; r: number; e: number }> = {
@@ -46,10 +45,6 @@ const sigmoidUpdate = (current: number, delta: number): number => {
 
 const calculateEntropyFriction = (currentEntropy: number): number => {
     return Math.max(0.3, 1 - (currentEntropy / 140));
-};
-
-const calculateFatigueAllowance = (index: number, total: number): number => {
-    return 1 + ((index / total) * 0.20); 
 };
 
 const calculateLogVariance = (latencies: number[]): number => {
@@ -128,7 +123,6 @@ export function calculateRawMetrics(history: GameHistoryItem[]): RawAnalysisResu
   let spikeCount = 0;
 
   history.forEach((h, index) => {
-    const fatigueFactor = calculateFatigueAllowance(index, history.length);
     const zScore = calculateZScore(h.latency, sessionMean, sessionStdDev);
     
     let tension = Math.min(100, Math.max(0, (zScore + 2) * 20)); 
@@ -270,11 +264,9 @@ export function calculateRawMetrics(history: GameHistoryItem[]): RawAnalysisResu
   if (isAlexithymiaDetected) technicalConfidence -= 15; 
   if (foundationCoherence < 0.7 || agencyCoherence < 0.7) technicalConfidence -= 15;
   
-  // --- SPARSE DATA PENALTY (Fixing The "Short Path" Illusion) ---
-  const dataDensity = history.length / TOTAL_NODES; // e.g. 20/50 = 0.4
+  const dataDensity = history.length / TOTAL_NODES; 
   if (dataDensity < 0.6) {
-      // If we only have 60% of data, confidence drops heavily
-      technicalConfidence *= (0.5 + (dataDensity * 0.5)); // Penalize by up to 50%
+      technicalConfidence *= (0.5 + (dataDensity * 0.5)); 
       warnings.push({ type: 'LOW_DATA_DENSITY', severity: 'MEDIUM', messageKey: 'Session incomplete. Metrics are provisional.' });
   }
 

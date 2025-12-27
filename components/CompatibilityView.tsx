@@ -5,7 +5,6 @@ import { generateClinicalNarrative } from '../services/clinicalNarratives';
 import { ClinicalDecoder } from '../services/clinicalDecoder';
 
 interface CompatibilityViewProps {
-  userResult: AnalysisResult | null;
   t: Translations;
   onBack: () => void;
 }
@@ -135,7 +134,7 @@ const SomaticDissonancePanel = ({ result, t }: { result: AnalysisResult, t: Tran
     );
 };
 
-export const CompatibilityView: React.FC<CompatibilityViewProps> = ({ userResult, t, onBack }) => {
+export const CompatibilityView: React.FC<CompatibilityViewProps> = ({ t, onBack }) => {
   const [partnerCode, setPartnerCode] = useState('');
   const [clientResult, setClientResult] = useState<AnalysisResult | null>(null);
 

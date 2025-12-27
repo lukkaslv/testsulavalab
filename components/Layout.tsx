@@ -8,7 +8,6 @@ interface LayoutProps {
   onLangChange: (lang: 'ru' | 'ka') => void;
   soundEnabled: boolean;
   onSoundToggle: () => void;
-  onLogout: () => void;
   onReset: () => void;
 }
 
@@ -27,7 +26,6 @@ export const Layout = memo<LayoutProps>(({
   onLangChange, 
   soundEnabled, 
   onSoundToggle,
-  onLogout,
   onReset
 }) => {
   const t = translations[lang];

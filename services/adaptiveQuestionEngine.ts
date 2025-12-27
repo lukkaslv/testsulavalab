@@ -1,6 +1,5 @@
-
 import { GameHistoryItem, Contradiction, AdaptiveState, BeliefKey, DomainType } from '../types';
-import { MODULE_REGISTRY, ONBOARDING_NODES_COUNT, TOTAL_NODES, DOMAIN_SETTINGS } from '../constants';
+import { TOTAL_NODES, DOMAIN_SETTINGS } from '../constants';
 
 const CLARITY_PER_NODE = 3.0; 
 const CONTRADICTION_PENALTY = 2.0; 
@@ -44,40 +43,33 @@ export const AdaptiveQuestionEngine = {
   selectNextQuestion(history: GameHistoryItem[], contradictions: Contradiction[]): string | null {
     const completedIds = history.map(h => parseInt(h.nodeId));
     
-    // Strict Calibration Phase (Nodes 0, 1, 2)
     for (let i = 0; i < 3; i++) {
         if (!completedIds.includes(i)) return i.toString();
     }
     
-    // DYNAMIC PROBING: Scan ALL domains for highest tension
     let domainTension: Record<DomainType, number> = { foundation: 0, agency: 0, money: 0, social: 0, legacy: 0 };
     
-    // Calculate tension based on contradictions per domain
     contradictions.forEach(c => {
         const item = history.find(h => h.nodeId === c.nodeId);
         if (item) domainTension[item.domain]++;
     });
 
-    // Find the domain with maximum tension that still has remaining nodes
     const sortedDomains = Object.entries(domainTension)
-        .sort((a, b) => b[1] - a[1]) // Descending tension
+        .sort((a, b) => b[1] - a[1]) 
         .map(([key]) => key as DomainType);
 
     for (const domainKey of sortedDomains) {
         const domainCfg = DOMAIN_SETTINGS.find(d => d.key === domainKey);
         if (domainCfg) {
-             // Check if this domain has remaining nodes
              for (let i = 0; i < domainCfg.count; i++) {
                 const id = (domainCfg.startId + i);
                 if (!completedIds.includes(id)) {
-                    // console.log(`Adaptive Engine: Probing ${domainKey} due to tension score ${domainTension[domainKey]}`);
                     return id.toString();
                 }
              }
         }
     }
 
-    // Default linear crawl if no specific tension found or high-tension domains are full
     for (let i = 3; i < TOTAL_NODES; i++) {
         if (!completedIds.includes(i)) return i.toString();
     }
@@ -93,7 +85,6 @@ export const AdaptiveQuestionEngine = {
     const clarity = Math.min(100, Math.max(0, rawClarity - penalty));
     const suggestedNextNodeId = this.selectNextQuestion(history, contradictions);
 
-    // Calculate Variance for Confidence Score
     const latencies = history.map(h => h.latency).filter(l => l > 400);
     const avg = latencies.reduce((a,b) => a+b, 0) / Math.max(1, latencies.length);
     const variance = Math.sqrt(latencies.reduce((a,b) => a + Math.pow(b - avg, 2), 0) / Math.max(1, latencies.length));

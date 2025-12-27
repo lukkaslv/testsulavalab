@@ -1,11 +1,9 @@
-
 import React, { useState, memo, useCallback, useMemo } from 'react';
 import { AnalysisResult, Translations, AdaptiveState, ScanHistory, BeliefKey, SessionPulseNode } from '../../types';
 import { StorageService } from '../../services/storageService';
 import { PlatformBridge } from '../../utils/helpers';
 import { generateClinicalNarrative } from '../../services/clinicalNarratives';
 import { EvolutionDashboard } from '../EvolutionDashboard';
-import { SessionPrepService } from '../../services/SessionPrepService';
 import { RadarChart } from '../RadarChart';
 import { BioSignature } from '../BioSignature';
 
@@ -21,7 +19,7 @@ interface ResultsViewProps {
   adaptiveState: AdaptiveState;
   onOpenBriefExplainer: () => void;
   onNewCycle?: () => void; 
-  isPro?: boolean; // New prop to control visibility
+  isPro?: boolean; 
 }
 
 const DeltaBadge = ({ current, previous, inverse = false }: { current: number, previous: number | undefined, inverse?: boolean }) => {
@@ -37,23 +35,16 @@ const DeltaBadge = ({ current, previous, inverse = false }: { current: number, p
     );
 };
 
-// --- NEW COMPONENT: SESSION EKG (The Heartbeat of the Session) ---
 const SessionPulseGraph: React.FC<{ pulse: SessionPulseNode[], t: Translations, locked?: boolean }> = memo(({ pulse, t, locked }) => {
     if (!pulse || pulse.length < 5) return null;
     
-    // Interactive State
     const [focusedNode, setFocusedNode] = useState<SessionPulseNode | null>(null);
-
     const maxTension = 100;
-    
-    // Find breakdown point (Highest spike followed by drop or sustained high)
     const breakdownNode = useMemo(() => pulse.reduce((max, node) => node.tension > max.tension ? node : max, pulse[0]), [pulse]);
-    
     const activeNode = focusedNode || breakdownNode;
 
     return (
         <div className="bg-slate-50 border border-slate-100 p-5 rounded-[2rem] space-y-4 shadow-sm relative overflow-hidden group">
-            {/* LOCKED OVERLAY - THE HOOK */}
             {locked && (
                 <div className="absolute inset-0 z-50 backdrop-blur-md bg-white/60 flex flex-col items-center justify-center text-center p-6 transition-all">
                     <div className="w-12 h-12 bg-slate-900 rounded-full flex items-center justify-center text-xl mb-3 shadow-xl animate-pulse">🔒</div>
@@ -64,7 +55,6 @@ const SessionPulseGraph: React.FC<{ pulse: SessionPulseNode[], t: Translations, 
                 </div>
             )}
 
-            {/* READOUT HEADER */}
             <div className={`flex justify-between items-start relative z-10 min-h-[2rem] ${locked ? 'blur-sm opacity-50' : ''}`}>
                 <div className="flex flex-col">
                     <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
@@ -73,7 +63,6 @@ const SessionPulseGraph: React.FC<{ pulse: SessionPulseNode[], t: Translations, 
                     <span className="text-[8px] font-mono text-slate-300">N={pulse.length} // MAX: {breakdownNode.tension}%</span>
                 </div>
                 
-                {/* DYNAMIC READOUT */}
                 <div className="text-right">
                     <div className="flex items-center justify-end gap-2">
                         <span className={`w-2 h-2 rounded-full ${activeNode.isBlock ? 'bg-red-500' : activeNode.isFlow ? 'bg-emerald-500' : 'bg-indigo-500'}`}></span>
@@ -87,15 +76,12 @@ const SessionPulseGraph: React.FC<{ pulse: SessionPulseNode[], t: Translations, 
                 </div>
             </div>
 
-            {/* GRAPH AREA */}
             <div className={`relative h-28 w-full z-10 mt-2 ${locked ? 'blur-sm opacity-50 pointer-events-none' : ''}`} onMouseLeave={() => setFocusedNode(null)}>
-                {/* THRESHOLD LINES */}
                 <div className="absolute top-[30%] left-0 w-full h-px border-t border-dashed border-red-500/20 pointer-events-none"></div>
                 <div className="absolute top-[70%] left-0 w-full h-px border-t border-dashed border-emerald-500/20 pointer-events-none"></div>
                 
                 <div className="flex items-end gap-1 h-full w-full">
                     {pulse.map((node, i) => {
-                        // Color logic based on Domain
                         const color = node.domain === 'foundation' ? 'bg-emerald-400' :
                                       node.domain === 'agency' ? 'bg-indigo-400' :
                                       node.domain === 'money' ? 'bg-amber-400' : 'bg-slate-300';
@@ -118,8 +104,6 @@ const SessionPulseGraph: React.FC<{ pulse: SessionPulseNode[], t: Translations, 
                                         ${isSpike ? 'shadow-[0_0_10px_rgba(239,68,68,0.4)]' : ''}`} 
                                     style={{ height: `${height}%` }}
                                 ></div>
-                                
-                                {/* Active Indicator Line */}
                                 {(isSelected || isBreakdown) && (
                                     <div className="absolute bottom-0 w-full h-1 bg-slate-900 rounded-full mb-[-6px]"></div>
                                 )}
@@ -143,28 +127,6 @@ const SessionPulseGraph: React.FC<{ pulse: SessionPulseNode[], t: Translations, 
         </div>
     );
 });
-
-const SignalDecoderItem: React.FC<{ item: any, t: Translations }> = ({ item, t }) => {
-    const isResistance = item.type === 'resistance';
-    return (
-        <div className={`p-4 rounded-2xl border flex items-center justify-between ${isResistance ? 'bg-amber-50 border-amber-100' : 'bg-indigo-50 border-indigo-100'}`}>
-            <div className="flex items-center gap-3">
-                <span className="text-xl">{isResistance ? '🐢' : '⚡'}</span>
-                <div>
-                    <span className={`text-[8px] font-black uppercase tracking-widest block ${isResistance ? 'text-amber-500' : 'text-indigo-500'}`}>
-                        {isResistance ? t.results.signal_resistance : t.results.signal_resonance}
-                    </span>
-                    <span className="text-[10px] font-bold text-slate-800 leading-tight block">
-                       {t.beliefs[item.descriptionKey.replace('correlation_resistance_', '').replace('correlation_resonance_', '') as keyof typeof t.beliefs] || 'Pattern'}
-                    </span>
-                </div>
-            </div>
-            <span className={`text-[9px] font-mono font-bold ${isResistance ? 'text-amber-700' : 'text-indigo-700'}`}>
-                {isResistance ? '> 5s' : 'SYNC'}
-            </span>
-        </div>
-    );
-};
 
 const PatternCard: React.FC<{ beliefKey: BeliefKey, t: Translations }> = ({ beliefKey, t }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -221,7 +183,6 @@ const ClientGuideCard: React.FC<{ t: Translations, lang: 'ru' | 'ka', result: An
                     </h3>
                 </div>
                 
-                {/* GENERAL SUMMARY (FREE TIER) */}
                 <div className="space-y-3 bg-white p-4 rounded-2xl border border-indigo-50">
                     <p className="text-xs text-slate-700 leading-relaxed font-medium">
                         {lang === 'ru' 
@@ -261,9 +222,8 @@ const ClientGuideCard: React.FC<{ t: Translations, lang: 'ru' | 'ka', result: An
 };
 
 export const ResultsView = memo<ResultsViewProps>(({ 
-  lang, t, result, isGlitchMode, onContinue, onShare, onBack, getSceneText, onOpenBriefExplainer, onNewCycle, isPro
+  lang, t, result, isGlitchMode, onShare, onBack, onNewCycle, isPro
 }) => {
-  const [showPrep, setShowPrep] = useState(false);
   const [activeMetricHelp, setActiveMetricHelp] = useState<string | null>(null);
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
@@ -271,11 +231,7 @@ export const ResultsView = memo<ResultsViewProps>(({
   const narrative = useMemo(() => generateClinicalNarrative(result, lang), [result, lang]);
   const clientBrief = narrative.level1;
 
-  // SAFETY OVERRIDE (ETHICS PATCH #3): If critical, show content regardless of Pro
   const isCritical = result.state.foundation < 30 || result.state.entropy > 70;
-  
-  // LOGIC TO BLUR/LOCK CONTENT
-  // We unlock if user is Pro OR if the condition is Critical (Safety First)
   const isLocked = !isPro && !isCritical;
 
   const history: ScanHistory = useMemo(() => StorageService.getScanHistory(), []);
@@ -294,7 +250,6 @@ export const ResultsView = memo<ResultsViewProps>(({
       setTimeout(() => setCopySuccess(false), 2000);
   };
 
-  // INSIGHT TEASER: Give them ONE interesting thing
   const insightTeaser = useMemo(() => {
       if (result.conflicts.length > 0) {
           return {
@@ -314,8 +269,6 @@ export const ResultsView = memo<ResultsViewProps>(({
       return null;
   }, [result, lang, t]);
 
-  // SAFETY PROTOCOL FOR CRITICAL STATES (EXTREME)
-  // Only for completely broken system, otherwise show standard Safety Override
   if (result.state.foundation < 15 && result.state.entropy > 85) {
       return (
           <div className="flex flex-col items-center justify-center h-full p-6 text-center bg-indigo-50/50">
@@ -354,7 +307,6 @@ export const ResultsView = memo<ResultsViewProps>(({
       <header className="dark-glass-card p-8 rounded-[2.5rem] shadow-2xl space-y-6 relative overflow-hidden border-b-4 border-indigo-500/30">
         <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
         
-        {/* BIO SIGNATURE: ALWAYS VISIBLE (It's cool) */}
         <div className="absolute top-4 right-4 opacity-40 mix-blend-screen pointer-events-none">
             <BioSignature f={result.state.foundation} a={result.state.agency} r={result.state.resource} e={result.state.entropy} width={80} height={40} />
         </div>
@@ -368,14 +320,12 @@ export const ResultsView = memo<ResultsViewProps>(({
               <h1 className="text-4xl font-black italic uppercase text-white leading-none tracking-tighter">{archetype.title}</h1>
               <p className="text-sm text-slate-400 font-medium leading-relaxed opacity-85 pt-2 border-l-2 border-indigo-500/50 pl-4">{archetype.desc}</p>
             </div>
-            {/* RADAR: Visible to everyone, but detailed numbers hidden if locked */}
             <div className="pt-4">
                 <RadarChart points={result.graphPoints} onLabelClick={(m) => setActiveMetricHelp(m)} lang={lang} />
             </div>
         </div>
       </header>
 
-      {/* ACTION COMPASS - HUMAN TRANSLATION LAYER */}
       <ClientGuideCard t={t} lang={lang} result={result} onShare={handleCopyCode} copySuccess={copySuccess} />
 
       <section className={`bg-white border border-slate-100 p-6 rounded-[2.5rem] space-y-4 shadow-sm relative overflow-hidden ${isCritical ? 'border-red-500/30 bg-red-50/10' : ''}`}>
@@ -389,7 +339,6 @@ export const ResultsView = memo<ResultsViewProps>(({
           </div>
           <p className="text-sm font-medium text-slate-600 leading-relaxed">{clientBrief.summary}</p>
           
-          {/* THE HOOK OR SAFETY OVERRIDE */}
           {isCritical ? (
               <div className="bg-red-50 border border-red-200 p-3 rounded-xl mt-2 animate-pulse">
                   <span className="text-[8px] font-black uppercase tracking-widest text-red-500 block mb-1">⚠️ {t.results.safety_override}</span>
@@ -409,10 +358,8 @@ export const ResultsView = memo<ResultsViewProps>(({
           )}
       </section>
 
-      {/* SESSION EKG (LOCKED FOR CLIENTS) */}
       <SessionPulseGraph pulse={result.sessionPulse} t={t} locked={isLocked} />
 
-      {/* PSYCHOMETRIC SIGNATURE (For Mathematicians) - BLURRED FOR CLIENTS */}
       {result.mathSignature && (
           <section className={`px-2 ${isLocked ? 'blur-sm opacity-50 select-none' : ''}`}>
               <div className="p-4 bg-slate-900/5 border border-slate-900/10 rounded-2xl flex items-center justify-between">
@@ -436,10 +383,8 @@ export const ResultsView = memo<ResultsViewProps>(({
           </section>
       )}
 
-      {/* EVOLUTION DASHBOARD - HIDDEN FOR CLIENTS (They haven't done multiple usually) */}
       {!isLocked && <EvolutionDashboard history={history} lang={lang} />}
 
-      {/* NEW CYCLE TRIGGER */}
       {onNewCycle && (
           <section className="px-2 animate-in">
               <button 
@@ -464,7 +409,6 @@ export const ResultsView = memo<ResultsViewProps>(({
           </section>
       )}
 
-      {/* PATTERNS & SIGNALS - VISIBLE BUT ABSTRACT */}
       {(result.activePatterns && result.activePatterns.length > 0) && (
           <section className="space-y-4">
               <div className="flex items-center justify-between px-2">
@@ -479,7 +423,6 @@ export const ResultsView = memo<ResultsViewProps>(({
           </section>
       )}
 
-      {/* DETAILED METRICS - LOCKED VALUES FOR CLIENTS */}
       <div className="space-y-6 px-2">
          {[
             { label: t.results.integrity, value: result.integrity, origin: t.results.origin_measured, color: 'bg-emerald-500', key: 'integrity', previous: previousScan?.integrity },
@@ -496,7 +439,6 @@ export const ResultsView = memo<ResultsViewProps>(({
                     </div>
                     <div className="flex items-center">
                         <DeltaBadge current={m.value} previous={m.previous} />
-                        {/* HIDE VALUE FOR CLIENTS, UNLESS CRITICAL */}
                         <span className="text-lg font-black text-slate-900 ml-2">
                             {isLocked ? '***' : `${m.value}%`}
                         </span>

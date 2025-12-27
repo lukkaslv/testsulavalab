@@ -1,8 +1,4 @@
-
 import { AnalysisResult } from "../types";
-
-// DETERMINISTIC SUPERVISOR ENGINE (NO AI IN RUNTIME)
-// Adheres to Genesis OS Constitution v3.0: Absolute Determinism.
 
 const SUPERVISOR_PATTERNS = {
   ru: {
@@ -46,7 +42,7 @@ const SUPERVISOR_PATTERNS = {
     frozen_state: {
       obs: "ნების პარალიზი მაღალი ენტროპიის ფონზე.",
       risk: "აუტოაგრესია და სომატიზაცია.",
-      provocation: "რა მოხდება ყველაზე საშინელი, თუ საკუთარ თავს გაბრაზების უფლებას მისცემთ?"
+      provocation: "რა მოხდება ყველაზე საშინელი, თუ საკუთარ თავს გაბრაზების უფლებავ მისცემთ?"
     },
     dissociation: {
       obs: "კავშირის გაწყვეტა გონებასა და სხეულს შორის.",
@@ -62,43 +58,37 @@ const SUPERVISOR_PATTERNS = {
 };
 
 export const GeminiService = {
-  // Renamed conceptually to "Supervisor", keeping file name to avoid breaking imports for now.
-  // In a full refactor, this should be renamed to 'SupervisorEngine.ts'
   async generateClinicalSupervision(result: AnalysisResult, lang: 'ru' | 'ka'): Promise<string> {
-    
-    // Simulate processing delay for "Compute" feel (UX only)
     await new Promise(resolve => setTimeout(resolve, 800));
 
     const t = SUPERVISOR_PATTERNS[lang];
-    const { state, neuroSync } = result;
-    const notes: string[] = [];
+    const { state, neuroSync, context } = result;
 
-    // --- DETERMINISTIC LOGIC KERNEL ---
-    
-    let keyPattern = t.stable; // Default
+    let keyPattern = t.stable; 
+    if (state.foundation < 35) keyPattern = t.critical_foundation;
+    else if (state.agency > 80 && state.foundation < 45) keyPattern = t.manic_defense;
+    else if (state.agency < 35 && state.entropy > 50) keyPattern = t.frozen_state;
+    else if (neuroSync < 45) keyPattern = t.dissociation;
 
-    // Hierarchy of Severity checks
-    if (state.foundation < 35) {
-        keyPattern = t.critical_foundation;
-    } else if (state.agency > 80 && state.foundation < 45) {
-        keyPattern = t.manic_defense;
-    } else if (state.agency < 35 && state.entropy > 50) {
-        keyPattern = t.frozen_state;
-    } else if (neuroSync < 45) {
-        keyPattern = t.dissociation;
-    }
-
-    // Construct the "AI" Report
     let report = `**OBSERVATION:** ${keyPattern.obs}\n\n`;
     report += `**RISK:** ${keyPattern.risk}\n\n`;
-    report += `**PROVOCATION:** ${keyPattern.provocation}`;
 
-    // Add specific metric flags
-    if (state.entropy > 65) {
-        const entNote = lang === 'ru' ? "Высокий уровень системного шума." : "სისტემური ხმაურის მაღალი დონე.";
-        report += `\n\n(Note: ${entNote})`;
+    // --- CONTEXT COGNITIVE DISSONANCE CHECK ---
+    if (context === 'CRISIS' && state.entropy < 30) {
+        const note = lang === 'ru' 
+            ? "ВНИМАНИЕ: Клиент заявляет о Кризисе, но системный шум аномально низок. Вероятна депрессивная заморозка или глубокое отрицание тяжести ситуации." 
+            : "ყურადღება: კლიენტი აცხადებს კრიზისს, მაგრამ ხმაური დაბალია. შესაძლოა დეპრესიული გაყინვა.";
+        report += `**CONTEXT_ALERT:** ${note}\n\n`;
+    }
+    
+    if (context === 'NORMAL' && state.foundation < 25) {
+        const note = lang === 'ru' 
+            ? "КРИТИЧНО: Клиент воспринимает текущее состояние (разрушение опор) как нормальное. Адаптация к дефициту." 
+            : "კრიტიკული: დეფიციტის ნორმალიზაცია.";
+        report += `**CONTEXT_ALERT:** ${note}\n\n`;
     }
 
+    report += `**PROVOCATION:** ${keyPattern.provocation}`;
     return report;
   }
 };

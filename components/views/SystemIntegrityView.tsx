@@ -1,6 +1,5 @@
-
-import React, { useState, useEffect, useMemo } from 'react';
-import { LogLevel, LogEntry, IntegrityReport, ConfigError, Translations } from '../../types';
+import React, { useState, useEffect } from 'react';
+import { IntegrityReport, ConfigError, Translations } from '../../types';
 import { logger } from '../../services/systemLogger';
 import { MODULE_REGISTRY, ALL_BELIEFS, DOMAIN_SETTINGS, TOTAL_NODES } from '../../constants';
 import { translations } from '../../translations';
@@ -69,12 +68,10 @@ function validateConfigIntegrity(lang: 'ru' | 'ka'): IntegrityReport {
     healthy.push(`Translations: ${lang.toUpperCase()} coverage 100%`);
   }
 
-  // Semantic Density Calculation (Word count parity)
   const ruCount = JSON.stringify(translations.ru).length;
   const kaCount = JSON.stringify(translations.ka).length;
   const parity = Math.round((kaCount / ruCount) * 100);
   
-  // Uniqueness Score
   const uniqueScore = Math.round(((TOTAL_NODES - duplicateCount) / TOTAL_NODES) * 100);
   if (uniqueScore < 80) {
       warnings.push({
@@ -97,29 +94,20 @@ function validateConfigIntegrity(lang: 'ru' | 'ka'): IntegrityReport {
 export const SystemIntegrityView: React.FC<SystemIntegrityViewProps> = ({ t, onBack }) => {
   const [activeTab, setActiveTab] = useState<'health' | 'integrity' | 'semantic'>('health');
   const [report, setReport] = useState<IntegrityReport | null>(null);
-  const [isValidating, setIsValidating] = useState(false);
-  const [logs, setLogs] = useState<LogEntry[]>([]);
 
   const lang = t.subtitle.includes('LUKA') && t.onboarding.title.includes('ნავიგატორი') ? 'ka' : 'ru';
 
   const runValidation = () => {
-    setIsValidating(true);
     setTimeout(() => {
       const newReport = validateConfigIntegrity(lang as any);
       setReport(newReport);
-      setIsValidating(false);
       logger.info('Validator', 'Integrity audit complete', { status: newReport.status });
     }, 600);
   };
 
   useEffect(() => {
     runValidation();
-    setLogs(logger.getLogs());
-    const interval = setInterval(() => setLogs(logger.getLogs()), 2000);
-    return () => clearInterval(interval);
   }, []);
-
-  const stats = useMemo(() => logger.getStats24h(), [logs]);
 
   return (
     <div className="min-h-screen bg-black text-emerald-400 font-mono text-[10px] p-4 flex flex-col space-y-6 overflow-hidden">
@@ -141,7 +129,7 @@ export const SystemIntegrityView: React.FC<SystemIntegrityViewProps> = ({ t, onB
             onClick={() => setActiveTab(tab)}
             className={`flex-1 py-2 rounded transition-all text-[8px] font-black uppercase ${activeTab === tab ? 'bg-emerald-500/20 border border-emerald-500/30 text-emerald-400' : 'text-slate-500'}`}
           >
-            {t.admin[tab]}
+            {tab.toUpperCase()}
           </button>
         ))}
       </nav>
