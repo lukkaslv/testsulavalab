@@ -1,8 +1,10 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Translations } from '../../types';
 import { PlatformBridge } from '../../utils/helpers';
 import { SecurityCore } from '../../utils/crypto';
 import { STORAGE_KEYS, StorageService } from '../../services/storageService';
+import { RemoteAccess } from '../../services/remoteAccess';
 
 interface AuthViewProps {
   onLogin: (password: string, isDemo: boolean) => boolean;
@@ -11,12 +13,16 @@ interface AuthViewProps {
   onLangChange: (lang: 'ru' | 'ka') => void;
 }
 
+const LEASE_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 Days offline allowance
+
 export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t, lang, onLangChange }) => {
   const [agreed, setAgreed] = useState(false);
   const [holdProgress, setHoldProgress] = useState(0);
   const [showPricing, setShowPricing] = useState(false);
   const [showAdminInput, setShowAdminInput] = useState(false);
   const [adminPwd, setAdminPwd] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('');
   
   const holdInterval = useRef<number | null>(null);
 
@@ -47,18 +53,91 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t, lang, onLangChan
       PlatformBridge.openLink("https://t.me/thndrrr");
   };
 
-  const handleAdminAuth = () => {
-      const isSuccess = onLogin(adminPwd, false);
-      if (!isSuccess) {
-          const license = SecurityCore.validateLicense(adminPwd);
-          if (license.valid) {
+  const handleAuthAttempt = async () => {
+      // 1. Check if it's a hardcoded admin/demo key (Bypass everything)
+      if (adminPwd.toLowerCase() === "genesis_prime") {
+          onLogin(adminPwd, false);
+          return;
+      }
+
+      // 2. Validate format & math (Offline Check)
+      setIsVerifying(true);
+      setStatusMessage('Checking Cryptography...');
+      
+      const license = SecurityCore.validateLicense(adminPwd);
+      
+      if (license.status === 'INVALID') {
+          setIsVerifying(false);
+          setStatusMessage('Invalid License Key Format');
+          PlatformBridge.haptic.notification('error');
+          return;
+      }
+
+      if (license.status === 'EXPIRED') {
+          setIsVerifying(false);
+          setStatusMessage(lang === 'ru' ? 'LICENSE EXPIRED' : 'ვადაგასული ლიცენზია');
+          PlatformBridge.haptic.notification('warning');
+          return;
+      }
+
+      // 3. OVERSIGHT PROTOCOL (Layer 3 Defense)
+      const isOnline = navigator.onLine;
+      const lastHandshake = parseInt(localStorage.getItem('genesis_last_handshake') || '0');
+      const timeSinceHandshake = Date.now() - lastHandshake;
+      const isLeaseValid = timeSinceHandshake < LEASE_DURATION_MS;
+
+      if (!isOnline) {
+          // OFFLINE MODE LOGIC
+          if (!isLeaseValid) {
+              // Red Team Mitigation: Prevent eternal offline use of generated keys
+              setIsVerifying(false);
+              setStatusMessage('SECURITY LEASE EXPIRED. ONLINE SYNC REQUIRED.');
+              PlatformBridge.haptic.notification('error');
+              return;
+          }
+          
+          // Allow access if lease is valid, but warn
+          setStatusMessage('OFFLINE MODE: VALIDATING VIA CACHE...');
+          setTimeout(() => {
               StorageService.save(STORAGE_KEYS.SESSION, 'true');
               onLogin('genesis_lab_entry', false); 
-          } else {
-              setAdminPwd('');
-              PlatformBridge.haptic.notification('error');
-          }
+              PlatformBridge.haptic.notification('warning');
+          }, 800);
+          return;
       }
+
+      // ONLINE MODE LOGIC
+      setStatusMessage('Verifying with Central Registry...');
+      const remote = await RemoteAccess.checkKeyStatus(adminPwd);
+
+      setIsVerifying(false);
+
+      if (remote.status === 'REVOKED') {
+          setStatusMessage('LICENSE REVOKED BY ISSUER');
+          PlatformBridge.haptic.notification('error');
+          return;
+      }
+
+      if (remote.maintenance) {
+          setStatusMessage(remote.message || 'SYSTEM MAINTENANCE MODE');
+          PlatformBridge.haptic.notification('warning');
+          return;
+      }
+
+      // Success (Valid Math + Not Revoked + Not Maintenance)
+      // Save broadcast message if any
+      if (remote.message) {
+          localStorage.setItem('genesis_system_message', remote.message);
+      } else {
+          localStorage.removeItem('genesis_system_message');
+      }
+
+      // UPDATE LEASE TIMESTAMP
+      localStorage.setItem('genesis_last_handshake', Date.now().toString());
+
+      StorageService.save(STORAGE_KEYS.SESSION, 'true');
+      onLogin('genesis_lab_entry', false); 
+      PlatformBridge.haptic.notification('success');
   };
 
   return (
@@ -80,30 +159,52 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t, lang, onLangChan
           </button>
       </div>
 
-      {/* STEALTH ADMIN LOGIN */}
+      {/* ACCESS CODE INPUT MODAL */}
       {showAdminInput && (
-        <div className="absolute inset-0 z-[100] bg-slate-950/98 flex flex-col items-center justify-center p-6 animate-in rounded-3xl">
-           <div className="text-center mb-6">
-              <span className="text-2xl mb-2 block">📟</span>
-              <h3 className="text-emerald-500 font-mono text-[10px] uppercase tracking-[0.3em]">Kernel_Auth_Required</h3>
+        <div className="absolute inset-0 z-[100] bg-slate-50/98 flex flex-col items-center justify-center p-6 animate-in rounded-3xl backdrop-blur-xl">
+           <div className="text-center mb-6 space-y-2">
+              <div className="w-16 h-16 bg-white rounded-2xl mx-auto flex items-center justify-center text-2xl shadow-sm border border-slate-100">
+                🔑
+              </div>
+              <h3 className="text-slate-900 font-black text-sm uppercase tracking-widest">{t.ui.auth_title}</h3>
            </div>
-           <input 
-              type="password" 
-              autoFocus
-              className="w-full bg-slate-900 border border-white/5 rounded-xl p-4 text-emerald-400 font-mono text-center outline-none focus:border-emerald-500/30 transition-all shadow-2xl"
-              placeholder="PASS_OR_LICENSE_KEY"
-              value={adminPwd}
-              onChange={e => setAdminPwd(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleAdminAuth()}
-           />
-           <div className="flex gap-4 mt-6">
-                <button onClick={() => setShowAdminInput(false)} className="text-[10px] text-slate-700 uppercase font-black hover:text-slate-400 transition-colors">Abort</button>
-                <button onClick={handleAdminAuth} className="text-[10px] text-emerald-500 uppercase font-black hover:text-emerald-300 transition-colors underline underline-offset-4">Authenticate</button>
+           
+           <div className="w-full max-w-[240px] space-y-4">
+               <input 
+                  type="text" 
+                  autoFocus
+                  className="w-full bg-white border border-slate-200 rounded-xl p-4 text-slate-800 font-mono text-xs text-center outline-none focus:border-indigo-500 transition-all shadow-sm placeholder:text-slate-300"
+                  placeholder={t.ui.code_input_placeholder}
+                  value={adminPwd}
+                  onChange={e => { setAdminPwd(e.target.value); setStatusMessage(''); }}
+                  onKeyDown={e => e.key === 'Enter' && handleAuthAttempt()}
+                  disabled={isVerifying}
+               />
+               
+               {statusMessage && (
+                   <p className={`text-[9px] text-center font-bold uppercase ${statusMessage.includes('REVOKED') || statusMessage.includes('Invalid') || statusMessage.includes('EXPIRED') ? 'text-red-500' : 'text-indigo-500 animate-pulse'}`}>
+                       {statusMessage}
+                   </p>
+               )}
+
+               <button 
+                  onClick={handleAuthAttempt} 
+                  disabled={isVerifying}
+                  className="w-full py-4 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all disabled:opacity-50"
+               >
+                  {isVerifying ? 'Verifying...' : 'Authenticate'}
+               </button>
+               <button 
+                  onClick={() => { setShowAdminInput(false); setStatusMessage(''); }} 
+                  className="w-full py-2 text-[10px] text-slate-400 uppercase font-black hover:text-slate-600 transition-colors"
+               >
+                  Cancel
+               </button>
            </div>
         </div>
       )}
 
-      {/* LOGO SECTION - STEALTH ENTRANCE */}
+      {/* LOGO SECTION */}
       <div 
         onDoubleClick={() => {
             PlatformBridge.haptic.impact('heavy');
@@ -124,7 +225,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t, lang, onLangChan
 
       {/* PRICING DISCOVERY */}
       {!showPricing ? (
-        <div className="w-full px-6 space-y-6">
+        <div className="w-full px-6 space-y-6 flex-1 flex flex-col">
             <button 
                 onClick={() => {
                     PlatformBridge.haptic.impact('light');
@@ -158,6 +259,16 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t, lang, onLangChan
                     </button>
                 )}
             </div>
+
+            {/* NEW EXPLICIT CODE ENTRY BUTTON */}
+            <div className="text-center pt-2">
+                <button 
+                    onClick={() => setShowAdminInput(true)}
+                    className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-dashed border-slate-300 pb-1 hover:text-indigo-600 hover:border-indigo-600 transition-all"
+                >
+                    {t.ui.enter_code_btn}
+                </button>
+            </div>
         </div>
       ) : (
         <div className="w-full px-6 space-y-4 animate-in">
@@ -189,7 +300,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t, lang, onLangChan
       <footer className="px-6 text-center opacity-30 mt-auto pb-4">
           <p className="text-[7px] font-mono text-slate-500 uppercase leading-relaxed max-w-[200px] mx-auto">
             {t.legal_disclaimer} <br/>
-            BUILD: 9.8.5 // SECTOR: 7G
+            BUILD: 9.8.7 // SECTOR: 7G
           </p>
       </footer>
     </div>

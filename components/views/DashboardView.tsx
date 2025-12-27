@@ -25,13 +25,16 @@ interface DashboardViewProps {
   onStartNode: (id: number, domain: DomainType) => void;
   onLogout: () => void;
   scanHistory: ScanHistory | null;
+  onResume?: () => void; // New prop for resuming flow
 }
 
 export const DashboardView = memo<DashboardViewProps>(({
   lang, t, isDemo, globalProgress, result, currentDomain, nodes, completedNodeIds,
-  onSetView, onSetCurrentDomain, onStartNode, onLogout, scanHistory
+  onSetView, onSetCurrentDomain, onStartNode, onLogout, scanHistory, onResume
 }) => {
   
+  const systemMessage = localStorage.getItem('genesis_system_message');
+
   const humanInsight = useMemo(() => {
     if (!result) return t.dashboard.desc;
     if (globalProgress === 100) return t.global.complete + ". " + t.dashboard.insight_coherence;
@@ -53,6 +56,8 @@ export const DashboardView = memo<DashboardViewProps>(({
       return latest.createdAt ? (Date.now() - latest.createdAt > 7 * 24 * 60 * 60 * 1000) : false;
   }, [scanHistory]);
 
+  const isSessionActive = globalProgress > 0 && globalProgress < 100 && !result;
+
   return (
     <div className="space-y-6 animate-in flex flex-col h-full">
       <header className="space-y-3 shrink-0">
@@ -66,6 +71,16 @@ export const DashboardView = memo<DashboardViewProps>(({
             </div>
         </div>
         
+        {/* GLOBAL BROADCAST */}
+        {systemMessage && (
+            <div className="bg-indigo-50 border border-indigo-200 p-4 rounded-[1.5rem] shadow-sm animate-in">
+                <h4 className="text-[9px] font-black text-indigo-500 uppercase tracking-widest flex items-center gap-2 mb-1">
+                    <span>📡</span> SYSTEM BROADCAST
+                </h4>
+                <p className="text-[11px] font-medium text-slate-700 leading-tight italic">"{systemMessage}"</p>
+            </div>
+        )}
+
         {needsRetest && (
             <div className="bg-amber-50 border-2 border-amber-200 p-4 rounded-[1.5rem] space-y-1 shadow-lg shadow-amber-200/20 animate-pulse">
                 <h4 className="text-[10px] font-black text-amber-700 uppercase tracking-widest flex items-center gap-2">
@@ -75,18 +90,39 @@ export const DashboardView = memo<DashboardViewProps>(({
             </div>
         )}
 
-        <div className={`p-4 rounded-2xl border transition-all duration-500 ${result && result.entropyScore > 60 ? 'bg-red-50 border-red-100 shadow-red-100/50' : 'bg-indigo-50/50 border-indigo-100/30'}`}>
-           <p className={`text-[11px] font-bold italic leading-relaxed ${result && result.entropyScore > 60 ? 'text-red-700' : 'text-indigo-700'}`}>
-              {humanInsight}
-           </p>
-        </div>
+        {isSessionActive && onResume ? (
+            <button 
+                onClick={onResume}
+                className="w-full bg-indigo-600 p-4 rounded-2xl shadow-xl shadow-indigo-500/20 border border-indigo-500/50 flex justify-between items-center group active:scale-[0.98] transition-all"
+            >
+                <div className="text-left">
+                    <h4 className="text-[9px] font-black text-indigo-200 uppercase tracking-widest flex items-center gap-2 mb-1">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        {t.ui.resume_session_title}
+                    </h4>
+                    <p className="text-sm font-black text-white italic">{t.ui.resume_session_btn} →</p>
+                </div>
+                <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white group-hover:bg-white group-hover:text-indigo-600 transition-colors">
+                    ▶
+                </div>
+            </button>
+        ) : (
+            <div className={`p-4 rounded-2xl border transition-all duration-500 ${result && result.entropyScore > 60 ? 'bg-red-50 border-red-100 shadow-red-100/50' : 'bg-indigo-50/50 border-indigo-100/30'}`}>
+               <p className={`text-[11px] font-bold italic leading-relaxed ${result && result.entropyScore > 60 ? 'text-red-700' : 'text-indigo-700'}`}>
+                  {humanInsight}
+               </p>
+            </div>
+        )}
       </header>
 
       <EvolutionDashboard history={scanHistory} lang={lang} />
 
       <section 
         className={`p-6 rounded-[2.5rem] shadow-2xl relative overflow-hidden shrink-0 group cursor-pointer transition-all active:scale-[0.98] ${globalProgress === 100 ? 'bg-indigo-600 ring-4 ring-indigo-500/20' : 'dark-glass-card'}`} 
-        onClick={() => result && onSetView('results')}
+        onClick={() => {
+            if (result) onSetView('results');
+            else if (onResume && isSessionActive) onResume();
+        }}
       >
          <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full blur-2xl -mr-8 -mt-8 animate-pulse"></div>
          

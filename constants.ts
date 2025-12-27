@@ -14,9 +14,12 @@ export const STORAGE_KEYS = {
 
 // SYSTEM VERSIONING & OVERSIGHT
 export const SYSTEM_METADATA = {
-    VERSION: '9.8.1-SLC-HEALTH',
+    VERSION: '9.8.2-SLC-NET',
     LAST_UPDATED: '2024-12-26',
-    CODENAME: 'Healthy Core Integration',
+    CODENAME: 'Connected Core',
+    // REPLACE THIS URL WITH YOUR RAW GITHUB FILE URL AFTER DEPLOYMENT
+    // Example: https://raw.githubusercontent.com/your-username/your-repo/main/public/ledger.json
+    GITHUB_LEDGER_URL: 'https://raw.githubusercontent.com/genesis-os/ledger/main/ledger.json',
     LANG_HEALTH: {
         ru: { status: 'VERIFIED', reliability: 0.98, notes: 'A/B Testing Active.' },
         ka: { status: 'LEARNING', reliability: 0.72, notes: 'Telemetry collecting for variant comparison.' }
@@ -44,6 +47,7 @@ export const SYSTEM_METADATA = {
     } as Record<string, number>,
     
     CHANGELOG: [
+        { v: '9.8.2', note: 'Added Remote Ledger verification protocol.' },
         { v: '9.8.1', note: 'Integrity fix: reachability for all 24 beliefs established.' },
         { v: '9.8.0', note: 'Implemented Deterministic A/B Framework.' }
     ]

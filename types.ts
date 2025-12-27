@@ -37,6 +37,16 @@ export interface LicenseInfo {
     features: string[];
 }
 
+export interface LicenseRecord {
+    id: string;
+    clientName: string;
+    key: string;
+    tier: string;
+    issuedAt: number;
+    expiresAt: number;
+    status: 'ACTIVE' | 'EXPIRED' | 'REVOKED';
+}
+
 export interface SystemHealth {
   status: 'healthy' | 'warning' | 'error';
   errors: number;
@@ -108,7 +118,23 @@ export type ArchetypeKey = 'THE_ARCHITECT' | 'THE_DRIFTER' | 'THE_BURNED_HERO' |
 export type BeliefKey = 'family_loyalty' | 'scarcity_mindset' | 'fear_of_punishment' | 'imposter_syndrome' | 'poverty_is_virtue' | 'hard_work_only' | 'self_permission' | 'fear_of_conflict' | 'betrayal_trauma' | 'unconscious_fear' | 'money_is_danger' | 'impulse_spend' | 'resource_toxicity' | 'short_term_bias' | 'capacity_expansion' | 'boundary_collapse' | 'shame_of_success' | 'hero_martyr' | 'latency_resistance' | 'body_mind_conflict' | 'ambivalence_loop' | 'autopilot_mode' | 'golden_cage' | 'money_is_tool' | 'default';
 export type PhaseType = 'SANITATION' | 'STABILIZATION' | 'EXPANSION';
 export type VerdictKey = 'HEALTHY_SCALE' | 'BRILLIANT_SABOTAGE' | 'INVISIBILE_CEILING' | 'LEAKY_BUCKET' | 'PARALYZED_GIANT' | 'FROZEN_POTENTIAL' | 'CRITICAL_DEFICIT';
-export interface RawAnalysisResult { state: { foundation: number; agency: number; resource: number; entropy: number }; integrity: number; capacity: number; entropyScore: number; neuroSync: number; systemHealth: number; phase: PhaseType; status: MetricLevel; validity: 'VALID' | 'SUSPICIOUS' | 'INVALID'; activePatterns: BeliefKey[]; correlations: NeuralCorrelation[]; conflicts: SystemConflict[]; somaticDissonance: BeliefKey[]; somaticProfile: { blocks: number; resources: number; dominantSensation: string }; integrityBreakdown: IntegrityBreakdown; clarity: number; confidenceScore: number; warnings: ClinicalWarning[]; flags: AnalysisFlags; skippedCount: number; }
+
+export interface MathSignature {
+    sigma: number; // Standard Deviation of Latency (Consistency)
+    friction: number; // Entropy Coefficient (Efficiency loss)
+    volatilityScore: number; // 0-100 normalized score
+}
+
+// Session EKG Point
+export interface SessionPulseNode {
+    id: number;
+    domain: DomainType;
+    tension: number; // 0-100 normalized stress level (latency + somatic)
+    isBlock: boolean; // Did they freeze?
+    isFlow: boolean; // Was it effortless?
+}
+
+export interface RawAnalysisResult { state: { foundation: number; agency: number; resource: number; entropy: number }; integrity: number; capacity: number; entropyScore: number; neuroSync: number; systemHealth: number; phase: PhaseType; status: MetricLevel; validity: 'VALID' | 'SUSPICIOUS' | 'INVALID' | 'BREACH'; activePatterns: BeliefKey[]; correlations: NeuralCorrelation[]; conflicts: SystemConflict[]; somaticDissonance: BeliefKey[]; somaticProfile: { blocks: number; resources: number; dominantSensation: string }; integrityBreakdown: IntegrityBreakdown; clarity: number; confidenceScore: number; warnings: ClinicalWarning[]; flags: AnalysisFlags; skippedCount: number; mathSignature?: MathSignature; sessionPulse: SessionPulseNode[]; }
 export interface AnalysisResult extends RawAnalysisResult { timestamp: number; createdAt: number; shareCode: string; archetypeKey: ArchetypeKey; secondaryArchetypeKey?: ArchetypeKey; matchPercent?: number; archetypeMatch: number; archetypeSpectrum: Array<{ key: ArchetypeKey; score: number }>; verdictKey: VerdictKey; lifeScriptKey: string; roadmap: ProtocolStep[]; graphPoints: Array<{ x: number; y: number }>; interventionStrategy: string; coreConflict: string; shadowDirective: string; patternFlags: PatternFlags; variantId?: string; }
 export type MetricLevel = 'OPTIMAL' | 'STABLE' | 'STRAINED' | 'PROTECTIVE' | 'UNSTABLE';
 export interface NeuralCorrelation { nodeId: string; domain: DomainType; type: 'resistance' | 'resonance'; descriptionKey: string; }
@@ -117,6 +143,7 @@ export interface IntegrityBreakdown { coherence: number; sync: number; stability
 export interface AnalysisFlags { isAlexithymiaDetected: boolean; isSlowProcessingDetected: boolean; isNeuroSyncReliable: boolean; isSocialDesirabilityBiasDetected: boolean; processingSpeedCompensation: number; entropyType: 'NEUTRAL' | 'CREATIVE' | 'STRUCTURAL'; isL10nRiskDetected: boolean; }
 export interface PatternFlags { isMonotonic: boolean; isHighSkipRate: boolean; isFlatline: boolean; isRoboticTiming: boolean; isSomaticMonotony: boolean; isEarlyTermination: boolean; dominantPosition: number | null; }
 // Fixed TaskKey type and applied to ProtocolStep
+export type TaskKey = string;
 export interface ProtocolStep { day: number; phase: PhaseType; taskKey: TaskKey; targetMetricKey: string; }
 export interface ClinicalWarning { type: string; severity: 'LOW' | 'MEDIUM' | 'HIGH'; messageKey: string; }
 export interface Choice { id: string; textKey: string; beliefKey: BeliefKey; position: number; }
@@ -137,9 +164,6 @@ export interface LogEntry { timestamp: number; level: LogLevel; module: string; 
 export interface IntegrityReport { status: 'healthy' | 'warning' | 'error'; errors: ConfigError[]; warnings: ConfigError[]; healthy: string[]; timestamp: number; semanticDensity?: Record<string, number>; }
 export interface ConfigError { severity: 'low' | 'high'; type: string; details: string; fix: string; file: string; impact: string; }
 export interface TherapyHypothesis { id: string; hypothesis: string; basedOn: string; focusForSession: string; }
-
-// Added types to fix exported members errors
-export type TaskKey = string;
 
 export interface SystemicVector {
     origin: string;
@@ -165,6 +189,7 @@ export interface ClinicalNarrative {
     level2: {
         introduction: string;
         generalConfig: string;
+        psychodynamicProfile: string; 
         deepAnalysis: string;
         archetypeAnalysis: string;
         clinicalHypotheses: string;
@@ -175,7 +200,14 @@ export interface ClinicalNarrative {
         systemicRoot: string;
         therapeuticAlliance: string;
         shadowContract: string;
+        counterTransference: string; 
+        therapeuticTrap: string; 
+        fragilityPoint: string; 
+        primaryDefense: string; 
         sessionFlow: SessionStep[];
+        clinicalStrategy: string[]; 
+        triggers: string[]; 
+        blindSpots: string[]; 
         clinicalProfile: string;
         systemicVectors: SystemicVector[];
         interventions: Intervention[];

@@ -1,4 +1,5 @@
-import { AnalysisResult, ScanHistory, DataCorruptionError, SystemLogEntry, TelemetryEvent, FeedbackEntry } from '../types';
+
+import { AnalysisResult, ScanHistory, DataCorruptionError, SystemLogEntry, TelemetryEvent, FeedbackEntry, LicenseRecord } from '../types';
 import { STORAGE_KEYS } from '../constants';
 import { SecurityCore } from '../utils/crypto';
 
@@ -29,23 +30,40 @@ const loadHistory = (): ScanHistory => {
   const item = provider?.getItem(STORAGE_KEYS.SCAN_HISTORY);
   if (!item) return { scans: [], latestScan: null, evolutionMetrics: { entropyTrend: [], integrityTrend: [], dates: [] } };
   
-  // Try decrypting. If it fails, try parsing as raw JSON (migration support)
+  // Try decrypting with Device Binding
   const decrypted = SecurityCore.safeDecode(item, INTERNAL_KEY);
-  if (decrypted) return decrypted;
-
-  try {
-    const raw = JSON.parse(item);
-    return raw;
-  } catch (e) {
-    return { scans: [], latestScan: null, evolutionMetrics: { entropyTrend: [], integrityTrend: [], dates: [] } };
+  
+  if (decrypted) {
+      // Chain of Custody Validation
+      // If history exists, verify that the timeline is mathematically consistent
+      // (Advanced feature for v3.1: currently we just trust the decode if checksum passes)
+      return decrypted;
   }
+
+  // FALLBACK: Migration from Old System (Non-Device Bound)
+  // If safeDecode fails, it might be because the data was saved before we added Device Fingerprinting.
+  // We try to "rescue" the data by parsing it as raw JSON or old format, then re-save it securely.
+  try {
+    // Attempt 1: Raw JSON (Dev mode legacy)
+    const raw = JSON.parse(item);
+    // If successful, immediately upgrade security
+    // We don't save here to avoid side-effects in getter, but next save will fix it.
+    if (raw.scans) return raw;
+  } catch (e) {
+     // Data is truly dead or from another device
+     console.error("StorageService: History unrecoverable.");
+  }
+
+  return { scans: [], latestScan: null, evolutionMetrics: { entropyTrend: [], integrityTrend: [], dates: [] } };
 };
 
 export const StorageService = {
   save: (key: string, data: unknown) => {
     try {
       // Encrypt sensitive diagnostic data
-      const isSensitive = [STORAGE_KEYS.SCAN_HISTORY, STORAGE_KEYS.SESSION_STATE, STORAGE_KEYS.TELEMETRY_DATA].includes(key as any);
+      const isSensitive = [STORAGE_KEYS.SCAN_HISTORY, STORAGE_KEYS.SESSION_STATE, STORAGE_KEYS.TELEMETRY_DATA, 'genesis_license_registry'].includes(key as any);
+      
+      // If sensitive, use Device-Bound Encryption
       const payload = isSensitive ? SecurityCore.safeEncode(data, INTERNAL_KEY) : JSON.stringify(data);
       provider?.setItem(key, payload);
     } catch (e) {
@@ -57,19 +75,40 @@ export const StorageService = {
     const item = provider?.getItem(key);
     if (!item) return fallback;
     
-    const isSensitive = [STORAGE_KEYS.SCAN_HISTORY, STORAGE_KEYS.SESSION_STATE, STORAGE_KEYS.TELEMETRY_DATA].includes(key as any);
+    const isSensitive = [STORAGE_KEYS.SCAN_HISTORY, STORAGE_KEYS.SESSION_STATE, STORAGE_KEYS.TELEMETRY_DATA, 'genesis_license_registry'].includes(key as any);
     if (isSensitive) {
         const decrypted = SecurityCore.safeDecode(item, INTERNAL_KEY);
         if (decrypted) return decrypted as T;
+        
+        // If decryption failed, it implies data corruption OR device mismatch.
+        // We return fallback to prevent crashing, but log the incident.
+        console.warn(`StorageService: Access Denied for ${key} (Integrity/Device Mismatch)`);
+        // Optional: Throw error if strict security is needed
+        // if (key === STORAGE_KEYS.SCAN_HISTORY) throw new DataCorruptionError("History integrity compromised");
+        return fallback; 
     }
 
     try {
       return JSON.parse(item) as T;
     } catch (e) {
-      if (isSensitive) throw new DataCorruptionError(`Security mismatch for key: ${key}`);
       return fallback;
     }
   },
+
+  // LICENSE REGISTRY MANAGEMENT
+  saveLicenseRecord: (record: LicenseRecord) => {
+      const registry = StorageService.load<LicenseRecord[]>('genesis_license_registry', []);
+      registry.unshift(record);
+      StorageService.save('genesis_license_registry', registry);
+  },
+
+  updateLicenseStatus: (key: string, status: LicenseRecord['status']) => {
+      const registry = StorageService.load<LicenseRecord[]>('genesis_license_registry', []);
+      const updated = registry.map(r => r.key === key ? { ...r, status } : r);
+      StorageService.save('genesis_license_registry', updated);
+  },
+
+  getLicenseRegistry: (): LicenseRecord[] => StorageService.load<LicenseRecord[]>('genesis_license_registry', []),
 
   logTelemetry: (event: Omit<TelemetryEvent, 'timestamp' | 'isOutlier'>) => {
       try {
@@ -101,6 +140,10 @@ export const StorageService = {
   async saveScan(result: AnalysisResult): Promise<void> {
     const history = loadHistory();
     const deterministicResult: AnalysisResult = { ...result, timestamp: Date.now() };
+    
+    // CHAIN OF CUSTODY (Integrity Link)
+    // To prevent deletion of past bad results, we can implement a hash link here in future versions.
+    // For now, Device Binding ensures that the history array implies a continuous session on this device.
     
     history.scans.push(deterministicResult);
     history.latestScan = deterministicResult;
@@ -156,7 +199,7 @@ export const StorageService = {
   },
 
   clear: () => {
-    const preservedKeys: string[] = [STORAGE_KEYS.LANG, STORAGE_KEYS.AUDIT_LOG, STORAGE_KEYS.CLINICAL_FEEDBACK];
+    const preservedKeys: string[] = [STORAGE_KEYS.LANG, STORAGE_KEYS.AUDIT_LOG, STORAGE_KEYS.CLINICAL_FEEDBACK, 'genesis_license_registry'];
     Object.values(STORAGE_KEYS).forEach(key => {
       if (!preservedKeys.includes(key as any)) {
         provider?.removeItem(key as any);

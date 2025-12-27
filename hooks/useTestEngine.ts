@@ -109,11 +109,8 @@ export const useTestEngine = ({
     if (nextId >= TOTAL_NODES) { setView('results'); return; }
     if (isDemo && nextId >= 3) { setView('dashboard'); return; }
 
-    if (nextNodes.length > 0 && nextNodes.length % 10 === 0 && !nextNodes.includes(nextId)) {
-        setView('dashboard');
-        window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred?.('success');
-        return;
-    }
+    // FIXED: Removed the forced kick-out logic (modulo 10) to prevent user confusion.
+    // The flow is now continuous until completion or manual exit.
 
     let nextDomain: DomainType | null = null;
     for (const d of DOMAIN_SETTINGS) {

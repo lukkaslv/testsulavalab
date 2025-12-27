@@ -1,6 +1,6 @@
 
-import React, { useState, memo, useMemo } from 'react';
-import { Translations, AnalysisResult, GameHistoryItem, LicenseInfo, SubscriptionTier } from '../../types';
+import React, { useState, memo, useMemo, useEffect } from 'react';
+import { Translations, AnalysisResult, GameHistoryItem, LicenseInfo, SubscriptionTier, LicenseRecord } from '../../types';
 import { PlatformBridge } from '../../utils/helpers';
 import { SecurityCore } from '../../utils/crypto';
 import { StorageService, STORAGE_KEYS } from '../../services/storageService';
@@ -17,16 +17,96 @@ interface AdminPanelProps {
 }
 
 export const AdminPanel = memo<AdminPanelProps>(({ t, onExit, result, history, onUnlockAll, glitchEnabled, onToggleGlitch, onSetView }) => {
-  const [activeTab, setActiveTab] = useState<'kernel' | 'billing' | 'telemetry' | 'integrity'>('kernel');
+  const [activeTab, setActiveTab] = useState<'kernel' | 'registry' | 'telemetry' | 'integrity'>('kernel');
   const [genTier, setGenTier] = useState<string>('CLINICAL');
   const [genDays, setGenDays] = useState<number>(30);
+  const [clientName, setClientName] = useState<string>('');
   const [lastGeneratedKey, setLastGeneratedKey] = useState<string>('');
+  const [registry, setRegistry] = useState<LicenseRecord[]>([]);
+  
+  // NEW: Ledger Configuration States
+  const [broadcastMessage, setBroadcastMessage] = useState('');
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
+
+  useEffect(() => {
+      setRegistry(StorageService.getLicenseRegistry());
+  }, [activeTab]);
 
   const telemetry = useMemo(() => StorageService.getTelemetry(), []);
 
   const handleGenerateKey = () => {
+      if (!clientName.trim()) {
+          PlatformBridge.haptic.notification('error');
+          return;
+      }
+      
       const key = SecurityCore.generateLicense(genTier, genDays);
+      const now = Date.now();
+      const expiresAt = now + (genDays * 24 * 60 * 60 * 1000);
+      
+      const newRecord: LicenseRecord = {
+          id: now.toString(36) + Math.random().toString(36).substr(2, 5),
+          clientName: clientName.trim(),
+          key: key,
+          tier: genTier,
+          issuedAt: now,
+          expiresAt: expiresAt,
+          status: 'ACTIVE'
+      };
+
+      StorageService.saveLicenseRecord(newRecord);
+      setRegistry(prev => [newRecord, ...prev]);
+      
       setLastGeneratedKey(key);
+      setClientName(''); // Clear name but keep settings
+      PlatformBridge.haptic.notification('success');
+  };
+
+  const handleRevoke = (key: string) => {
+      if (window.confirm("Mark this key as revoked? This will update your local registry status.")) {
+          StorageService.updateLicenseStatus(key, 'REVOKED');
+          setRegistry(prev => prev.map(r => r.key === key ? { ...r, status: 'REVOKED' } : r));
+      }
+  };
+
+  // Generates the JSON file content to be pushed to GitHub with System Controls
+  const handleExportLedger = () => {
+      const revokedKeys = registry.filter(r => r.status === 'REVOKED').map(r => r.key);
+      const ledgerContent = {
+          updatedAt: new Date().toISOString(),
+          broadcastMessage: broadcastMessage.trim() || undefined,
+          maintenanceMode: maintenanceMode,
+          revokedKeys: revokedKeys
+      };
+
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(ledgerContent, null, 2));
+      const downloadAnchorNode = document.createElement('a');
+      downloadAnchorNode.setAttribute("href", dataStr);
+      downloadAnchorNode.setAttribute("download", `ledger.json`);
+      document.body.appendChild(downloadAnchorNode);
+      downloadAnchorNode.click();
+      downloadAnchorNode.remove();
+      PlatformBridge.haptic.notification('success');
+      alert("Ledger generated with System Config! Commit this file to GitHub.");
+  };
+
+  const handleExportData = () => {
+      const exportData = {
+          version: "Genesis_v9.8",
+          timestamp: new Date().toISOString(),
+          telemetry: StorageService.getTelemetry(),
+          feedback: StorageService.getFeedback(),
+          scan_history: StorageService.getScanHistory(),
+          license_registry: StorageService.getLicenseRegistry()
+      };
+
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
+      const downloadAnchorNode = document.createElement('a');
+      downloadAnchorNode.setAttribute("href", dataStr);
+      downloadAnchorNode.setAttribute("download", `genesis_dataset_${Date.now()}.json`);
+      document.body.appendChild(downloadAnchorNode);
+      downloadAnchorNode.click();
+      downloadAnchorNode.remove();
       PlatformBridge.haptic.notification('success');
   };
 
@@ -50,7 +130,7 @@ export const AdminPanel = memo<AdminPanelProps>(({ t, onExit, result, history, o
       </header>
 
       <nav className="flex gap-1 shrink-0 p-1 bg-slate-900/50 rounded-xl border border-white/5 overflow-x-auto no-scrollbar">
-        {(['kernel', 'billing', 'telemetry', 'integrity'] as const).map(tab => (
+        {(['kernel', 'registry', 'telemetry', 'integrity'] as const).map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)} className={`px-4 py-2.5 rounded-lg text-[8px] font-black uppercase transition-all ${activeTab === tab ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'opacity-40 text-slate-400'}`}>
                 {tab}
             </button>
@@ -91,10 +171,47 @@ export const AdminPanel = memo<AdminPanelProps>(({ t, onExit, result, history, o
           </div>
         )}
 
-        {activeTab === 'billing' && (
+        {activeTab === 'registry' && (
             <div className="space-y-6 animate-in">
-                <section className="bg-indigo-900/20 p-6 rounded-2xl border border-indigo-500/30 space-y-4">
-                    <h4 className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">License_Generator_v1.1</h4>
+                {/* GLOBAL CONTROL */}
+                <section className="bg-slate-900/40 p-5 rounded-2xl border border-purple-500/30 space-y-4">
+                    <h4 className="text-[9px] font-black text-purple-400 uppercase tracking-widest">GLOBAL_CONTROL_CENTER</h4>
+                    
+                    <div className="space-y-2">
+                        <span className="text-[8px] text-slate-500 uppercase">System Broadcast Message</span>
+                        <input 
+                            type="text" 
+                            value={broadcastMessage}
+                            onChange={(e) => setBroadcastMessage(e.target.value)}
+                            className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-[10px] text-white outline-none placeholder:text-slate-600"
+                            placeholder="e.g. 'Server maintenance at 22:00' (Leave empty to clear)"
+                        />
+                    </div>
+
+                    <div className="flex items-center gap-3 p-3 bg-black/30 rounded-xl border border-white/5">
+                        <button 
+                            onClick={() => setMaintenanceMode(!maintenanceMode)}
+                            className={`w-10 h-6 rounded-full transition-colors flex items-center p-1 ${maintenanceMode ? 'bg-red-500' : 'bg-slate-700'}`}
+                        >
+                            <div className={`w-4 h-4 bg-white rounded-full transition-transform ${maintenanceMode ? 'translate-x-4' : 'translate-x-0'}`}></div>
+                        </button>
+                        <div>
+                            <span className="text-[9px] font-bold text-white block">MAINTENANCE MODE (KILL SWITCH)</span>
+                            <span className="text-[8px] text-slate-500">Block all non-admin access</span>
+                        </div>
+                    </div>
+                </section>
+
+                {/* GENERATOR */}
+                <section className="bg-indigo-900/20 p-5 rounded-2xl border border-indigo-500/30 space-y-4">
+                    <h4 className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">ISSUE_NEW_LICENSE</h4>
+                    <input 
+                        type="text" 
+                        value={clientName} 
+                        onChange={(e) => setClientName(e.target.value)}
+                        className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-[10px] text-white outline-none placeholder:text-slate-600"
+                        placeholder="Client Name / ID (Required for tracking)"
+                    />
                     <div className="grid grid-cols-2 gap-3">
                         <select 
                             value={genTier} 
@@ -114,7 +231,7 @@ export const AdminPanel = memo<AdminPanelProps>(({ t, onExit, result, history, o
                         />
                     </div>
                     <button onClick={handleGenerateKey} className="w-full py-4 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase shadow-xl active:scale-95 transition-all">
-                        Generate_Master_Key
+                        Generate & Register
                     </button>
                     {lastGeneratedKey && (
                         <div className="p-4 bg-black/60 border border-emerald-500/30 rounded-xl space-y-2">
@@ -123,16 +240,69 @@ export const AdminPanel = memo<AdminPanelProps>(({ t, onExit, result, history, o
                                 navigator.clipboard.writeText(lastGeneratedKey);
                                 PlatformBridge.haptic.notification('success');
                             }}>{lastGeneratedKey}</p>
-                            <span className="text-[6px] text-slate-500 italic block">Click key to copy to clipboard</span>
                         </div>
                     )}
+                </section>
+
+                {/* LEDGER & EXPORT */}
+                <section className="space-y-3">
+                    <div className="flex justify-between items-center">
+                        <h4 className="text-[9px] font-black text-slate-500 uppercase tracking-widest pl-1">LICENSE_LEDGER ({registry.length})</h4>
+                        <button 
+                            onClick={handleExportLedger}
+                            className="bg-purple-900/30 text-purple-400 border border-purple-500/30 px-3 py-1.5 rounded-lg text-[8px] font-black uppercase hover:bg-purple-800/30 transition-colors flex items-center gap-2"
+                        >
+                            <span>☁️</span> PREPARE_GITHUB_UPDATE
+                        </button>
+                    </div>
+                    <div className="space-y-2">
+                        {registry.map((rec) => {
+                            const isExpired = Date.now() > rec.expiresAt;
+                            const isRevoked = rec.status === 'REVOKED';
+                            return (
+                                <div key={rec.id} className={`p-3 rounded-xl border flex flex-col gap-2 ${isRevoked ? 'bg-red-950/10 border-red-900/30 opacity-60' : isExpired ? 'bg-slate-900/40 border-slate-800' : 'bg-slate-900/80 border-emerald-900/30'}`}>
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <span className="text-[10px] font-bold text-white block">{rec.clientName}</span>
+                                            <span className="text-[8px] font-mono text-slate-500">{rec.tier} // {new Date(rec.issuedAt).toLocaleDateString()}</span>
+                                        </div>
+                                        <div className="text-right">
+                                            <span className={`text-[8px] font-black px-1.5 py-0.5 rounded ${isRevoked ? 'bg-red-900 text-red-400' : isExpired ? 'bg-slate-800 text-slate-400' : 'bg-emerald-900 text-emerald-400'}`}>
+                                                {isRevoked ? 'REVOKED' : isExpired ? 'EXPIRED' : 'ACTIVE'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="bg-black/30 p-2 rounded text-[8px] font-mono text-slate-400 break-all">
+                                        {rec.key}
+                                    </div>
+                                    <div className="flex justify-between items-center pt-1">
+                                        <span className="text-[8px] text-slate-600">Exp: {new Date(rec.expiresAt).toLocaleDateString()}</span>
+                                        {!isRevoked && (
+                                            <button onClick={() => handleRevoke(rec.key)} className="text-[8px] text-red-500 uppercase hover:text-red-400 font-bold">
+                                                [ REVOKE ]
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                        {registry.length === 0 && <p className="text-[9px] text-slate-700 italic text-center py-4">No active licenses in local registry.</p>}
+                    </div>
                 </section>
             </div>
         )}
 
         {activeTab === 'telemetry' && (
             <div className="space-y-4 animate-in">
-                <h4 className="text-[9px] font-black text-slate-500 uppercase tracking-widest pl-1">Live_Telemetry_Stream</h4>
+                <div className="flex justify-between items-center">
+                    <h4 className="text-[9px] font-black text-slate-500 uppercase tracking-widest pl-1">Live_Telemetry_Stream</h4>
+                    <button 
+                        onClick={handleExportData}
+                        className="bg-emerald-900/30 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-lg text-[8px] font-black uppercase hover:bg-emerald-800/30 transition-colors"
+                    >
+                        Export_Dataset.json
+                    </button>
+                </div>
                 <div className="space-y-2">
                     {telemetry.length === 0 && <p className="text-[9px] text-slate-700 italic">No telemetry data captured in current buffer.</p>}
                     {telemetry.slice().reverse().map((t, idx) => (

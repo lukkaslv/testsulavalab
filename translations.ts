@@ -103,7 +103,12 @@ const ru: Translations = {
     status_active: "Активен",
     status_expired: "Истек",
     upgrade_btn: "Обновить",
-    skip_button: "Пропустить"
+    skip_button: "Пропустить",
+    enter_code_btn: "Ввести код доступа",
+    code_input_placeholder: "Лицензия или Пароль",
+    auth_title: "Авторизация",
+    resume_session_title: "Сессия активна", 
+    resume_session_btn: "Продолжить"
   },
   admin: {
     kernel: "Ядро",
@@ -130,7 +135,8 @@ const ru: Translations = {
     title: "Про-Гайд",
     subtitle: "Для специалистов",
     sections: [
-      { title: "Интерпретация", content: ["Смотрите на Entropy", "Foundation - это база вашей работы", "NeuroSync показывает готовность к изменениям"] }
+      { title: "Интерпретация", content: ["Смотрите на Entropy", "Foundation - это база вашей работы", "NeuroSync показывает готовность к изменениям"] },
+      { title: "Чтение ЭКГ Сессии (EKG)", content: ["График показывает динамику напряжения по ходу сессии.", "Высокие пики (красный) = Точки срыва адаптации и сильного сопротивления.", "Провалы (зеленый) = Flow state или диссоциация (проверяйте NeuroSync).", "Нажмите на столбец, чтобы увидеть точную метрику напряжения."] }
     ],
     closing: "Genesis OS — это профессиональный инструмент, а не развлечение."
   },
@@ -269,7 +275,7 @@ const ru: Translations = {
     share_button: "Поделиться",
     back: "В дашборд",
     disclaimer_title: "Важное уведомление",
-    disclaimer_body: "Результаты скрининга требуют интерпретации квалифицированным специалистом. Это не диагноз.",
+    disclaimer_body: "Результаты скрининга требуют интерпретации квалифицированным специалистом. Это не медицинский диагноз.",
     brief_instruction: "Передайте этот код вашему специалисту.",
     copy_brief: "Копировать код",
     brief_copied: "Код скопирован",
@@ -285,7 +291,21 @@ const ru: Translations = {
     origin_reported: "Отчет клиента",
     session_prep: "Подготовка к сессии",
     session_prep_desc: "Ключевые вопросы для терапии",
-    status: "Статус системы"
+    status: "Статус системы",
+    
+    // NEW KEYS FOR ACTION COMPASS
+    next_steps_title: "Что делать дальше?",
+    next_steps_body: "Это не диагноз, а карта для вашего психолога.",
+    step_1: "Скопируйте Clinical ID (код выше).",
+    step_2: "Отправьте код своему психологу.",
+    step_3: "Назначьте встречу для разбора.",
+    human_readable_summary: "Ваше состояние одной фразой:",
+    resume_session_title: "Сессия активна", 
+    resume_session_btn: "Продолжить",
+    start_new_cycle_btn: "Начать новый цикл", 
+    new_cycle_desc: "Архивировать текущий результат и начать с чистого листа",
+    session_ekg_title: "Кардиограмма сессии (EKG)",
+    session_ekg_desc: "Динамика напряжения и сопротивления в реальном времени."
   },
   phases: {
     SANITATION: "Санация",
@@ -440,7 +460,16 @@ const ka: Translations = {
     status_active: "აქტიური",
     status_expired: "ვადაგასული",
     upgrade_btn: "განახლება",
-    skip_button: "გამოტოვება"
+    skip_button: "გამოტოვება",
+    enter_code_btn: "წვდომის კოდის შეყვანა",
+    code_input_placeholder: "ლიცენზია ან პაროლი",
+    auth_title: "ავტორიზაცია",
+    resume_session_title: "სესია აქტიურია", 
+    resume_session_btn: "გაგრძელება",
+    start_new_cycle_btn: "ახალი ციკლის დაწყება", 
+    new_cycle_desc: "მიმდინარე შედეგის დაარქივება და თავიდან დაწყება",
+    session_ekg_title: "სესიის კარდიოგრამა (EKG)",
+    session_ekg_desc: "დაძაბულობის დინამიკა რეალურ დროში."
   },
   admin: {
     kernel: "ბირთვი",
@@ -467,7 +496,8 @@ const ka: Translations = {
     title: "პრო-გაიდი",
     subtitle: "სპეციალისტებისთვის",
     sections: [
-      { title: "ინტერპრეტაცია", content: ["აკონტროლეთ Entropy", "Foundation არის თქვენი მუშაობის საფუძველი", "NeuroSync აჩვენებს ცვლილებებისთვის მზაობას"] }
+      { title: "ინტერპრეტაცია", content: ["აკონტროლეთ Entropy", "Foundation არის თქვენი მუშაობის საფუძველი", "NeuroSync აჩვენებს ცვლილებებისთვის მზაობას"] },
+      { title: "EKG კითხვა", content: ["გრაფიკი აჩვენებს დაძაბულობის დინამიკას.", "წითელი ზონა = წინააღმდეგობა.", "მწვანე ზონა = Flow.", "დააჭირეთ სვეტს დეტალებისთვის."] }
     ],
     closing: "Genesis OS პროფესიული ინსტრუმენტია."
   },
@@ -622,7 +652,21 @@ const ka: Translations = {
     origin_reported: "კლიენტის რეპორტი",
     session_prep: "სესიისთვის მომზადება",
     session_prep_desc: "საკვანძო კითხვები თერაპიისთვის",
-    status: "სისტემის სტატუსი"
+    status: "სისტემის სტატუსი",
+
+    // NEW KEYS FOR ACTION COMPASS
+    next_steps_title: "რა გავაკეთო?",
+    next_steps_body: "ეს არ არის დიაგნოზი, არამედ რუკა თქვენი ფსიქოლოგისთვის.",
+    step_1: "დააკოპირეთ Clinical ID (კოდი ზემოთ).",
+    step_2: "გაუგზავნეთ კოდი თქვენს ფსიქოლოგს.",
+    step_3: "დანიშნეთ შეხვედრა განხილვისთვის.",
+    human_readable_summary: "თქვენი მდგომარეობა ერთი ფრაზით:",
+    resume_session_title: "სესია აქტიურია", 
+    resume_session_btn: "გაგრძელება",
+    start_new_cycle_btn: "ახალი ციკლის დაწყება", 
+    new_cycle_desc: "მიმდინარე შედეგის დაარქივება და თავიდან დაწყება",
+    session_ekg_title: "სესიის კარდიოგრამა (EKG)",
+    session_ekg_desc: "დაძაბულობის დინამიკა რეალურ დროში."
   },
   phases: {
     SANITATION: "სანაცია",
