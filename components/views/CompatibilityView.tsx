@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { AnalysisResult, Translations, SessionStep } from '../../types';
 import { CompatibilityEngine } from '../../services/compatibilityEngine';
@@ -89,7 +88,7 @@ const QualityControlHUD = ({ result }: { result: AnalysisResult }) => {
     // Determine Protocol Version based on label
     const isLegacy = result.integrityBreakdown?.label === 'LEGACY_PROTOCOL';
     const isBreach = result.validity === 'BREACH' || result.validity === 'INVALID';
-    const density = result.clarity; // Mapped from clarity (approx) or actual calculation
+    const density = result.clarity; 
     
     // Calculate Data Reliability Score
     let reliability = 100;
@@ -111,7 +110,7 @@ const QualityControlHUD = ({ result }: { result: AnalysisResult }) => {
             <div className="bg-slate-900/50 border border-slate-800 p-2 rounded-lg text-center">
                 <span className="text-[6px] text-slate-500 uppercase tracking-widest block mb-1">RELIABILITY</span>
                 <span className={`text-[8px] font-black uppercase ${reliabilityColor}`}>
-                    {Math.max(0, reliability)}% {reliability < 60 ? '⚠️' : ''}
+                    {Math.max(0, reliability)}% {(reliability < 60) ? '⚠️' : ''}
                 </span>
             </div>
             <div className="bg-slate-900/50 border border-slate-800 p-2 rounded-lg text-center">
@@ -145,7 +144,7 @@ const SomaticHeatmap = ({ result }: { result: AnalysisResult }) => {
             </div>
             <div className="text-right">
                 <span className="text-[7px] text-slate-500 uppercase tracking-widest block">SYNC_RATE</span>
-                <span className={`text-[12px] font-black ${neuroSync < 50 ? 'text-red-400' : 'text-indigo-400'}`}>{neuroSync}%</span>
+                <span className={`text-[12px] font-black ${(neuroSync < 50) ? 'text-red-400' : 'text-indigo-400'}`}>{neuroSync}%</span>
             </div>
         </div>
     );
