@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Layout } from './components/Layout';
-import { MODULE_REGISTRY, ONBOARDING_NODES_COUNT, TOTAL_NODES, DOMAIN_SETTINGS } from './constants';
+import { MODULE_REGISTRY, ONBOARDING_NODES_COUNT, DOMAIN_SETTINGS } from './constants';
 import { translations } from './translations';
 import { calculateRawMetrics } from './services/psychologyService';
 import { DiagnosticEngine } from './services/diagnosticEngine';
@@ -16,7 +16,9 @@ import { PatternDetector } from './services/PatternDetector';
 import { AuthView } from './components/views/AuthView';
 import { BootView } from './components/views/BootView';
 import { DashboardView, NodeUI } from './components/views/DashboardView';
-import { TestView, BodySyncView, ReflectionView } from './components/views/TestModule';
+// Fix: Import BodySyncView from its dedicated file as it's not exported from TestModule
+import { TestView, ReflectionView } from './components/views/TestModule';
+import { BodySyncView } from './components/views/BodySyncView';
 import { ResultsView } from './components/views/ResultsView';
 import { AdminPanel } from './components/views/AdminPanel';
 import { CompatibilityView } from './components/views/CompatibilityView';
@@ -213,14 +215,12 @@ const App: React.FC = () => {
 
   const handleReset = useCallback((force: boolean = false) => {
     const performResetAction = () => {
-      // 1. Clear Storage
       StorageService.clear();
       sessionStorage.removeItem('genesis_boot_seen');
       localStorage.removeItem(STORAGE_KEYS.SESSION);
       localStorage.removeItem('genesis_tier');
       localStorage.removeItem('genesis_system_message');
       
-      // 2. Clear State
       setBootShown(false);
       setCompletedNodeIds([]);
       setHistory([]);
@@ -229,7 +229,6 @@ const App: React.FC = () => {
       setIsPro(false);
       setLicenseTier('FREE');
       
-      // 3. Forced UI Reset (Ensures no stale data remains in memory)
       PlatformBridge.haptic.notification('success');
       setTimeout(() => {
           window.location.reload();
@@ -317,7 +316,7 @@ const App: React.FC = () => {
       case 'test': return !activeModule ? null : <TestView t={t} activeModule={activeModule} currentId={engine.state.currentId} scene={MODULE_REGISTRY[activeModule]?.[engine.state.currentId]} onChoice={engine.handleChoice} onExit={() => setView('dashboard')} getSceneText={getSceneText} adaptiveState={adaptiveState} />;
       case 'body_sync': return <BodySyncView lang={lang} t={t} onSync={engine.syncBodySensation} />;
       case 'reflection': return <ReflectionView t={t} sensation={history[history.length - 1]?.sensation} />;
-      case 'results': if (!result) return null; return result.validity === 'INVALID' ? <InvalidResultsView t={t} onReset={() => handleReset(true)} patternFlags={result.patternFlags} /> : <ResultsView lang={lang} t={t} result={result} isGlitchMode={!!isGlitchMode} onContinue={handleContinue} onShare={handleShare} onBack={() => setView('dashboard')} getSceneText={getSceneText} adaptiveState={adaptiveState} onOpenBriefExplainer={() => setView('brief_explainer')} onNewCycle={handleNewCycle} isPro={isPro} />;
+      case 'results': if (!result) return null; return result.validity === 'INVALID' ? <InvalidResultsView t={t} onReset={() => handleReset(true)} patternFlags={result.patternFlags} /> : <ResultsView lang={lang} t={t} result={result} isGlitchMode={!!isGlitchMode} onContinue={handleContinue} onShare={handleShare} onBack={() => setView('dashboard')} onNewCycle={handleNewCycle} isPro={isPro} />;
       case 'compatibility': return <CompatibilityView lang={lang} onUnlockPro={() => setIsPro(true)} t={t} onBack={() => setView('dashboard')} />;
       case 'guide': return <GuideView t={t} onBack={() => setView('dashboard')} />;
       case 'brief_explainer': return <BriefExplainerView t={t} onBack={() => setView('results')} />;

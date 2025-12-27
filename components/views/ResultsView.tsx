@@ -1,13 +1,9 @@
 
 import React, { useState, memo, useMemo } from 'react';
-import { AnalysisResult, Translations, AdaptiveState, ScanHistory, BeliefKey, SessionPulseNode } from '../../types';
-import { StorageService } from '../../services/storageService';
+import { AnalysisResult, Translations, BeliefKey, SessionPulseNode } from '../../types';
 import { PlatformBridge } from '../../utils/helpers';
-import { generateClinicalNarrative } from '../../services/clinicalNarratives';
 import { SessionPrepService } from '../../services/SessionPrepService';
-import { EvolutionDashboard } from '../EvolutionDashboard';
 import { RadarChart } from '../RadarChart';
-import { BioSignature } from '../BioSignature';
 
 interface ResultsViewProps {
   lang: 'ru' | 'ka';
@@ -17,25 +13,9 @@ interface ResultsViewProps {
   onContinue: () => void;
   onShare: () => void;
   onBack: () => void;
-  getSceneText: (path: string) => string;
-  adaptiveState: AdaptiveState;
-  onOpenBriefExplainer: () => void;
   onNewCycle?: () => void; 
   isPro?: boolean; 
 }
-
-const DeltaBadge = ({ current, previous, inverse = false }: { current: number, previous: number | undefined, inverse?: boolean }) => {
-    if (previous === undefined) return null;
-    const diff = current - previous;
-    if (Math.abs(diff) < 2) return null; 
-    const isPositive = diff > 0;
-    const isGood = inverse ? !isPositive : isPositive;
-    return (
-        <span className={`text-[9px] font-black ml-2 px-1.5 py-0.5 rounded ${isGood ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
-            {isPositive ? '↑' : '↓'} {Math.abs(Math.round(diff))}%
-        </span>
-    );
-};
 
 const SessionPulseGraph: React.FC<{ pulse: SessionPulseNode[], t: Translations, locked?: boolean }> = memo(({ pulse, t, locked }) => {
     if (!pulse || pulse.length < 5) return null;
@@ -127,14 +107,7 @@ export const ResultsView = memo<ResultsViewProps>(({
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
 
-  const narrative = useMemo(() => generateClinicalNarrative(result, lang), [result, lang]);
   const sessionPrepQuestions = useMemo(() => SessionPrepService.generate(result, t), [result, t]);
-
-  const history: ScanHistory = useMemo(() => StorageService.getScanHistory(), []);
-  const previousScan = useMemo(() => {
-      const curIdx = history.scans.findIndex(s => s.createdAt === result.createdAt);
-      return curIdx > 0 ? history.scans[curIdx - 1] : undefined;
-  }, [history, result]);
 
   const handleCopyCode = () => {
       navigator.clipboard.writeText(result.shareCode);
@@ -178,7 +151,7 @@ export const ResultsView = memo<ResultsViewProps>(({
         </div>
       </header>
 
-      {/* SESSION PREP BLOCK - Ключевая ценность для психолога */}
+      {/* SESSION PREP BLOCK */}
       <section className="bg-indigo-600 p-8 rounded-[2.5rem] shadow-xl space-y-6 relative overflow-hidden text-white">
           <div className="absolute top-0 right-0 p-6 opacity-10 text-6xl">💬</div>
           <div className="relative z-10">
@@ -195,18 +168,14 @@ export const ResultsView = memo<ResultsViewProps>(({
                   </div>
               ))}
           </div>
-          <p className="text-[10px] text-indigo-200 font-medium italic pt-2">
-              {lang === 'ru' ? 'Запишите эти вопросы. Они помогут начать работу максимально эффективно.' : 'ჩაინიშნეთ ეს კითხვები.'}
-          </p>
-      </section>
-
-      {/* CLINICAL SUMMARY */}
-      <section className="bg-white border border-slate-100 p-6 rounded-[2.5rem] space-y-4 shadow-sm">
-          <div>
-              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{t.results.status}</span>
-              <h3 className="text-lg font-black uppercase leading-tight text-slate-900">{narrative.level1.statusTag}</h3>
-          </div>
-          <p className="text-sm font-medium text-slate-600 leading-relaxed">{narrative.level1.summary}</p>
+          {onNewCycle && (
+              <button 
+                  onClick={onNewCycle}
+                  className="mt-4 w-full py-3 bg-white/20 hover:bg-white/30 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-white/10"
+              >
+                  {t.ui.start_new_cycle_btn}
+              </button>
+          )}
       </section>
 
       <SessionPulseGraph pulse={result.sessionPulse} t={t} locked={!isPro} />

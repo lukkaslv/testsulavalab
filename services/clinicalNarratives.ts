@@ -66,26 +66,20 @@ export function generateClinicalNarrative(result: AnalysisResult, lang: Lang): C
     let validityExpl = "";
     let profileName = "";
     let clinicalStrategy: string[] = [];
-    let blindSpots: string[] = [];
 
     const isCompensatoryOverdrive = state.agency > 85 && state.resource > 85 && state.entropy < 15;
 
-    // --- LOCALIZED LABELS ---
     const labels = {
         ru: {
             armored: "БРОНИРОВАННАЯ ЗАЩИТА",
             critical: "КРИТИЧЕСКИЙ ДЕФИЦИТ",
             stable: "СТАБИЛЬНЫЙ (НЕВРОТИЧЕСКИЙ)",
-            focus_false_self: "Фокус: Демонтаж 'Ложного Я'",
-            focus_attachment: "Фокус: Безопасность привязанности",
             focus_somatic: "Фокус: Соматическая интеграция",
         },
         ka: {
             armored: "ჯავშნიანი დაცვა",
             critical: "კრიტიკული დეფიციტი",
             stable: "სტაბილური (ნევროტული)",
-            focus_false_self: "ფოკუსი: 'ცრუ მე'-ს დემონტაჟი",
-            focus_attachment: "ფოკუსი: მიჯაჭვულობის უსაფრთხოება",
             focus_somatic: "ფოკუსი: სომატური ინტეგრაცია",
         }
     }[lang];
@@ -123,7 +117,7 @@ export function generateClinicalNarrative(result: AnalysisResult, lang: Lang): C
     } else {
         profileName = labels.stable;
         psychodynamicProfile = lang === 'ru' ? "Невротическая организация." : "ნევროტული ორგანიზაცია.";
-        deepExpl = lang === 'ru' ? "Поддержание статус-кво." : "სტატუს-კვოს შენარჩუნება.";
+        deepExpl = lang === 'ru' ? "Поддержание статус-кво." : "სტატუს-кვოს შენარჩუნება.";
         behaviorExpl = lang === 'ru' ? "Избегание реальных перемен." : "რეალური ცვლილებების თავიდან არიდება.";
         hypoExpl = lang === 'ru' ? "Исследование Теневых аспектов." : "ჩრდილოვანი ასპექტების კვლევა.";
         interExpl = lang === 'ru' ? "Работа с родовыми лояльностями." : "მუშაობა საგვარეულო ლოიალობებზე.";
@@ -151,8 +145,8 @@ export function generateClinicalNarrative(result: AnalysisResult, lang: Lang): C
 
     const diffMap = [
         { label: lang === 'ru' ? "Аффективная диссоциация" : "აფექტური დისოციაცია", prob: neuroSync < 45 ? 0.85 : 0.15 },
-        { label: lang === 'ru' ? "Нარციссическое расширение" : "ნარცისული გაფართოება", prob: state.agency > 85 ? 0.85 : 0.1 },
-        { label: lang === 'ru' ? "Маниакальная защита" : "მანიაკალური დაცვა", prob: (state.agency > 75 && state.foundation < 40) ? 0.9 : 0.05 },
+        { label: lang === 'ru' ? "Нарциссическое расширение" : "ნარცისული გაფართოება", prob: state.agency > 85 ? 0.85 : 0.1 },
+        { label: lang === 'ru' ? "Маниакальная защита" : "მანიაკალური делентность", prob: (state.agency > 75 && state.foundation < 40) ? 0.9 : 0.05 },
         { label: lang === 'ru' ? "Системная лояльность" : "სისტემური ლოიალობა", prob: activePatterns.includes('family_loyalty') ? 0.95 : 0.3 }
     ];
 
@@ -176,11 +170,14 @@ export function generateClinicalNarrative(result: AnalysisResult, lang: Lang): C
             activePatterns: activePatterns.join(', '),
             verdictAndRecommendations: `${lang === 'ru' ? 'Вердикт' : 'ვერდიქტი'}: ${t.verdicts[verdictKey]?.label || verdictKey}.`,
             resistanceProfile: lang === 'ru' ? "Интеллектуализация." : "ინტელექტუალიზაცია.",
-            behavioralMarkers: lang === 'ru' ? "Идеальный фасад." : "იდეალური ფასადი.",
+            behavioralMarkers: lang === 'ru' ? "Идеальный фасад." : "იდеალური ფასადი.",
             systemicRoot: lang === 'ru' ? "Замещение фигуры." : "ფიგურის ჩანაცვლება.",
             therapeuticAlliance: lang === 'ru' ? "Риск формального сотрудничества." : "ფორმალური თანამშრომლობის რისკი.",
             shadowContract, evolutionGoal, shadowContractExpl, evolutionProcess, 
-            counterTransference, primaryDefense, therapeuticTrap, fragilityPoint, clinicalStrategy, triggers: [], blindSpots: [],
+            counterTransference, primaryDefense, therapeuticTrap, fragilityPoint, clinicalStrategy, 
+            triggers: [], 
+            // Fix: Added missing 'blindSpots' required by ClinicalNarrative interface
+            blindSpots: [],
             sessionFlow: [
                 { phase: 'ENTRY', title: lang === 'ru' ? 'Конфронтация' : 'კონფრონტაცია', action: lang === 'ru' ? 'Возврат ответственности.' : 'პასუხისმგებლობის დაბრუნება.' },
                 { phase: 'EXPLORATION', title: lang === 'ru' ? 'Поиск трещины' : 'ბზარის ძიება', action: lang === 'ru' ? 'Где вы не справляетесь?' : 'სად ვერ უმკლავდებით?' }

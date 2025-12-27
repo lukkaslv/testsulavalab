@@ -1,6 +1,5 @@
 
-import { BeliefKey, GameHistoryItem, RawAnalysisResult, NeuralCorrelation, DomainType, SystemConflict, MetricLevel, ClinicalWarning, SessionPulseNode, LifeContext } from '../types';
-import { SYSTEM_METADATA, STORAGE_KEYS, TOTAL_NODES } from '../constants';
+import { BeliefKey, GameHistoryItem, RawAnalysisResult, NeuralCorrelation, SessionPulseNode } from '../types';
 
 const WEIGHTS: Record<BeliefKey, { f: number; a: number; r: number; e: number }> = {
   'scarcity_mindset':     { f: -4, a: -2, r: -3, e: 4 },
