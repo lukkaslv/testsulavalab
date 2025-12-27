@@ -38,9 +38,7 @@ export const useTestEngine = ({
   const hardwareLatencyOffset = useRef<number>(0); 
   const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const commitUpdate = useCallback((newItem: GameHistoryItem, lastNodeId: number) => {
-    let finalNodes: number[] = [];
-    
+  const commitUpdate = useCallback((newItem: GameHistoryItem, lastNodeId: number, onComplete: (newNodes: number[]) => void) => {
     const userId = localStorage.getItem(STORAGE_KEYS.SESSION) || 'anonymous';
     const variantId = (userId.charCodeAt(0) % 2 === 0) ? 'A' : 'B';
 
@@ -57,16 +55,15 @@ export const useTestEngine = ({
         const next = [...prev, newItem];
         setCompletedNodeIds(prevNodes => {
             const nextNodes = prevNodes.includes(lastNodeId) ? prevNodes : [...prevNodes, lastNodeId];
-            finalNodes = nextNodes;
             const sessionState: SessionState = { nodes: nextNodes, history: next };
             StorageService.save(STORAGE_KEYS.SESSION_STATE, sessionState);
+            onComplete(nextNodes);
             return nextNodes;
         });
         return next;
     });
 
     StorageService.save('genesis_recovery_choice', null);
-    return () => finalNodes;
   }, [setHistory, setCompletedNodeIds]);
 
   useEffect(() => {
@@ -106,8 +103,8 @@ export const useTestEngine = ({
     });
   }, [isDemo, canStart, setActiveModule, setView]);
 
-  const advanceNode = useCallback((nextNodes: number[]) => {
-    const nextId = Math.max(...nextNodes, -1) + 1;
+  const advanceNode = useCallback((completedNodes: number[]) => {
+    const nextId = Math.max(...completedNodes, -1) + 1;
     if (nextId >= TOTAL_NODES) { setView('results'); return; }
     if (isDemo && nextId >= 3) { setView('dashboard'); return; }
 
@@ -118,8 +115,11 @@ export const useTestEngine = ({
             break;
         }
     }
-    if (nextDomain) startNode(nextId, nextDomain);
-    else setView('dashboard');
+    if (nextDomain) {
+      startNode(nextId, nextDomain);
+    } else {
+      setView('dashboard');
+    }
   }, [isDemo, setView, startNode]);
 
   const syncBodySensation = useCallback((sensation: string) => {
@@ -135,24 +135,20 @@ export const useTestEngine = ({
       choicePosition: state.lastChoice.position
     };
     
-    commitUpdate(newItem, lastSelectedNode);
-
-    if (sensation === 's0') {
-         setCompletedNodeIds(nodes => {
-             advanceNode(nodes);
-             return nodes;
-         });
-    } else {
+    const onCommitComplete = (newNodes: number[]) => {
+      if (sensation === 's0') {
+        advanceNode(newNodes);
+      } else {
         setView('reflection');
         if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
         syncTimerRef.current = setTimeout(() => {
-           setCompletedNodeIds(nodes => {
-               advanceNode(nodes);
-               return nodes;
-           });
+           advanceNode(newNodes);
         }, 1200);
-    }
-  }, [state, isProcessing, activeModule, lastSelectedNode, advanceNode, setView, commitUpdate, setCompletedNodeIds]);
+      }
+    };
+    
+    commitUpdate(newItem, lastSelectedNode, onCommitComplete);
+  }, [state, isProcessing, activeModule, lastSelectedNode, advanceNode, setView, commitUpdate]);
 
   const handleChoice = useCallback((choice: Choice) => {
     if (isProcessing) return; 
@@ -182,14 +178,12 @@ export const useTestEngine = ({
                  nodeId: state.currentId, domain: activeModule as DomainType,
                  choicePosition: choice.position
              };
-             commitUpdate(newItem, lastSelectedNode);
-             setCompletedNodeIds(nodes => {
-                 advanceNode(nodes);
-                 return nodes;
+             commitUpdate(newItem, lastSelectedNode, (newNodes) => {
+                 advanceNode(newNodes);
              });
         }
     }
-  }, [isProcessing, activeModule, state, lastSelectedNode, advanceNode, setView, commitUpdate, setCompletedNodeIds]);
+  }, [isProcessing, activeModule, state, lastSelectedNode, advanceNode, setView, commitUpdate]);
 
   const forceCompleteAll = useCallback(() => {
     const allIds = Array.from({ length: TOTAL_NODES }, (_, i) => i);
