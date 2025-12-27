@@ -1,6 +1,5 @@
-
-import React, { useState, useEffect, useMemo } from 'react';
-import { IntegrityReport, ConfigError, Translations } from '../../types';
+import React, { useState, useMemo } from 'react';
+import { Translations } from '../../types';
 import { DOMAIN_SETTINGS } from '../../constants';
 import { translations } from '../../translations';
 import { SecurityCore } from '../../utils/crypto';

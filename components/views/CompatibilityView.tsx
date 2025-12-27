@@ -1,6 +1,5 @@
-
 import React, { useState, useMemo } from 'react';
-import { AnalysisResult, Translations, LifeContext, SessionStep, SubscriptionTier, BeliefKey } from '../../types';
+import { AnalysisResult, Translations, LifeContext, SessionStep, SubscriptionTier } from '../../types';
 import { CompatibilityEngine } from '../../services/compatibilityEngine';
 import { generateClinicalNarrative } from '../../services/clinicalNarratives';
 import { ClinicalDecoder } from '../../services/clinicalDecoder';
@@ -296,6 +295,11 @@ export const CompatibilityView: React.FC<CompatibilityViewProps> = ({ lang, lice
                         <VitalMonitor label="RES" value={Math.round(clientResult.state.resource)} color="text-amber-400" />
                         <VitalMonitor label="ENT" value={Math.round(clientResult.state.entropy)} color={clientResult.state.entropy > 40 ? 'text-red-400' : 'text-emerald-400'} />
                     </div>
+                </div>
+
+                <div>
+                    <h4 className={`text-[9px] font-black uppercase tracking-[0.2em] pl-1 mb-2 ${isLab ? 'text-emerald-600' : 'text-indigo-400'}`}>{ph.session_arc}</h4>
+                    <SessionArc steps={interpretation.narrative.sessionFlow} />
                 </div>
 
                 {isLab && (

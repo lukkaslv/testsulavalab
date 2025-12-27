@@ -183,7 +183,7 @@ const ProDashboard = memo<DashboardViewProps>(({ t, usageStats, onSetView, onSta
 // ---------------------------------------------------------------------------
 // 2. CLIENT DASHBOARD (STANDARD) - For FREE/SOLO
 // ---------------------------------------------------------------------------
-const ClientDashboard = memo<DashboardViewProps>(({ lang, t, isPro, globalProgress, result, currentDomain, nodes, onSetView, onSetCurrentDomain, onStartNode, scanHistory, onResume, onLogout, licenseTier }) => {
+const ClientDashboard = memo<DashboardViewProps>(({ lang, t, isPro, globalProgress, result, currentDomain, nodes, onSetView, onSetCurrentDomain, onStartNode, scanHistory, onResume, onLogout }) => {
     
     const activeDomainCount = useMemo(() => 
       DOMAIN_SETTINGS.filter(d => nodes.filter(n => n.domain === d.key && n.done).length === d.count).length
