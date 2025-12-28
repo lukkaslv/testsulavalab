@@ -42,7 +42,7 @@ const Sparkline = ({ data, color, height = 40, t }: { data: number[], color: str
   );
 };
 
-export const EvolutionDashboard: React.FC<EvolutionDashboardProps> = memo(({ history, lang, t }) => {
+export const EvolutionDashboard: React.FC<EvolutionDashboardProps> = memo(({ history, t }) => {
   const hasHistory = history && history.scans.length > 1;
   const scansCount = history?.scans.length || 0;
 

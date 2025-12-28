@@ -1,6 +1,8 @@
 
 import React, { memo } from 'react';
-import { GameHistoryItem, Translations } from '../types';
+import { GameHistoryItem, Translations, BeliefKey } from '../types';
+import { PlatformBridge } from '../../utils/helpers';
+import { WEIGHTS } from '../services/psychologyService';
 
 interface SignalDecoderProps {
   history: GameHistoryItem[];
@@ -9,7 +11,7 @@ interface SignalDecoderProps {
   lang: 'ru' | 'ka';
 }
 
-export const SignalDecoder: React.FC<SignalDecoderProps> = memo(({ history, t, baseline, lang }) => {
+export const SignalDecoder: React.FC<SignalDecoderProps> = memo(({ history, t, baseline }) => {
   // Identify hotspots: High latency (Z > 1.8) or Somatic Friction (s1, s4)
   const hotspots = history.filter(h => {
       const isHighLatency = h.latency > baseline * 1.8;
@@ -31,9 +33,23 @@ export const SignalDecoder: React.FC<SignalDecoderProps> = memo(({ history, t, b
 
         <div className="space-y-2">
             {hotspots.map((h, i) => {
+                const beliefKey = h.beliefKey as BeliefKey;
+                const w = WEIGHTS[beliefKey] || WEIGHTS.default;
+                const choiceValence = (w.f || 0) + (w.a || 0) + (w.r || 0);
+                const isPositiveChoice = choiceValence > 2;
                 const isHighLatency = h.latency > baseline * 1.8;
                 const hasSomaticFriction = h.sensation === 's1' || h.sensation === 's4';
                 const domainLabel = t.domains[h.domain] || h.domain;
+
+                let messageKey: keyof typeof t.results.signal_decoder = 'friction';
+                if (isPositiveChoice && hasSomaticFriction) {
+                    messageKey = 'cognitive_somatic_dissonance';
+                } else if (isHighLatency && hasSomaticFriction) {
+                    messageKey = 'high_latency_friction';
+                } else if (isHighLatency) {
+                    messageKey = 'high_latency';
+                }
+                const message = t.results.signal_decoder[messageKey] || t.results.signal_decoder.friction;
 
                 return (
                     <div key={i} className="bg-slate-50 border border-slate-100 p-4 rounded-2xl flex items-start gap-4 group">
@@ -47,12 +63,7 @@ export const SignalDecoder: React.FC<SignalDecoderProps> = memo(({ history, t, b
                                 <span className="text-[8px] font-mono text-slate-400">{(h.latency/1000).toFixed(1)}s</span>
                             </div>
                             <p className="text-[11px] font-bold text-slate-700 leading-tight italic">
-                                {isHighLatency && hasSomaticFriction 
-                                    ? t.results.signal_decoder.high_latency_friction
-                                    : isHighLatency 
-                                    ? t.results.signal_decoder.high_latency
-                                    : t.results.signal_decoder.friction
-                                }
+                                {message}
                             </p>
                         </div>
                     </div>

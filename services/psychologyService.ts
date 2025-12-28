@@ -45,14 +45,20 @@ export const WEIGHTS: Record<BeliefKey, { f: number; a: number; r: number; e: nu
 };
 
 /**
- * Stabilized Sigmoid Engine v5.3
- * Added stronger entropy gravity to prevent runaway chaos.
+ * Sigmoid Engine v5.4 with Entropy Gravity
+ * High entropy now acts as a friction coefficient, dampening change.
  */
 const sigmoidUpdate = (current: number, delta: number, entropyCurrent: number): number => {
-    const chaos = entropyCurrent > 65 ? 1.05 : 1.0;
-    
+    // Entropy Gravity: High entropy creates "friction," dampening the impact of choices.
+    let gravityFactor = 1.0;
+    if (entropyCurrent > 60) {
+        // Smoothly decrease from 1.0 at 60 to 0.7 at 95
+        gravityFactor = 1.0 - ((entropyCurrent - 60) / 35) * 0.3;
+    }
+    const effectiveDelta = delta * gravityFactor;
+
     const x = Math.max(-5, Math.min(5, (current - 50) / 12));
-    const newX = x + (delta * 0.10 * chaos); 
+    const newX = x + (effectiveDelta * 0.10); 
     
     const result = 100 / (1 + Math.exp(-newX));
     return Math.max(5, Math.min(95, result));
@@ -122,12 +128,27 @@ export function calculateRawMetrics(history: GameHistoryItem[]): RawAnalysisResu
 
     e = Math.max(5, Math.min(95, e + (w.e * entropyResistance) + (zScore > 2.5 ? 3 : 0)));
 
-    // NeuroSync Decay Logic
-    if ((Math.abs(w.a) > 2 || Math.abs(w.f) > 2) && (h.sensation === 's1' || h.sensation === 's4')) {
-        syncScore = Math.max(10, syncScore - 12); // Reduced penalty from 15
+    // NeuroSync v2.0 Logic: Detects nuanced dissonance.
+    const choiceValence = (w.f || 0) + (w.a || 0) + (w.r || 0);
+    const isPositiveChoice = choiceValence > 2;
+    const isNegativeChoice = choiceValence < -2;
+    const isConflictingSensation = h.sensation === 's1' || h.sensation === 's4';
+    const isResourcefulSensation = h.sensation === 's2' || h.sensation === 's3';
+
+    if (isPositiveChoice && isConflictingSensation) {
+        // Classic Dissonance: "I'm fine" but body tenses up. High penalty.
+        syncScore = Math.max(10, syncScore - 15);
         if (!somaticDissonance.includes(beliefKey)) somaticDissonance.push(beliefKey);
-    } else if (h.sensation === 's2' || h.sensation === 's3') {
-        syncScore = Math.min(100, syncScore + 3); // Faster recovery
+    } else if (isNegativeChoice && isResourcefulSensation) {
+        // Hidden Cost Dissonance: "I feel good about a negative pattern." Medium penalty.
+        syncScore = Math.max(10, syncScore - 8);
+        if (!somaticDissonance.includes(beliefKey)) somaticDissonance.push(beliefKey);
+    } else if (isPositiveChoice && isResourcefulSensation) {
+        // Congruence (Growth): Positive choice and positive feeling. High reward.
+        syncScore = Math.min(100, syncScore + 5);
+    } else if (isNegativeChoice && isConflictingSensation) {
+        // Congruence (Honesty): Acknowledging negative pattern feels bad. Small reward for awareness.
+        syncScore = Math.min(100, syncScore + 2);
     }
 
     sessionPulse.push({

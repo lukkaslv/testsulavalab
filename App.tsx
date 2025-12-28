@@ -1,6 +1,7 @@
+
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { Layout } from './components/Layout';
-import { MODULE_REGISTRY, ONBOARDING_NODES_COUNT, TOTAL_NODES, DOMAIN_SETTINGS } from './constants';
+import { MODULE_REGISTRY, ONBOARDING_NODES_COUNT, DOMAIN_SETTINGS } from './constants';
 import { calculateRawMetrics } from './services/psychologyService';
 import { DiagnosticEngine } from './services/diagnosticEngine';
 import { DomainType, AnalysisResult } from './types';
@@ -157,6 +158,7 @@ const App: React.FC = () => {
       case 'boot': return <BootView onComplete={() => setViewAndPersist('dashboard')} t={t} />;
       case 'dashboard': return <DashboardView nodes={nodes} result={result} onStartNode={handleStartNode} onResume={handleContinue} globalProgress={globalProgress} lang={lang} t={t} isDemo={isDemo} isPro={isPro} completedNodeIds={completedNodeIds} onSetView={setViewAndPersist} onLogout={handleLogout} scanHistory={scanHistory} licenseTier={licenseTier} usageStats={usageStats} onSetCurrentDomain={setCurrentDomain} currentDomain={currentDomain} />;
       case 'test': return <TestView key={activeTest.id} t={t} activeModule={activeTest.domain!} currentId={activeTest.id} scene={scene!} onChoice={engineInstance.handleChoice} onExit={() => setViewAndPersist('dashboard')} getSceneText={getSceneText} adaptiveState={adaptiveState} />;
+      // FIX: Added the missing 'lang' prop to BodySyncView to resolve the type error.
       case 'body_sync': return <BodySyncView lang={lang} t={t} onSync={engineInstance.syncBodySensation} />;
       case 'reflection': return <ReflectionView t={t} sensation={history[history.length - 1]?.sensation} />;
       case 'results':

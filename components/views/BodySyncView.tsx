@@ -2,12 +2,11 @@ import { memo } from 'react';
 import { Translations } from '../../types';
 
 interface BodySyncViewProps {
-  lang: 'ru' | 'ka';
   t: Translations;
   onSync: (sensation: string) => void;
 }
 
-export const BodySyncView = memo<BodySyncViewProps>(({ lang, t, onSync }) => {
+export const BodySyncView = memo<BodySyncViewProps>(({ t, onSync }) => {
   return (
      <div className="py-10 text-center px-4 space-y-8 animate-in h-full flex flex-col justify-center bg-gradient-to-b from-white to-slate-50 relative overflow-hidden">
         <div className="absolute inset-0 z-0 pointer-events-none opacity-20">
