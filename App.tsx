@@ -1,10 +1,10 @@
+
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { Layout } from './components/Layout';
 import { MODULE_REGISTRY, ONBOARDING_NODES_COUNT, TOTAL_NODES, DOMAIN_SETTINGS } from './constants';
 import { calculateRawMetrics } from './services/psychologyService';
 import { DiagnosticEngine } from './services/diagnosticEngine';
-import { DomainType, AnalysisResult, GameHistoryItem, ScanHistory, DataCorruptionError } from './types';
-import { StorageService, STORAGE_KEYS, SessionState } from './services/storageService';
+import { DomainType, AnalysisResult } from './types';
 import { resolvePath, PlatformBridge } from './utils/helpers';
 import { useTestEngine } from './hooks/useTestEngine';
 import { AdaptiveQuestionEngine } from './services/adaptiveQuestionEngine';

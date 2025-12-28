@@ -1,5 +1,5 @@
 
-import { MODULE_REGISTRY, ALL_BELIEFS, TOTAL_NODES, DOMAIN_SETTINGS, NODE_CONFIGS, PSYCHO_CONFIG } from '../constants';
+import { MODULE_REGISTRY, TOTAL_NODES, DOMAIN_SETTINGS, NODE_CONFIGS, PSYCHO_CONFIG } from '../constants';
 import { WEIGHTS } from './psychologyService';
 import { IntegrityReport, IntegrityCategory, ConfigError, StructuralAnomalies, ComplexityMetrics, Translations } from '../types';
 

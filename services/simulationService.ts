@@ -2,7 +2,7 @@
 import { ALL_BELIEFS, MODULE_REGISTRY, TOTAL_NODES } from '../constants';
 import { translations } from '../translations';
 import { WEIGHTS } from './psychologyService';
-import { BeliefKey, SimulationReport, PersonaResult } from '../types';
+import { BeliefKey, SimulationReport } from '../types';
 
 // Deterministic Pseudo-Random for Simulation (Same input = Same report)
 const pseudoRandom = (seed: number) => {
