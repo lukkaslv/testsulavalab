@@ -46,18 +46,19 @@ const PulsingNucleus = ({ score, risk, status, t }: { score: number, risk: numbe
     );
 };
 
-const SatelliteOrgan = ({ 
+interface SatelliteOrganProps {
+    category: IntegrityCategory;
+    index: number;
+    total: number;
+    t: Translations;
+    onClick: () => void;
+}
+
+const SatelliteOrgan: React.FC<SatelliteOrganProps> = ({ 
     category, 
     index, 
     total, 
-    t,
     onClick 
-}: { 
-    category: IntegrityCategory, 
-    index: number, 
-    total: number, 
-    t: Translations,
-    onClick: () => void 
 }) => {
     // Calculate orbital position
     const angle = (index / total) * 2 * Math.PI - (Math.PI / 2);
@@ -151,8 +152,10 @@ const AnomalyList = ({ structural, labels, t }: { structural: StructuralAnomalie
     return (
         <div className="flex gap-2 overflow-x-auto no-scrollbar px-4 pb-4 mask-fade-sides shrink-0">
             {activeKeys.map(key => (
-                <div key={key} className="flex-shrink-0 bg-slate-800/50 border border-slate-700 p-3 rounded-xl min-w-[120px]">
-                    <span className="text-[7px] font-black text-indigo-400 uppercase block mb-1 tracking-wider">{labels[key] || key}</span>
+                <div key={key as string} className="flex-shrink-0 bg-slate-800/50 border border-slate-700 p-3 rounded-xl min-w-[120px]">
+                    <span className="text-[7px] font-black text-indigo-400 uppercase block mb-1 tracking-wider">
+                        {labels[key] || String(key)}
+                    </span>
                     <span className="text-lg font-black text-white block leading-none">{structural[key].length}</span>
                 </div>
             ))}
