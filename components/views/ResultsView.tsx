@@ -115,7 +115,6 @@ const PatternCard: React.FC<{ beliefKey: BeliefKey, t: Translations }> = ({ beli
     );
 };
 
-// NEW: Core Conflict Visualization
 const ConflictBlock: React.FC<{ conflictKey: string, t: Translations }> = ({ conflictKey, t }) => {
     const conflict = t.conflicts?.[conflictKey];
     if (!conflict) return null;
@@ -162,7 +161,20 @@ export const ResultsView = memo<ResultsViewProps>(({
   const isFragile = result.state.foundation < 40 || result.entropyScore > 55;
 
   const displayArchetype = useMemo(() => {
-    const arch = t.archetypes[result.archetypeKey] || t.archetypes.THE_ARCHITECT;
+    // Defensive check: Ensure t.archetypes exists and handle undefined lookup
+    const arch = t.archetypes?.[result.archetypeKey] || t.archetypes?.THE_ARCHITECT;
+    
+    // Fallback if translations are missing entirely
+    if (!arch) {
+      return { 
+        title: 'ARCHETYPE_ERROR', 
+        desc: 'Translation missing for archetype', 
+        superpower: 'N/A', 
+        shadow: 'N/A', 
+        quote: 'System error' 
+      };
+    }
+
     if (isFragile && t.soft_mode) {
       return { ...arch, title: `${t.soft_mode.archetype_prefix}${arch.title}` };
     }
@@ -308,7 +320,7 @@ export const ResultsView = memo<ResultsViewProps>(({
 
       <div className="px-2">
          <div className={`p-4 rounded-2xl border border-dashed text-center ${isFragile ? 'bg-indigo-50 border-indigo-200' : 'bg-slate-50 border-slate-200'}`}>
-            <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 block mb-1">VERDICT</span>
+            <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 block mb-1">{t.ui.verdict_label || 'VERDICT'}</span>
             <p className={`text-xs font-black uppercase italic ${isFragile ? 'text-indigo-600' : 'text-slate-600'}`}>{displayVerdict.label}</p>
          </div>
       </div>

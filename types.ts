@@ -244,6 +244,8 @@ export interface Translations {
   soft_mode: { archetype_prefix: string; verdict_softened: Record<string, string> };
   test_metrics: any;
   legal: any;
+  oracle: any;
+  export_image: any;
 }
 
 export interface ConfigError {

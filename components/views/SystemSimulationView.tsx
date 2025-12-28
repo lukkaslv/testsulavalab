@@ -31,10 +31,11 @@ const PersonaCard: React.FC<{ result: PersonaResult }> = ({ result }) => (
     </div>
 );
 
-export const SystemSimulationView: React.FC<SystemSimulationViewProps> = ({ onBack }) => {
+export const SystemSimulationView: React.FC<SystemSimulationViewProps> = ({ t, onBack }) => {
   const [report, setReport] = useState<SimulationReport | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [progress, setProgress] = useState(0);
+  const oracle = t.oracle;
 
   const runSimulation = () => {
     setIsRunning(true);
@@ -67,11 +68,11 @@ export const SystemSimulationView: React.FC<SystemSimulationViewProps> = ({ onBa
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg border border-purple-500/30 flex items-center justify-center text-lg font-black bg-purple-500/5 shadow-lg">🔮</div>
           <div>
-            <h1 className="text-xs font-black uppercase tracking-widest text-purple-300">ПРОТОКОЛ: ОРАКУЛ</h1>
-            <span className="text-[7px] text-slate-500 font-bold uppercase tracking-widest">DYNAMIC SIMULATOR v1.0</span>
+            <h1 className="text-xs font-black uppercase tracking-widest text-purple-300">{oracle.title}</h1>
+            <span className="text-[7px] text-slate-500 font-bold uppercase tracking-widest">{oracle.subtitle}</span>
           </div>
         </div>
-        <button onClick={onBack} className="bg-red-950/20 px-4 py-2 rounded-xl border border-red-900/30 text-red-500 font-black">ВЫХОД</button>
+        <button onClick={onBack} className="bg-red-950/20 px-4 py-2 rounded-xl border border-red-900/30 text-red-500 font-black">{oracle.exit}</button>
       </header>
 
       <div className="flex-1 overflow-y-auto space-y-6 pr-1 custom-scrollbar">
@@ -80,7 +81,7 @@ export const SystemSimulationView: React.FC<SystemSimulationViewProps> = ({ onBa
               disabled={isRunning}
               className="w-full py-5 bg-purple-600/10 border border-purple-500/30 text-purple-300 rounded-2xl text-[10px] font-black uppercase hover:bg-purple-600/20 transition-all disabled:opacity-50 disabled:animate-pulse"
           >
-              {isRunning ? "СИМУЛЯЦИЯ..." : "ЗАПУСТИТЬ СИМУЛЯЦИЮ"}
+              {isRunning ? oracle.btn_running : oracle.btn_idle}
           </button>
           
           {(isRunning || progress > 0) && (
@@ -92,17 +93,17 @@ export const SystemSimulationView: React.FC<SystemSimulationViewProps> = ({ onBa
           {report && (
               <div className="space-y-6 animate-in">
                   <section className="space-y-3">
-                      <h3 className="text-slate-500 font-black tracking-widest uppercase text-[9px]">ОБНАРУЖЕННЫЕ АНОМАЛИИ ({allAnomalies.length})</h3>
+                      <h3 className="text-slate-500 font-black tracking-widest uppercase text-[9px]">{oracle.section_anomalies} ({allAnomalies.length})</h3>
                       {allAnomalies.length > 0 ? (
                         allAnomalies.map((a: JourneyAnomaly, i: number) => <AnomalyCard key={i} anomaly={a} type={a.source || 'UNKNOWN'} />)
                       ) : (
                         <div className="p-4 bg-emerald-950/20 border border-emerald-500/30 rounded-lg text-center text-emerald-400 text-[9px]">
-                            Аномалий не обнаружено.
+                            {oracle.no_anomalies}
                         </div>
                       )}
                   </section>
                   <section className="space-y-3">
-                      <h3 className="text-slate-500 font-black tracking-widest uppercase text-[9px]">ПСИХОМЕТРИЧЕСКИЙ КАЛИБРАТОР</h3>
+                      <h3 className="text-slate-500 font-black tracking-widest uppercase text-[9px]">{oracle.section_calibrator}</h3>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                         {report.calibrator.results.map((r: PersonaResult) => <PersonaCard key={r.persona} result={r} />)}
                       </div>
@@ -112,7 +113,7 @@ export const SystemSimulationView: React.FC<SystemSimulationViewProps> = ({ onBa
       </div>
       
       <footer className="shrink-0 border-t border-purple-900/20 pt-4 text-center opacity-40">
-        <p className="text-[8px] text-slate-500 tracking-[0.3em] uppercase">Genesis_Oracle_Protocol // Pre-Flight Check</p>
+        <p className="text-[8px] text-slate-500 tracking-[0.3em] uppercase">{oracle.footer}</p>
       </footer>
     </div>
   );

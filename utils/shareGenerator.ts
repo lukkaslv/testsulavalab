@@ -91,7 +91,7 @@ const drawPentagonChart = (
     ctx.stroke();
 
     // 4. Draw Data Points & Labels
-    ctx.font = 'bold 24px monospace';
+    ctx.font = 'bold 24px monospace'; // Fallback to monospace if system sans fails
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     
@@ -102,13 +102,17 @@ const drawPentagonChart = (
         const lx = centerX + Math.cos(angle) * labelR;
         const ly = centerY + Math.sin(angle) * labelR;
         
-        const label = (t.domains[key] || key).toUpperCase();
+        // Defensive check for translation
+        const label = (t.domains?.[key] || key).toUpperCase();
         const value = Math.round(profile[key] || 0);
         
         ctx.fillStyle = '#94a3b8';
+        // Use system font for Georgian support
+        ctx.font = 'bold 24px sans-serif'; 
         ctx.fillText(label, lx, ly - 15);
         
         ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 24px monospace';
         ctx.fillText(`${value}%`, lx, ly + 15);
 
         // Dot on the chart
@@ -136,9 +140,14 @@ export const generateShareImage = async (
   canvas.width = 1080;
   canvas.height = 1920;
 
-  // SAFE LOOKUP
-  const archetype = t.archetypes[result.archetypeKey] || t.archetypes.THE_ARCHITECT;
-  const verdict = t.verdicts[result.verdictKey] || t.verdicts.HEALTHY_SCALE;
+  // SAFE LOOKUP with Fallbacks
+  const defaultArchetype = { title: "UNKNOWN", desc: "System Analysis Pending", quote: "", superpower: "", shadow: "" };
+  const archetype = t.archetypes?.[result.archetypeKey] || t.archetypes?.THE_ARCHITECT || defaultArchetype;
+  
+  const verdict = t.verdicts?.[result.verdictKey] || t.verdicts?.HEALTHY_SCALE || { label: "PENDING", impact: "" };
+  
+  // Use localized strings or fallback
+  const ex = t.export_image || { header: "GENESIS OS", blueprint_title: "IDENTITY BLUEPRINT", footer: "CLINICAL SCREENING", metrics: { integrity: "INTEGRITY", entropy: "ENTROPY" } };
 
   // 1. Background (Deep Premium Gradient)
   const gradient = ctx.createLinearGradient(0, 0, 0, 1920);
@@ -160,9 +169,10 @@ export const generateShareImage = async (
 
   // 3. Header (SYSTEM IDENTITY)
   ctx.fillStyle = '#6366f1'; 
-  ctx.font = 'bold 32px monospace';
+  // Use sans-serif for better i18n support
+  ctx.font = 'bold 32px sans-serif'; 
   ctx.textAlign = 'center';
-  ctx.fillText('GENESIS OS // CLINICAL BRIDGE', 540, 100);
+  ctx.fillText(ex.header, 540, 100);
   
   ctx.fillStyle = '#ffffff';
   ctx.font = '900 64px sans-serif';
@@ -171,8 +181,8 @@ export const generateShareImage = async (
   ctx.fillText(displayName, 540, 190);
   
   ctx.fillStyle = 'rgba(99, 102, 241, 0.8)';
-  ctx.font = 'bold 30px monospace';
-  ctx.fillText('IDENTITY BLUEPRINT', 540, 240);
+  ctx.font = 'bold 30px sans-serif';
+  ctx.fillText(ex.blueprint_title, 540, 240);
 
   // 4. Archetype Box
   const boxX = 80, boxY = 300, boxW = 920, boxH = 500;
@@ -185,8 +195,8 @@ export const generateShareImage = async (
   ctx.stroke();
 
   ctx.fillStyle = '#ffffff';
-  ctx.font = '900 70px sans-serif';
-  ctx.fillText((archetype.title || "").toUpperCase(), 540, boxY + 120);
+  ctx.font = '900 60px sans-serif'; // Reduced slightly for longer localized titles
+  wrapText(ctx, (archetype.title || "").toUpperCase(), 540, boxY + 100, 850, 70);
   
   ctx.fillStyle = '#94a3b8';
   ctx.font = 'italic 30px serif';
@@ -214,15 +224,15 @@ export const generateShareImage = async (
   // 6. Meta Metrics (Linear below chart)
   const metaY = 1580;
   const metaMetrics = [
-      { label: "INTEGRITY", val: result.integrity, color: "#10b981" },
-      { label: "ENTROPY", val: result.entropyScore, color: "#ef4444" }
+      { label: ex.metrics.integrity, val: result.integrity, color: "#10b981" },
+      { label: ex.metrics.entropy, val: result.entropyScore, color: "#ef4444" }
   ];
   
   metaMetrics.forEach((m, i) => {
       const x = i === 0 ? 300 : 780;
       ctx.textAlign = 'center';
       ctx.fillStyle = '#94a3b8';
-      ctx.font = 'bold 24px monospace';
+      ctx.font = 'bold 24px sans-serif';
       ctx.fillText(m.label, x, metaY);
       
       ctx.fillStyle = m.color;
@@ -241,9 +251,9 @@ export const generateShareImage = async (
 
   // 8. Footer
   ctx.fillStyle = '#94a3b8';
-  ctx.font = 'bold 24px monospace';
+  ctx.font = 'bold 24px sans-serif';
   ctx.textBaseline = 'alphabetic';
-  ctx.fillText('GENESIS-OS.APP // CLINICAL SCREENING', 540, 1890);
+  ctx.fillText(`GENESIS-OS.APP // ${ex.footer}`, 540, 1890);
 
   return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
 };

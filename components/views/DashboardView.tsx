@@ -142,13 +142,13 @@ const ClientDashboard = memo<DashboardViewProps>(({ lang, t, isPro, globalProgre
     const estMinutes = Math.ceil((remainingNodes * 18) / 60); 
 
     const humanInsight = useMemo(() => {
-        if (!result) return t.dashboard.desc;
+        if (!result) return t.dashboard?.desc || "Genesis OS"; // Defensive check
         if (globalProgress === 100) return t.global.complete + ". " + t.dashboard.insight_coherence;
         const { entropyScore, neuroSync, integrity } = result;
         if (entropyScore > 60) return t.dashboard.insight_noise;
         if (neuroSync < 45) return t.dashboard.insight_somatic_dissonance;
         if (integrity > 75) return t.dashboard.insight_coherence;
-        return t.dashboard.desc;
+        return t.dashboard?.desc || "Analyzing...";
     }, [result, t, globalProgress]);
 
     const systemMessage = localStorage.getItem('genesis_system_message');

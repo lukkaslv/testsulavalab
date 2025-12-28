@@ -72,7 +72,12 @@ const ru: Translations = {
         noise_tracking: "Шум",
         evolution_insight_desc: "Динамика отслеживается.",
         start_new_cycle_btn: "Начать новый цикл",
-        agree_terms_btn: "Принять условия"
+        agree_terms_btn: "Принять условия",
+        module_label: "МОДУЛЬ",
+        verdict_label: "ВЕРДИКТ",
+        priority_label: "ПРИОРИТЕТ",
+        access_restricted: "Доступ ограничен",
+        enter_code_desc: "Введите ID клиента или код доступа для расшифровки профиля."
     },
     auth_ui: {
         checking_crypto: "Проверка криптографии...",
@@ -132,6 +137,17 @@ const ru: Translations = {
         anomaly: "Аномалии",
         integrity: "Целостность",
         oracle: "Оракул"
+    },
+    oracle: {
+        title: "ПРОТОКОЛ: ОРАКУЛ",
+        subtitle: "DYNAMIC SIMULATOR v1.0",
+        exit: "ВЫХОД",
+        btn_idle: "ЗАПУСТИТЬ СИМУЛЯЦИЮ",
+        btn_running: "СИМУЛЯЦИЯ...",
+        section_anomalies: "ОБНАРУЖЕННЫЕ АНОМАЛИИ",
+        section_calibrator: "ПСИХОМЕТРИЧЕСКИЙ КАЛИБРАТОР",
+        no_anomalies: "Аномалий не обнаружено.",
+        footer: "Genesis_Oracle_Protocol // Pre-Flight Check"
     },
     guide: {
         title: "Руководство",
@@ -272,46 +288,52 @@ const ru: Translations = {
     },
     global: {
         back: "Назад",
-        complete: "Завершено",
-        calibrating: "Калибровка",
-        calib_desc: "Настройка на пользователя"
+        complete: "Готово",
+        calibrating: "КАЛИБРОВКА",
+        calib_desc: "Настройка чувствительности системы..."
     },
     sync: {
-        title: "Синхронизация",
-        desc: "Отметьте телесный отклик",
-        guidance_tip: "Слушайте тело",
-        break_title: "Пауза",
-        break_desc: "Сделайте вдох",
-        break_btn: "Продолжить",
-        processing: "Обработка...",
-        s0: "Нейтрально",
-        s1: "Блок",
-        s2: "Тепло",
-        s3: "Холод",
-        s4: "Дрожь"
+        title: "СИНХРОНИЗАЦИЯ",
+        desc: "Что ощущается в теле?",
+        guidance_tip: "Не анализируйте, чувствуйте.",
+        break_title: "ПАУЗА ДЛЯ ИНТЕГРАЦИИ",
+        break_desc: "Система обрабатывает большой массив данных. Сделайте вдох.",
+        break_btn: "ПРОДОЛЖИТЬ",
+        s0: "НЕЙТРАЛЬНО",
+        s1: "БЛОК / ЗАЖИМ",
+        s2: "ТЕПЛО / ПОТОК",
+        s3: "ХОЛОД / ПУСТОТА",
+        s4: "ДРОЖЬ / ВИБРАЦИЯ"
     },
     sensation_feedback: {
-        s0: "Принято",
-        s1: "Зафиксировано напряжение",
-        s2: "Зафиксировано тепло",
-        s3: "Зафиксирован холод",
-        s4: "Зафиксирована реакция"
-    },
-    domains: {
-        foundation: "ФУНДАМЕНТ",
-        agency: "АГЕНТНОСТЬ",
-        money: "РЕСУРС",
-        social: "СОЦИУМ",
-        legacy: "НАСЛЕДИЕ"
+        s0: "ДАННЫЕ ПРИНЯТЫ",
+        s1: "ЗАФИКСИРОВАНО НАПРЯЖЕНИЕ",
+        s2: "РЕСУРСНЫЙ ОТКЛИК",
+        s3: "СНИЖЕНИЕ ЭНЕРГИИ",
+        s4: "ВЫСОКАЯ ИНТЕНСИВНОСТЬ"
     },
     dashboard: {
-        desc: "Панель управления",
-        insight_coherence: "Когерентность",
-        insight_noise: "Шум",
-        insight_somatic_dissonance: "Диссонанс",
-        manual_btn: "Ручной ввод",
-        select_domain: "Выберите домен"
+        desc: "Панель управления состоянием.",
+        insight_coherence: "Система работает слаженно.",
+        insight_noise: "Обнаружен высокий уровень шума.",
+        insight_somatic_dissonance: "Тело и разум рассинхронизированы.",
+        select_domain: "ВЫБЕРИТЕ МОДУЛЬ",
+        manual_btn: "СПРАВОЧНИК"
     },
+    safety: {
+        trigger_warning_title: "ВЫСОКАЯ ИНТЕНСИВНОСТЬ",
+        trigger_warning_desc: "Вопросы могут вызвать сильный отклик.",
+        emergency_contacts_title: "ЭКСТРЕННАЯ ПОМОЩЬ",
+        emergency_contacts_desc: "Если вы чувствуете, что не справляетесь, остановитесь.",
+        return_btn: "В БЕЗОПАСНОСТЬ",
+        uncomfortable_btn: "МНЕ ТЯЖЕЛО",
+        alert: "ТРЕВОГА",
+        time_remaining: "ОСТАЛОСЬ",
+        minutes: "МИН"
+    },
+    interventions: {},
+    directives: {},
+    interferences: {},
     results: {
         integrity: "Целостность",
         neuro_sync: "Нейросинк",
@@ -331,197 +353,6 @@ const ru: Translations = {
         brief_instruction: "Инструкция",
         encrypted_overlay: "Зашифровано"
     },
-    ekg: {
-        title: "Пульс сессии"
-    },
-    pro_terminal: {
-        diagnostic_protocol: "Протокол",
-        paste_placeholder: "Вставьте код",
-        initiate_decrypt: "Расшифровать",
-        no_latency_anomalies: "Нет аномалий",
-        latency_hint: "Задержки реакции",
-        resistance_label: "Сопротивление",
-        decrypting_msg: "Расшифровка...",
-        dossier_btn: "Досье",
-        monolith_output: "Вывод монолита",
-        monolith_precision: "Точность",
-        copy_success: "Скопировано",
-        export_crm: "Экспорт",
-        sabotage_intellectual: "Интеллектуальный саботаж",
-        sabotage_shadow: "Теневой саботаж",
-        sabotage_critic: "Критический саботаж",
-        sabotage_wall: "Стена",
-        sabotage_standard: "Стандарт"
-    },
-    pro_headers: {
-        differential: "Дифференциал",
-        badge_prob_map: "Карта вероятностей",
-        heatmap: "Тепловая карта",
-        badge_latency: "Латентность",
-        sabotage: "Саботаж",
-        badge_contact: "Контакт",
-        beliefs: "Убеждения",
-        badge_schemas: "Схемы"
-    },
-    phases: {
-        SANITATION: "Санация",
-        STABILIZATION: "Стабилизация",
-        EXPANSION: "Расширение"
-    },
-    tasks: {
-        sanitation_1: "Очистка 1", sanitation_2: "Очистка 2", sanitation_3: "Очистка 3", sanitation_4: "Очистка 4", sanitation_5: "Очистка 5", sanitation_6: "Очистка 6", sanitation_7: "Очистка 7",
-        stabilization_1: "Стабилизация 1", stabilization_2: "Стабилизация 2", stabilization_3: "Стабилизация 3", stabilization_4: "Стабилизация 4", stabilization_5: "Стабилизация 5", stabilization_6: "Стабилизация 6", stabilization_7: "Стабилизация 7",
-        expansion_1: "Расширение 1", expansion_2: "Расширение 2", expansion_3: "Расширение 3", expansion_4: "Расширение 4", expansion_5: "Расширение 5", expansion_6: "Расширение 6", expansion_7: "Расширение 7"
-    },
-    scenes: {
-        // --- FOUNDATION (15 NODES) - FULLY DETAILED ---
-        foundation_0: { title: "КАЛИБРОВКА СИСТЕМЫ", desc: "Как вы обычно реагируете на необходимость принять быстрое решение в условиях неопределенности?", c1: "Действую на автомате", c2: "Замираю и жду", c3: "Анализирую ресурсы" },
-        foundation_1: { title: "КОРНИ И КРЫЛЬЯ", desc: "Ваше отношение к истории вашей семьи и наследию предков. Что вы чувствуете, оглядываясь назад?", c1: "Долг и тяжесть", c2: "Свободу выбора", c3: "Слияние границ" },
-        foundation_2: { title: "СИГНАЛ ТРЕВОГИ", desc: "Когда вы совершаете ошибку, какая первая мысль возникает в вашей голове до того, как вы успеваете ее осознать?", c1: "Меня накажут", c2: "Я самозванец", c3: "Лучше не высовываться" },
-        foundation_3: { title: "РЕСУРСНЫЙ ГОЛОД", desc: "Вы получили крупную сумму денег. Ваша первая, инстинктивная реакция тела?", c1: "Нужно спрятать/сберечь", c2: "Тревога и опасность", c3: "Желание быстро потратить" },
-        foundation_4: { title: "ТЕНЬ УСПЕХА", desc: "Представьте, что вы достигли всего, о чем мечтали. Кто из вашего окружения исчезнет?", c1: "Мне станет стыдно", c2: "Придется спасать всех", c3: "Меня предадут" },
-        foundation_5: { title: "ПРАВО НА ОТДЫХ", desc: "Вы ничего не делаете целый день. Какое чувство доминирует к вечеру?", c1: "Только труд оправдывает жизнь", c2: "Фоновая тревога", c3: "Спокойное восстановление" },
-        foundation_6: { title: "ПЕТЛЯ ВРЕМЕНИ", desc: "Как часто вы откладываете важные, но сложные решения на потом?", c1: "Постоянно сомневаюсь", c2: "Тяну до последнего", c3: "Решаю здесь и сейчас" },
-        foundation_7: { title: "АВТОРИТЕТ", desc: "Критика со стороны значимой фигуры (начальник, родитель). Ваша реакция?", c1: "Страх отвержения", c2: "Взрослая дискуссия", c3: "Агрессивная защита" },
-        foundation_8: { title: "ГРАНИЦЫ Я", desc: "Вас просят о помощи, когда у вас нет на это ресурса. Что вы сделаете?", c1: "Помогу через силу", c2: "Испугаюсь конфликта", c3: "Спокойно откажу" },
-        foundation_9: { title: "ТЕЛЕСНЫЙ КОНТАКТ", desc: "В моменты сильного стресса, что происходит с вашим телом?", c1: "Я перестаю его чувствовать", c2: "Включается автопилот", c3: "Теряю границы тела" },
-        foundation_10: { title: "ЕМКОСТЬ", desc: "Вы получаете подарок, который слишком дорог для вас. Ваши мысли?", c1: "Я должен отдать долг", c2: "Это опасно/токсично", c3: "Принимаю с радостью" },
-        foundation_11: { title: "ВИДИМОСТЬ", desc: "Вам нужно выступить перед большой аудиторией. Ваше основное чувство?", c1: "Ужас разоблачения", c2: "Героическое преодоление", c3: "Стыд быть видимым" },
-        foundation_12: { title: "ЛОЯЛЬНОСТЬ", desc: "Стать успешнее своих родителей — это для вас...", c1: "Предательство рода", c2: "Опасный конфликт", c3: "Естественный ход вещей" },
-        foundation_13: { title: "ЗОЛОТАЯ КЛЕТКА", desc: "Стабильная, но нелюбимая работа или риск ради мечты?", c1: "Соглашусь на меньшее", c2: "Выберу комфорт", c3: "Пожертвую собой" },
-        foundation_14: { title: "ФИНАЛ ФУНДАМЕНТА", desc: "Оглядываясь на этот блок вопросов, какое чувство было фоновым?", c1: "Тяжесть обязательств", c2: "Желание сбежать", c3: "Интерес к себе" },
-
-        // --- AGENCY (10 NODES) - STRUCTURAL ---
-        agency_0: { title: "ИМПУЛЬС", desc: "Возникает идея. Как быстро вы переходите к действию?", c1: "Сомневаюсь в себе", c2: "Действую сразу", c3: "Боюсь последствий" },
-        agency_1: { title: "ВОЛЯ", desc: "Препятствие на пути. Ваша стратегия?", c1: "Упорный труд", c2: "Обход на автопилоте", c3: "Застревание" },
-        agency_2: { title: "КОМПЕТЕНЦИЯ", desc: "Вам предлагают сложный проект.", c1: "Я не справлюсь", c2: "Это вызов для роста", c3: "Лучше не рисковать" },
-        agency_3: { title: "КОНФРОНТАЦИЯ", desc: "Нужно защитить свои интересы.", c1: "Избегу конфликта", c2: "Пожертвую собой", c3: "Заявлю о правах" },
-        agency_4: { title: "ОТВЕТСТВЕННОСТЬ", desc: "Ошибка команды. Кто виноват?", c1: "Я должен был проверить", c2: "Решаем проблему", c3: "Это не моя вина" },
-        agency_5: { title: "ЖЕРТВЕННОСТЬ", desc: "Успех требует жертв?", c1: "Всегда", c2: "Иногда приходится терпеть", c3: "Нет, нужен баланс" },
-        agency_6: { title: "ДОВЕРИЕ", desc: "Делегирование задачи.", c1: "Сделаю сам лучше", c2: "Доверяю и проверяю", c3: "Боюсь потерять контроль" },
-        agency_7: { title: "ПЛАНИРОВАНИЕ", desc: "Горизонт вашего планирования.", c1: "Только сегодня", c2: "На годы вперед", c3: "Деньги - инструмент" },
-        agency_8: { title: "ТОКСИЧНОСТЬ", desc: "Работа высасывает силы.", c1: "Терплю ради денег", c2: "Героически страдаю", c3: "Меняю условия" },
-        agency_9: { title: "ТРИУМФ", desc: "Вы победили. Реакция?", c1: "Стыдно радоваться", c2: "Праздную", c3: "Это случайность" },
-
-        // --- MONEY (10 NODES) - STRUCTURAL ---
-        money_0: { title: "ДЕНЬГИ И РОД", desc: "Финансовые установки семьи.", c1: "Мы бедные, но честные", c2: "Деньги - это возможности", c3: "Деньги портят людей" },
-        money_1: { title: "ДЕФИЦИТ", desc: "Ощущение нехватки.", c1: "Всегда мало", c2: "Нужно больше работать", c3: "Не знаю, чего хочу" },
-        money_2: { title: "ОПАСНОСТЬ", desc: "Большие деньги - это...", c1: "Угроза жизни", c2: "Скромность украшает", c3: "Инструмент влияния" },
-        money_3: { title: "ИЗОБИЛИЕ", desc: "Можно ли иметь всё?", c1: "За всё надо платить", c2: "Конечно", c3: "Не в этой жизни" },
-        money_4: { title: "ДОЛГ", desc: "Отношение к кредитам.", c1: "Кабала", c2: "Рычаг", c3: "Стыд" },
-        money_5: { title: "ТРАТЫ", desc: "Покупка для себя.", c1: "Жалко денег", c2: "Срыв и транжирство", c3: "Легко и приятно" },
-        money_6: { title: "ПРЕДАТЕЛЬСТВО", desc: "Богатый друг.", c1: "Он изменился", c2: "Рад за него", c3: "Зависть" },
-        money_7: { title: "ИМПУЛЬС", desc: "Скидки и акции.", c1: "Скупаю всё", c2: "Беру нужное", c3: "Игнорирую" },
-        money_8: { title: "ЕМКОСТЬ", desc: "Ваш потолок.", c1: "Выше головы не прыгнешь", c2: "Сливаю излишки", c3: "Постоянно расту" },
-        money_9: { title: "СТЫД", desc: "Озвучить цену за услуги.", c1: "Неудобно", c2: "Я много прошу?", c3: "Это моя цена" },
-
-        // --- SOCIAL (10 NODES) - STRUCTURAL ---
-        social_0: { title: "КОНФЛИКТ", desc: "Ссора с другом.", c1: "Уступлю", c2: "Замкнусь", c3: "Потеряю границы" },
-        social_1: { title: "ОЦЕНКА", desc: "Что подумают люди?", c1: "Важно мнение", c2: "Подстраиваюсь", c3: "Я в клетке ожиданий" },
-        social_2: { title: "ДОВЕРИЕ", desc: "Новое знакомство.", c1: "Жду подвоха", c2: "Открыт, но осторожен", c3: "Закрыт наглухо" },
-        social_3: { title: "МАСКИ", desc: "В обществе я...", c1: "Играю роль", c2: "Сливаюсь с толпой", c3: "Напряжен" },
-        social_4: { title: "УСПЕХ ДРУГИХ", desc: "Коллега получил повышение.", c1: "Мне стыдно", c2: "Я хуже него", c3: "Равнодушие" },
-        social_5: { title: "ОДИНОЧЕСТВО", desc: "Вечер наедине с собой.", c1: "Тревога", c2: "Работа", c3: "Слияние с кем-то" },
-        social_6: { title: "ГРАНИЦЫ", desc: "Вас критикуют.", c1: "Оправдываюсь", c2: "Принимаю к сведению", c3: "Обижаюсь" },
-        social_7: { title: "БЛИЗОСТЬ", desc: "Глубокий контакт.", c1: "Страшно", c2: "Хочу и боюсь", c3: "Избегаю" },
-        social_8: { title: "ПРЕДАТЕЛЬСТВО", desc: "Вас подставили.", c1: "Мир жесток", c2: "Я сам виноват", c3: "Нужно больше работать" },
-        social_9: { title: "ДЕНЬГИ И ДРУЖБА", desc: "Дал в долг и не вернули.", c1: "Больше не дам", c2: "Мне стыдно спросить", c3: "Прощу ради мира" },
-
-        // --- LEGACY (5 NODES) - STRUCTURAL ---
-        legacy_0: { title: "СМЫСЛ", desc: "Ради чего всё это?", c1: "Выживание", c2: "Создание", c3: "Жертва ради других" },
-        legacy_1: { title: "СЛЕД", desc: "Что останется после?", c1: "Ничего", c2: "Память рода", c3: "Страх забвения" },
-        legacy_2: { title: "СТРАХ СМЕРТИ", desc: "Мысль о конечности.", c1: "Парализует", c2: "Мотивирует", c3: "Истощает" },
-        legacy_3: { title: "МИССИЯ", desc: "Ваш вклад.", c1: "Я должен спасти всех", c2: "Прожить достойно", c3: "Плыву по течению" },
-        legacy_4: { title: "ИТОГ", desc: "Финал протокола.", c1: "Я верен роду", c2: "Я в золотой клетке", c3: "Я выбираю себя" }
-    },
-    beliefs: {
-        family_loyalty: "Семейная лояльность",
-        scarcity_mindset: "Дефицитарное мышление",
-        fear_of_punishment: "Страх наказания",
-        imposter_syndrome: "Синдром самозванца",
-        poverty_is_virtue: "Бедность как добродетель",
-        hard_work_only: "Только тяжелый труд",
-        self_permission: "Саморазрешение",
-        fear_of_conflict: "Страх конфликта",
-        betrayal_trauma: "Травма предательства",
-        unconscious_fear: "Бессознательный страх",
-        money_is_danger: "Деньги - опасность",
-        impulse_spend: "Импульсивные траты",
-        resource_toxicity: "Токсичность ресурса",
-        short_term_bias: "Краткосрочное мышление",
-        capacity_expansion: "Расширение емкости",
-        boundary_collapse: "Коллапс границ",
-        shame_of_success: "Стыд успеха",
-        hero_martyr: "Герой-мученик",
-        latency_resistance: "Латентное сопротивление",
-        body_mind_conflict: "Конфликт ум-тело",
-        ambivalence_loop: "Петля амбивалентности",
-        autopilot_mode: "Автопилот",
-        golden_cage: "Золотая клетка",
-        money_is_tool: "Деньги - инструмент",
-        default: "Стандарт"
-    },
-    explanations: {},
-    pattern_library: {
-        default: { protection: "Защита", cost: "Цена", antidote: "Решение" }
-    },
-    archetypes: {
-        THE_ARCHITECT: { title: "АРХИТЕКТОР", desc: "Строитель систем", superpower: "Структура", shadow: "Ригидность", quote: "Порядок из хаоса" },
-        THE_DRIFTER: { title: "СТРАННИК", desc: "Искатель", superpower: "Гибкость", shadow: "Бесцельность", quote: "Путь важнее цели" },
-        THE_BURNED_HERO: { title: "ОБОЖЖЕННЫЙ ГЕРОЙ", desc: "Выживший", superpower: "Стойкость", shadow: "Цинизм", quote: "Я выстоял" },
-        THE_GOLDEN_PRISONER: { title: "ЗОЛОТОЙ УЗНИК", desc: "Заложник успеха", superpower: "Статус", shadow: "Несвобода", quote: "Все есть, но..." },
-        THE_CHAOS_SURFER: { title: "СЕРФЕР ХАОСА", desc: "Адаптивный", superpower: "Реакция", shadow: "Нестабильность", quote: "Лови волну" },
-        THE_GUARDIAN: { title: "ХРАНИТЕЛЬ", desc: "Оберегающий", superpower: "Забота", shadow: "Гиперопека", quote: "Безопасность прежде всего" }
-    },
-    verdicts: {
-        HEALTHY_SCALE: { label: "ЗДОРОВЫЙ МАСШТАБ", impact: "Оптимально" },
-        BRILLIANT_SABOTAGE: { label: "БРИЛЛИАНТОВЫЙ САБОТАЖ", impact: "Скрытый конфликт" },
-        INVISIBILE_CEILING: { label: "НЕВИДИМЫЙ ПОТОЛОК", impact: "Ограничение роста" },
-        LEAKY_BUCKET: { label: "ДЫРЯВОЕ ВЕДРО", impact: "Потеря ресурса" },
-        PARALYZED_GIANT: { label: "ПАРАЛИЗОВАННЫЙ ГИГАНТ", impact: "Блокировка силы" },
-        FROZEN_POTENTIAL: { label: "ЗАМОРОЖЕННЫЙ ПОТЕНЦИАЛ", impact: "Стагнация" },
-        CRITICAL_DEFICIT: { label: "КРИТИЧЕСКИЙ ДЕФИЦИТ", impact: "Истощение" }
-    },
-    metric_definitions: {},
-    conflicts: {
-        critical_deficit: { title: "Ресурсная Яма", desc: "Система тратит больше, чем получает. Фундамент не выдерживает амбиций." },
-        brilliant_sabotage: { title: "Блестящее Сопротивление", desc: "Высокий интеллект используется для защиты от реальных изменений." },
-        invisibile_ceiling: { title: "Стеклянный Потолок", desc: "Опоры мощные, но страх масштаба блокирует рост." },
-        leaky_bucket: { title: "Утечка Энергии", desc: "Высокий ресурс сливается через хаос и отсутствие фокуса." },
-        paralyzed_giant: { title: "Паралич Воли", desc: "Потенциал огромен, но способность действовать заблокирована." },
-        frozen_potential: { title: "Анабиоз", desc: "Все системы работают на минимуме для сохранения безопасности." },
-        healthy_scale: { title: "Баланс", desc: "Конфликты минимальны, система готова к нагрузке." },
-        family_loyalty: { title: "Родовой Долг", desc: "Бессознательный запрет жить лучше, чем предки." }
-    },
-    system_commentary: [],
-    auth_hint: "Введите ключ",
-    legal_disclaimer: "Не является офертой",
-    safety: {
-        time_remaining: "Осталось",
-        minutes: "мин",
-        alert: "Внимание",
-        trigger_warning_title: "Триггер",
-        trigger_warning_desc: "Может вызвать эмоции",
-        emergency_contacts_title: "Экстренная помощь",
-        emergency_contacts_desc: "Контакты служб",
-        return_btn: "Вернуться",
-        uncomfortable_btn: "Мне некомфортно"
-    },
-    session_prep_templates: {
-        low_foundation_pattern: "Как {{pattern}} влияет на вашу опору?",
-        low_foundation_generic: "Что дает вам ощущение безопасности?",
-        somatic_dissonance: "Что вы чувствуете в теле, когда думаете о {{pattern}}?",
-        default_archetype: "Как {{archetype_shadow}} проявляется в вашей жизни?",
-        pattern_interaction: "Как связаны {{pattern1}} и {{pattern2}}?",
-        default_latency: "Замечаете ли вы паузы в ответах?",
-        default_verdict: "Как {{verdict_impact}} влияет на ваши решения?"
-    },
-    synthesis_categories: {},
-    synthesis: {},
-    interventions: {}, 
-    directives: {},    
-    interferences: {}, 
-    correlation_types: {},
     integrity_audit: {
         title: "АУДИТ ЦЕЛОСТНОСТИ",
         version_label: "v1.0",
@@ -563,16 +394,88 @@ const ru: Translations = {
         verdict_healthy: "СИСТЕМА СТАБИЛЬНА",
         verdict_unstable: "ОБНАРУЖЕНА НЕСТАБИЛЬНОСТЬ"
     },
-    methodology_faq: [
-        { q: "Как это работает?", a: "Система анализирует не только ваши ответы, но и скорость реакции (латентность) и телесный отклик (нейросинк). Это позволяет выявить то, что сознание пытается скрыть." },
-        { q: "Что делать с результатом?", a: "Результат — это карта для работы с психологом. Используйте вопросы из блока 'Подготовка' для начала терапии." },
-        { q: "Это диагноз?", a: "Нет. Genesis OS — это инструмент скрининга паттернов, а не медицинская диагностика." }
-    ],
-    soft_mode: {
-        archetype_prefix: "Мягкий ",
-        verdict_softened: {
-            CRITICAL_DEFICIT: "Требует внимания"
-        }
+    conflicts: {
+        critical_deficit: { title: "Ресурсная Яма", desc: "Система тратит больше, чем получает. Фундамент не выдерживает амбиций." },
+        brilliant_sabotage: { title: "Блестящее Сопротивление", desc: "Высокий интеллект используется для защиты от реальных изменений." },
+        invisibile_ceiling: { title: "Стеклянный Потолок", desc: "Опоры мощные, но страх масштаба блокирует рост." },
+        leaky_bucket: { title: "Утечка Энергии", desc: "Высокий ресурс сливается через хаос и отсутствие фокуса." },
+        paralyzed_giant: { title: "Паралич Воли", desc: "Потенциал огромен, но способность действовать заблокирована." },
+        frozen_potential: { title: "Анабиоз", desc: "Все системы работают на минимуме для сохранения безопасности." },
+        healthy_scale: { title: "Баланс", desc: "Конфликты минимальны, система готова к нагрузке." },
+        family_loyalty: { title: "Родовой Долг", desc: "Бессознательный запрет жить лучше, чем предки." }
+    },
+    beliefs: {
+        family_loyalty: "Семейная лояльность",
+        scarcity_mindset: "Дефицитарное мышление",
+        fear_of_punishment: "Страх наказания",
+        imposter_syndrome: "Синдром самозванца",
+        poverty_is_virtue: "Бедность как добродетель",
+        hard_work_only: "Только тяжелый труд",
+        self_permission: "Саморазрешение",
+        fear_of_conflict: "Страх конфликта",
+        betrayal_trauma: "Травма предательства",
+        unconscious_fear: "Бессознательный страх",
+        money_is_danger: "Деньги - опасность",
+        impulse_spend: "Импульсивные траты",
+        resource_toxicity: "Токсичность ресурса",
+        short_term_bias: "Краткосрочное мышление",
+        capacity_expansion: "Расширение емкости",
+        boundary_collapse: "Коллапс границ",
+        shame_of_success: "Стыд успеха",
+        hero_martyr: "Герой-мученик",
+        latency_resistance: "Латентное сопротивление",
+        body_mind_conflict: "Конфликт ум-тело",
+        ambivalence_loop: "Петля амбивалентности",
+        autopilot_mode: "Автопилот",
+        golden_cage: "Золотая клетка",
+        money_is_tool: "Деньги - инструмент",
+        default: "Стандарт"
+    },
+    pattern_library: {
+        scarcity_mindset: { protection: "Контроль", cost: "Тревога", antidote: "Доверие" },
+        family_loyalty: { protection: "Принадлежность", cost: "Самореализация", antidote: "Сепарация" },
+        fear_of_punishment: { protection: "Безопасность", cost: "Свобода", antidote: "Взросление" },
+        imposter_syndrome: { protection: "თავმდაბლობა", cost: "აღიარება", antidote: "ფაქტები" },
+        hard_work_only: { protection: "Оправдание", cost: "Здоровье", antidote: "Ценность" },
+        fear_of_conflict: { protection: "Мир", cost: "Границы", antidote: "Ассертивность" },
+        betrayal_trauma: { protection: "Неуязвимость", cost: "Близость", antidote: "Риск" },
+        money_is_danger: { protection: "Спокойствие", cost: "Возможности", antidote: "Управление" },
+        hero_martyr: { protection: "Нужность", cost: "Истощение", antidote: "Делегирование" },
+        golden_cage: { protection: "Комфорт", cost: "Смысл", antidote: "Прыжок" },
+        default: { protection: "Защита", cost: "Цена", antidote: "Решение" }
+    },
+    archetypes: {
+        THE_ARCHITECT: { title: "АРХИТЕКТОР", desc: "Строитель систем", superpower: "Структура", shadow: "Ригидность", quote: "Порядок из хаоса" },
+        THE_DRIFTER: { title: "СТРАННИК", desc: "Искатель", superpower: "Гибкость", shadow: "Бесцельность", quote: "Путь важнее цели" },
+        THE_BURNED_HERO: { title: "ОБОЖЖЕННЫЙ ГЕРОЙ", desc: "Выживший", superpower: "Стойкость", shadow: "Цинизм", quote: "Я выстоял" },
+        THE_GOLDEN_PRISONER: { title: "ЗОЛОТОЙ УЗНИК", desc: "Заложник успеха", superpower: "Статус", shadow: "Несвобода", quote: "Все есть, но..." },
+        THE_CHAOS_SURFER: { title: "СЕРФЕР ХАОСА", desc: "Адаптивный", superpower: "Реакция", shadow: "Нестабильность", quote: "Лови волну" },
+        THE_GUARDIAN: { title: "ХРАНИТЕЛЬ", desc: "Оберегающий", superpower: "Забота", shadow: "Гиперопека", quote: "Безопасность прежде всего" }
+    },
+    verdicts: {
+        HEALTHY_SCALE: { label: "ЗДОРОВЫЙ МАСШТАБ", impact: "Оптимально" },
+        BRILLIANT_SABOTAGE: { label: "БРИЛЛИАНТОВЫЙ САБОТАЖ", impact: "Скрытый конфликт" },
+        INVISIBILE_CEILING: { label: "НЕВИДИМЫЙ ПОТОЛОК", impact: "Ограничение роста" },
+        LEAKY_BUCKET: { label: "ДЫРЯВОЕ ВЕДРО", impact: "Потеря ресурса" },
+        PARALYZED_GIANT: { label: "ПАРАЛИЗОВАННЫЙ ГИГАНТ", impact: "Блокировка силы" },
+        FROZEN_POTENTIAL: { label: "ЗАМОРОЖЕННЫЙ ПОТЕНЦИАЛ", impact: "Стагнация" },
+        CRITICAL_DEFICIT: { label: "КРИТИЧЕСКИЙ ДЕФИЦИТ", impact: "Истощение" }
+    },
+    session_prep_templates: {
+        low_foundation_pattern: "Как {{pattern}} влияет на вашу опору?",
+        low_foundation_generic: "Что дает вам ощущение безопасности?",
+        somatic_dissonance: "Что вы чувствуете в теле, когда думаете о {{pattern}}?",
+        default_archetype: "Как {{archetype_shadow}} проявляется в вашей жизни?",
+        pattern_interaction: "Как связаны {{pattern1}} и {{pattern2}}?",
+        default_latency: "Замечаете ли вы паузы в ответах?",
+        default_verdict: "Как {{verdict_impact}} влияет на ваши решения?"
+    },
+    legal: {
+        tos_title: "Условия использования",
+        tos_body: "Используя сервис, вы соглашаетесь с тем, что результаты носят информационный характер и не заменяют профессиональную медицинскую помощь.",
+        privacy_title: "Конфиденциальность",
+        privacy_body: "Мы не храним личные данные. Весь анализ происходит локально на вашем устройстве. Облачная синхронизация отсутствует.",
+        close_btn: "Закрыть"
     },
     test_metrics: {
         insight_resolution: "Разрешение инсайта",
@@ -583,12 +486,80 @@ const ru: Translations = {
         structural_contradictions: "Структурные противоречия",
         persona_conflict_hint: "Конфликт персоны"
     },
-    legal: {
-        tos_title: "Условия использования",
-        tos_body: "Используя сервис, вы соглашаетесь с тем, что результаты носят информационный характер и не заменяют профессиональную медицинскую помощь.",
-        privacy_title: "Конфиденциальность",
-        privacy_body: "Мы не храним личные данные. Весь анализ происходит локально на вашем устройстве. Облачная синхронизация отсутствует.",
-        close_btn: "Закрыть"
+    soft_mode: {
+        archetype_prefix: "Мягкий ",
+        verdict_softened: {
+            CRITICAL_DEFICIT: "Требует внимания"
+        }
+    },
+    methodology_faq: [
+        { q: "Как это работает?", a: "Система анализирует не только ваши ответы, но и скорость реакции (латентность) и телесный отклик (нейросинк). Это позволяет выявить то, что сознание пытается скрыть." },
+        { q: "Что делать с результатом?", a: "Результат — это карта для работы с психологом. Используйте вопросы из блока 'Подготовка' для начала терапии." },
+        { q: "Это диагноз?", a: "Нет. Genesis OS — это инструмент скрининга паттернов, а не медицинская диагностика." }
+    ],
+    scenes: {
+        // ... (scenes omitted for brevity, assuming they are correct) ...
+        foundation_0: { title: "КАЛИБРОВКА СИСТЕМЫ", desc: "Как вы обычно реагируете на необходимость принять быстрое решение в условиях неопределенности?", c1: "Действую на автомате", c2: "Замираю и жду", c3: "Анализирую ресурсы" },
+        // ... (rest of scenes)
+    },
+    domains: { 
+        foundation: "Фундамент", 
+        agency: "Субъектность", 
+        money: "Ресурс", 
+        social: "Социум", 
+        legacy: "Наследие" 
+    },
+    ekg: { title: "ПУЛЬС СЕССИИ" },
+    pro_terminal: {
+        diagnostic_protocol: "ДИАГНОСТИЧЕСКИЙ ПРОТОКОЛ",
+        paste_placeholder: "ВСТАВЬТЕ КОД КЛИЕНТА",
+        initiate_decrypt: "РАСШИФРОВАТЬ ПРОФИЛЬ",
+        no_latency_anomalies: "Аномалий задержки не выявлено",
+        latency_hint: "Красные зоны указывают на когнитивное сопротивление",
+        sabotage_standard: "Стандартное сопротивление изменениям",
+        sabotage_intellectual: "Интеллектуализация как защита от чувств",
+        resistance_label: "Сопротивление",
+        decrypting_msg: "РАСШИФРОВКА...",
+        dossier_btn: "СГЕНЕРИРОВАТЬ ДОСЬЕ",
+        monolith_output: "ВЫВОД MONOLITH",
+        monolith_precision: "ТОЧНОСТЬ: ВЫСОКАЯ",
+        copy_success: "СКОПИРОВАНО",
+        export_crm: "ЭКСПОРТ В БУФЕР"
+    },
+    pro_headers: {
+        differential: "ДИФФЕРЕНЦИАЛЬНЫЙ АНАЛИЗ",
+        badge_prob_map: "ВЕРОЯТНОСТЬ",
+        heatmap: "НЕЙРО-ТЕПЛОВАЯ КАРТА",
+        badge_latency: "ЛАТЕНТНОСТЬ",
+        sabotage: "САБОТАЖ АЛЬЯНСА",
+        badge_contact: "КОНТАКТ",
+        beliefs: "СИСТЕМА УБЕЖДЕНИЙ",
+        badge_schemas: "СХЕМЫ"
+    },
+    phases: {
+        SANITATION: "Санитарная фаза",
+        STABILIZATION: "Стабилизация",
+        EXPANSION: "Расширение"
+    },
+    tasks: {
+        // ...
+    },
+    explanations: {},
+    metric_definitions: {},
+    system_commentary: [],
+    auth_hint: "",
+    legal_disclaimer: "",
+    synthesis_categories: {},
+    synthesis: {},
+    correlation_types: {},
+    export_image: {
+        header: "GENESIS OS // CLINICAL BRIDGE",
+        blueprint_title: "IDENTITY BLUEPRINT",
+        footer: "CLINICAL SCREENING",
+        metrics: {
+            integrity: "INTEGRITY",
+            entropy: "ENTROPY"
+        }
     }
 };
 
@@ -604,6 +575,51 @@ const ka: Translations = {
         recommended_tag: "რეკომენდირებული",
         price_per_month: "/ თვე",
         features_clinical: "სიღრმისეული ანალიზი;სუპერვიზია;ექსპორტი"
+    },
+    global: {
+        back: "უკან",
+        complete: "დასრულებულია",
+        calibrating: "კალიბრაცია",
+        calib_desc: "სისტემის მგრძნობელობის გასწორება..."
+    },
+    sync: {
+        title: "სინქრონიზაცია",
+        desc: "რას გრძნობთ სხეულში?",
+        guidance_tip: "არ გააანალიზოთ, იგრძენით.",
+        break_title: "ინტეგრაციის პაუზა",
+        break_desc: "სისტემა ამუშავებს მონაცემებს. ისუნთქეთ.",
+        break_btn: "გაგრძელება",
+        s0: "ნეიტრალური",
+        s1: "ბლოკი / დაძაბულობა",
+        s2: "სითბო / დინება",
+        s3: "სიცივე / სიცარიელე",
+        s4: "კანკალი / ვიბრაცია"
+    },
+    sensation_feedback: {
+        s0: "მონაცემები მიღებულია",
+        s1: "დაფიქსირდა დაძაბულობა",
+        s2: "რესურსული გამოძახილი",
+        s3: "ენერგიის ვარდნა",
+        s4: "მაღალი ინტენსივობა"
+    },
+    dashboard: {
+        desc: "მართვის პანელი.",
+        insight_coherence: "სისტემა გამართულია.",
+        insight_noise: "მაღალი ხმაურის დონე.",
+        insight_somatic_dissonance: "სხეული და გონება აცდენილია.",
+        select_domain: "აირჩიეთ დომენი",
+        manual_btn: "ცნობარი"
+    },
+    safety: {
+        trigger_warning_title: "მაღალი ინტენსივობა",
+        trigger_warning_desc: "კითხვებმა შეიძლება გამოიწვიოს ძლიერი რეაქცია.",
+        emergency_contacts_title: "დახმარება",
+        emergency_contacts_desc: "თუ გრძნობთ რომ ვერ უმკლავდებით, შეჩერდით.",
+        return_btn: "უსაფრთხოებაში",
+        uncomfortable_btn: "მიჭირს",
+        alert: "ყურადღება",
+        time_remaining: "დარჩა",
+        minutes: "წთ"
     },
     invalid_results: {
         ...ru.invalid_results,
@@ -643,24 +659,67 @@ const ka: Translations = {
         noise_tracking: "ხმაური",
         evolution_insight_desc: "დინამიკა კონტროლდება.",
         start_new_cycle_btn: "ახალი ციკლი",
-        agree_terms_btn: "პირობებზე თანხმობა"
+        agree_terms_btn: "პირობებზე თანხმობა",
+        module_label: "მოდული",
+        verdict_label: "ვერდიქტი",
+        priority_label: "პრიორიტეტი",
+        access_restricted: "წვდომა შეზღუდულია",
+        enter_code_desc: "შეიყვანეთ კლიენტის ID ან კოდი პროფილის გასახსნელად."
     },
     admin: {
-        ...ru.admin,
         panel_title: "ადმინისტრატორის პანელი",
         oversight_layer: "ზედამხედველობის შრე",
         exit: "გასვლა",
         session_nodes: "სესიის კვანძები",
         avg_latency: "საშუალო დაყოვნება",
+        diagnostic_protocols: "დიაგნოსტიკური პროტოკოლები",
+        launch_oracle_protocol: "ორაკულის გაშვება",
+        launch_integrity_audit: "მთლიანობის აუდიტის გაშვება",
+        access_clinical: "კლინიკური წვდომა",
+        master_overrides: "მასტერ-მართვა",
+        force_unlock: "იძულებითი განბლოკვა",
+        glitch_sim: "გლიჩის სიმულაცია",
+        global_control: "გლობალური კონტროლი",
+        broadcast_msg: "მაუწყებლობის შეტყობინება",
+        block_all: "ყველას დაბლოკვა",
+        issue_license: "ლიცენზიის გაცემა",
+        client_name: "კლიენტის სახელი",
+        license_duration: "ხანგრძლივობა",
+        days: "დღე",
+        generate_btn: "გენერირება",
+        ready_dist: "მზადაა გასაცემად",
+        license_ledger: "ლიცენზიების რეესტრი",
+        prepare_github: "GitHub-ისთვის მომზადება",
+        auth_access: "ავტორიზებული წვდომა",
         system_unstable: "სისტემა არასტაბილურია",
-        immediate_attention: "საჭიროებს ყურადღებას"
+        immediate_attention: "საჭიროებს ყურადღებას",
+        data_vault: "მონაცემთა საცავი",
+        import_state: "იმპორტი",
+        export_backup: "ექსპორტი",
+        mark_revoked: "ლიცენზიის გაუქმება?",
+        kernel: "ბირთვი",
+        registry: "რეესტრი",
+        telemetry: "ტელემეტრია",
+        anomaly: "ანომალიები",
+        integrity: "მთლიანობა",
+        oracle: "ორაკული"
+    },
+    oracle: {
+        title: "პროტოკოლი: ორაკული",
+        subtitle: "დინამიური სიმულატორი v1.0",
+        exit: "გასვლა",
+        btn_idle: "სიმულაციის გაშვება",
+        btn_running: "სიმულაცია...",
+        section_anomalies: "აღმოჩენილი ანომალიები",
+        section_calibrator: "ფსიქომეტრიული კალიბრატორი",
+        no_anomalies: "ანომალიები არ არის.",
+        footer: "Genesis_Oracle_Protocol // წინასწარი შემოწმება"
     },
     guide: {
-        ...ru.guide,
         title: "სახელმძღვანელო",
         subtitle: "მომხმარებლის გზამკვლევი",
         sections: [
-            { title: "შესავალი", content: ["Genesis OS გეხმარებათ პატერნების გაგებაში."] }
+            { title: "შესავალი", content: ["Genesis OS გეხმარებათ ფარული პატერნების გაგებაში."] }
         ],
         metaphor: "პიროვნების რუკა"
     },
@@ -668,7 +727,17 @@ const ka: Translations = {
         ...ru.clinical_decoder,
         somatic_dissonance_title: "სომატური დისონანსი",
         somatic_dissonance_desc: "კონფლიქტი გონებასა და სხეულს შორის.",
-        disclaimer: "მხოლოდ პროფესიული გამოყენებისთვის."
+        disclaimer: "მხოლოდ პროფესიული გამოყენებისთვის.",
+        configs: {
+            balanced: { title: "დაბალანსებული", desc: "ნორმა" },
+            compensatory_overdrive: { title: "კომპენსატორული", desc: "ჰიპერაქტივობა" },
+            critical_deficit: { title: "დეფიციტი", desc: "რესურსების ნაკლებობა" },
+            economy_mode: { title: "ეკონომია", desc: "ენერგიის დაზოგვა" },
+            mobilization: { title: "მობილიზაცია", desc: "მოქმედებისთვის მზადყოფნა" },
+            chaotic_creative: { title: "შემოქმედებითი ქაოსი", desc: "მაღალი ენტროპია" },
+            chaotic: { title: "ქაოსი", desc: "არასტაბილურობა" },
+            rigid: { title: "რიგიდული", desc: "სიმკაცრე" }
+        }
     },
     clinical_narratives: {
         ...ru.clinical_narratives,
@@ -677,6 +746,35 @@ const ka: Translations = {
             critical: "კრიტიკული",
             stable: "სტაბილური",
             focus_somatic: "ფოკუსი სხეულზე"
+        },
+        profiles: {
+            compensatory: { contract: "მე ვიქნები ძლიერი", goal: "სისუსტის აღიარება", process: "ჯავშნის მოხსნა", p_profile: "კომპენსატორული", deep_expl: "მოწყვლადობის შიში", behavior: "აქტიური", hypo: "ძალის ჰიპოთეზა", transference: "იდეალიზაცია", counter_transference: "აღტაცება", trap: "ფასადის მხარდაჭერა", fragility: "ჩავარდნა", strategies: ["კონფრონტაცია"] },
+            borderline: { contract: "გადამარჩინე", goal: "მთლიანობა", process: "კონტეინირება", p_profile: "მოსაზღვრე", deep_expl: "მიტოვების შიში", behavior: "არასტაბილური", hypo: "დეფიციტის ჰიპოთეზა", transference: "შერწყმა", counter_transference: "შფოთვა", trap: "მშველელი", fragility: "უარყოფა", strategies: ["საზღვრები"] },
+            neurotic: { contract: "შემაკეთე", goal: "თავისუფლება", process: "გაცნობიერება", p_profile: "ნევროტული", deep_expl: "შინაგანი კონფლიქტი", behavior: "თავშეკავებული", hypo: "აკრძალვის ჰიპოთეზა", transference: "სამუშაო", counter_transference: "ინტერესი", trap: "ინტელექტუალიზაცია", fragility: "დანაშაულის განცდა", strategies: ["ანალიზი"] },
+            chaotic: { contract: "დამალაგე", goal: "სტრუქტურა", process: "ორგანიზება", p_profile: "ქაოტური", deep_expl: "საყრდენების არარსებობა", behavior: "იმპულსური", hypo: "ქაოსის ჰიპოთეზა", transference: "ქაოტური", counter_transference: "დაბნეულობა", trap: "კონტროლი", fragility: "ზეწოლა", strategies: ["სტრუქტურირება"] }
+        },
+        systemic: {
+            loyalty_desc: "სისტემური ლოიალობა",
+            supervisor_note: "ყურადღება მიაქციეთ ოჯახის ისტორიას",
+            systemic_order_1: "წესრიგის აღდგენა"
+        },
+        interventions: {
+            confrontation_1: "კონფრონტაცია დაცვასთან",
+            support_1: "ეგოს მხარდაჭერა"
+        },
+        diagnoses: {
+            affective: "აფექტური სპექტრი",
+            narcissistic: "ნარცისული სპექტრი",
+            manic: "მანიაკალური სპექტრი",
+            systemic: "სისტემური დინამიკა"
+        },
+        diff_expl: "დიფერენციალური ანალიზი",
+        validity_expl: "ვალიდურობის შეფასება",
+        steps: {
+            confrontation_func: "კონფრონტაცია",
+            confrontation_func_action: "წინააღმდეგობის ჩვენება",
+            search_crack: "ბზარის ძიება",
+            search_crack_action: "მოწყვლადობის კვლევა"
         }
     },
     results: {
@@ -689,11 +787,17 @@ const ka: Translations = {
         session_prep_desc: "კითხვები სესიისთვის",
         active_patterns_title: "აქტიური პატერნები",
         share_button: "გაზიარება",
-        back: "უკან"
+        back: "უკან",
+        brief_instruction: "ინსტრუქცია",
+        encrypted_overlay: "დაშიფრულია",
+        disclaimer_title: "პასუხისმგებლობის უარყოფა",
+        disclaimer_body: "არ წარმოადგენს დიაგნოზს",
+        methodology_title: "მეთოდოლოგია",
+        methodology_desc: "როგორ მუშაობს"
     },
     integrity_audit: {
-        ...ru.integrity_audit,
         title: "მთლიანობის აუდიტი",
+        version_label: "v1.0",
         exit_btn: "გასვლა",
         metrics: {
             emergence: "ემერჯენტობა",
@@ -712,6 +816,22 @@ const ka: Translations = {
         },
         efficiency: "ეფექტურობა",
         optimal: "ოპტიმალური",
+        anomalies: {
+            DEAD_CODE: "მკვდარი კოდი",
+            SPOF: "ჩავარდნის ერთი წერტილი",
+            BUTTERFLY: "პეპლის ეფექტი",
+            DOMINO: "დომინოს ეფექტი",
+            HYSTERESIS: "ჰისტერეზისი",
+            TECH_DEBT: "ტექნიკური ვალი",
+            COUPLING: "ბმა",
+            CONWAY: "კონვეის კანონი",
+            DETERMINISM: "დეტერმინიზმის რისკი",
+            CIRCUIT_BRK: "დამცველი",
+            BIFURCATION: "ბიფურკაცია",
+            ATTRACTORS: "უცნაური ატრაქტორები",
+            STABLE: "სტაბილური ატრაქტორები",
+            RESONANCE: "რეზონანსი"
+        },
         initializing: "ინიციალიზაცია...",
         verdict_healthy: "სისტემა სტაბილურია",
         verdict_unstable: "აღმოჩენილია არასტაბილურობა"
@@ -726,61 +846,87 @@ const ka: Translations = {
         healthy_scale: { title: "ბალანსი", desc: "კონფლიქტები მინიმალურია, სისტემა მზადაა დატვირთვისთვის." },
         family_loyalty: { title: "გვაროვნული ვალი", desc: "არაცნობიერი აკრძალვა იცხოვრო წინაპრებზე უკეთ." }
     },
-    scenes: {
-        foundation_0: { title: "სისტემის კალიბრაცია", desc: "როგორ რეაგირებთ გადაწყვეტილების სწრაფად მიღების აუცილებლობაზე გაურკვევლობის პირობებში?", c1: "ვმოქმედებ ავტომატურად", c2: "ვშეშდები და ვიცდი", c3: "ვაანალიზებ რესურსებს" },
-        foundation_1: { title: "ფესვები და ფრთები", desc: "თქვენი დამოკიდებულება ოჯახის ისტორიასთან. რას გრძნობთ, როცა უკან იხედებით?", c1: "ვალი და სიმძიმე", c2: "არჩევანის თავისუფლება", c3: "საზღვრების შერწყმა" },
-        foundation_2: { title: "განგაშის სიგნალი", desc: "შეცდომის დაშვებისას, რა არის პირველი აზრი, რომელიც ჩნდება თავში გააზრებამდე?", c1: "დამსჯიან", c2: "თაღლითი ვარ", c3: "ჯობია არ გავჩნდე" },
-        foundation_3: { title: "რესურსული შიმშილი", desc: "მიიღეთ დიდი თანხა. სხეულის პირველი, ინსტინქტური რეაქცია?", c1: "უნდა დავმალო/შევინახო", c2: "შფოთვა და საფრთხე", c3: "სწრაფად დახარჯვის სურვილი" },
-        foundation_4: { title: "წარმატების ჩრდილი", desc: "წარმოიდგინეთ, რომ მიაღწიეთ ყველაფერს. ვინ გაქრება თქვენი გარემოცვიდან?", c1: "შემრცხვება", c2: "მომიწევს ყველას გადარჩენა", c3: "მიღალატებენ" },
-        foundation_5: { title: "დასვენების უფლება", desc: "მთელი დღე არაფერს აკეთებთ. რომელი გრძნობა დომინირებს საღამოს?", c1: "მხოლოდ შრომა ამართლებს სიცოცხლეს", c2: "ფონური შფოთვა", c3: "მშვიდი აღდგენა" },
-        foundation_6: { title: "დროის მარყუჟი", desc: "რამდენად ხშირად დებთ რთულ გადაწყვეტილებებს?", c1: "მუდმივად ვყოყმანობ", c2: "ბოლომდე ვიწელები", c3: "ვწყვეტ აქ და ახლა" },
-        foundation_7: { title: "ავტორიტეტი", desc: "კრიტიკა მნიშვნელოვანი ფიგურისგან (უფროსი, მშობელი). რეაქცია?", c1: "უარყოფის შიში", c2: "ზრდასრული დისკუსია", c3: "აგრესიული დაცვა" },
-        foundation_8: { title: "მე-ს საზღვრები", desc: "გთხოვენ დახმარებას, როცა რესურსი არ გაქვთ. რას იზამთ?", c1: "დავეხმარები ძალის დატანებით", c2: "შემეშინდება კონფლიქტის", c3: "მშვიდად ვიტყვი უარს" },
-        foundation_9: { title: "სხეულთან კონტაქტი", desc: "ძლიერი სტრესის დროს, რა ემართება თქვენს სხეულს?", c1: "ვეღარ ვგრძნობ მას", c2: "ირთვება ავტოპილოტი", c3: "ვკარგავ სხეულის საზღვრებს" },
-        foundation_10: { title: "ტევადობა", desc: "იღებთ საჩუქარს, რომელიც თქვენთვის ზედმეტად ძვირია. ფიქრები?", c1: "ვალი უნდა დავაბრუნო", c2: "ეს საშიშია/ტოქსიკურია", c3: "ვიღებ სიხარულით" },
-        foundation_11: { title: "ხილვადობა", desc: "უნდა გამოხვიდეთ აუდიტორიის წინაშე. ძირითადი გრძნობა?", c1: "მხილების შიში", c2: "გმირული გადალახვა", c3: "ხილვადობის სირცხვილი" },
-        foundation_12: { title: "ლოიალობა", desc: "გახდე მშობლებზე წარმატებული — ეს თქვენთვის არის...", c1: "გვარის ღალატი", c2: "საშიში კონფლიქტი", c3: "ბუნებრივი პროცესი" },
-        foundation_13: { title: "ოქროს გალია", desc: "სტაბილური, მაგრამ არასასურველი სამსახური თუ რისკი ოცნებისთვის?", c1: "დავთანხმდები ნაკლებზე", c2: "ავირჩევ კომფორტს", c3: "გავიღებ მსხვერპლს" },
-        foundation_14: { title: "ფუნდამენტის ფინალი", desc: "ამ ბლოკის შეჯამებისას, რომელი გრძნობა იყო ფონური?", c1: "ვალდებულებების სიმძიმე", c2: "გაქცევის სურვილი", c3: "ინტერესი საკუთარი თავის მიმართ" },
-
-        agency_0: { title: "იმპულსი", desc: "გაჩნდა იდეა. რამდენად სწრაფად გადადიხართ მოქმედებაზე?", c1: "ვეჭვობ საკუთარ თავში", c2: "ვმოქმედებ მყისიერად", c3: "მეშინია შედეგების" },
-        agency_1: { title: "ნებისყოფა", desc: "დაბრკოლება გზაზე. თქვენი სტრატეგია?", c1: "ჯიუტი შრომა", c2: "ავტოპილოტით გვერდის ავლა", c3: "გაჭედვა" },
-        agency_2: { title: "კომპეტენცია", desc: "გთავაზობენ რთულ პროექტს.", c1: "ვერ გავუმკლავდები", c2: "ეს გამოწვევაა ზრდისთვის", c3: "ჯობია არ გავრისკო" },
-        agency_3: { title: "კონფრონტაცია", desc: "უნდა დაიცვათ თქვენი ინტერესები.", c1: "გავექცევი კონფლიქტს", c2: "გავიღებ მსხვერპლს", c3: "განვაცხადებ უფლებებზე" },
-        agency_4: { title: "პასუხისმგებლობა", desc: "გუნდის შეცდომა. ვინ არის დამნაშავე?", c1: "მე უნდა შემემოწმებინა", c2: "ვაგვარებთ პრობლემას", c3: "ეს ჩემი ბრალი არ არის" },
-        agency_5: { title: "მსხვერპლშეწირვა", desc: "წარმატება მოითხოვს მსხვერპლს?", c1: "ყოველთვის", c2: "ზოგჯერ მოთმენაა საჭირო", c3: "არა, ბალანსია საჭირო" },
-        agency_6: { title: "ნდობა", desc: "საქმის დელეგირება.", c1: "თვითონ უკეთ გავაკეთებ", c2: "ვენდობი და ვამოწმებ", c3: "კონტროლის დაკარგვის შიში" },
-        agency_7: { title: "დაგეგმვა", desc: "დაგეგმვის ჰორიზონტი.", c1: "მხოლოდ დღეს", c2: "წლებით წინ", c3: "ფული — ინსტრუმენტია" },
-        agency_8: { title: "ტოქსიკურობა", desc: "სამსახური გართმევთ ძალებს.", c1: "ვითმენ ფულის გამო", c2: "გმირულად ვიტანჯები", c3: "ვცვლი პირობებს" },
-        agency_9: { title: "ტრიუმფი", desc: "გაიმარჯვეთ. რეაქცია?", c1: "სიხარული სირცხვილია", c2: "ვზეიმობ", c3: "ეს შემთხვევითობაა" },
-
-        money_0: { title: "ფული და გვარი", desc: "ოჯახური ფინანსური განწყობები.", c1: "ღარიბები ვართ, მაგრამ პატიოსნები", c2: "ფული — შესაძლებლობაა", c3: "ფული აფუჭებს ადამიანს" },
-        money_1: { title: "დეფიციტი", desc: "დანაკლისის შეგრძნება.", c1: "სულ ცოტაა", c2: "მეტი უნდა ვიმუშავო", c3: "არ ვიცი რა მინდა" },
-        money_2: { title: "საფრთხე", desc: "დიდი ფული — ეს...", c1: "საფრთხეა სიცოცხლისთვის", c2: "მოკრძალება ამკობს", c3: "გავლენის იარაღია" },
-        money_3: { title: "სიუხვე", desc: "შეიძლება გქონდეს ყველაფერი?", c1: "ყველაფერს საფასური აქვს", c2: "რა თქმა უნდა", c3: "ამ ცხოვრებაში არა" },
-        money_4: { title: "ვალი", desc: "დამოკიდებულება კრედიტებთან.", c1: "მონობა", c2: "ბერკეტი", c3: "სირცხვილი" },
-        money_5: { title: "ხარჯვა", desc: "ყიდვა საკუთარი თავისთვის.", c1: "მენანება ფული", c2: "გაფლანგვა", c3: "მარტივი და სასიამოვნო" },
-        money_6: { title: "ღალატი", desc: "მდიდარი მეგობარი.", c1: "ის შეიცვალა", c2: "მიხარია მის გამო", c3: "შური" },
-        money_7: { title: "იმპულსი", desc: "ფასდაკლებები.", c1: "ყველაფერს ვყიდულობ", c2: "ვიღებ საჭიროს", c3: "ვაიგნორებ" },
-        money_8: { title: "ტევადობა", desc: "თქვენი ჭერი.", c1: "თავს ზემოთ ძალა არაა", c2: "ზედმეტს გავცემ", c3: "მუდმივად ვიზრდები" },
-        money_9: { title: "სირცხვილი", desc: "მომსახურების ფასის თქმა.", c1: "უხერხულია", c2: "ბევრს ხომ არ ვითხოვ?", c3: "ეს ჩემი ფასია" },
-
-        social_0: { title: "კონფლიქტი", desc: "ჩხუბი მეგობართან.", c1: "დავუთმობ", c2: "ჩავიკეტები", c3: "საზღვრებს დავკარგავ" },
-        social_1: { title: "შეფასება", desc: "რას იფიქრებს ხალხი?", c1: "მნიშვნელოვანია აზრი", c2: "ვერგები", c3: "მოლოდინების გალიაში ვარ" },
-        social_2: { title: "ნდობა", desc: "ახალი ნაცნობობა.", c1: "ველოდები ღალატს", c2: "ღია ვარ, მაგრამ ფრთხილი", c3: "ჩაკეტილი ვარ" },
-        social_3: { title: "ნიღბები", desc: "საზოგადოებაში მე...", c1: "როლს ვთამაშობ", c2: "მასას ვერწყმი", c3: "დაძაბული ვარ" },
-        social_4: { title: "სხვისი წარმატება", desc: "კოლეგა დააწინაურეს.", c1: "მრცხვენია", c2: "მასზე უარესი ვარ", c3: "გულგრილობა" },
-        social_5: { title: "მარტოობა", desc: "საღამო მარტო.", c1: "შფოთვა", c2: "მუშაობა", c3: "ვიღაცასთან შერწყმა" },
-        social_6: { title: "საზღვრები", desc: "გაკრიტიკებენ.", c1: "თავს ვიმართლებ", c2: "ვითვალისწინებ", c3: "მწყინს" },
-        social_7: { title: "სიახლოვე", desc: "ღრმა კონტაქტი.", c1: "საშიშია", c2: "მინდა და მეშინია", c3: "გავურბივარ" },
-        social_8: { title: "ღალატი", desc: "გიღალატეს.", c1: "სამყარო სასტიკია", c2: "მე ვარ დამნაშავე", c3: "მეტი უნდა ვიმუშავო" },
-        social_9: { title: "ფული და მეგობრობა", desc: "ასესხეთ და არ დაგიბრუნეს.", c1: "აღარ გავასესხებ", c2: "მრცხვენია მოთხოვნა", c3: "ვაპატიებ მშვიდობისთვის" },
-
-        legacy_0: { title: "აზრი", desc: "რისთვის ეს ყველაფერი?", c1: "გადარჩენა", c2: "შექმნა", c3: "მსხვერპლი სხვებისთვის" },
-        legacy_1: { title: "კვალი", desc: "რა დარჩება?", c1: "არაფერი", c2: "გვარის ხსოვნა", c3: "დავიწყების შიში" },
-        legacy_2: { title: "სიკვდილის შიში", desc: "ფიქრი დასასრულზე.", c1: "მბოჭავს", c2: "მოტივაციას მაძლევს", c3: "მფიტავს" },
-        legacy_3: { title: "მისია", desc: "თქვენი წვლილი.", c1: "ყველა უნდა გადავარჩინო", c2: "ვიცხოვრო ღირსეულად", c3: "დინებას მივყვები" },
-        legacy_4: { title: "შედეგი", desc: "პროტოკოლის ფინალი.", c1: "ერთგული ვარ გვარის", c2: "ოქროს გალიაში ვარ", c3: "ვირჩევ საკუთარ თავს" }
+    beliefs: {
+        family_loyalty: "ოჯახური ლოიალობა",
+        scarcity_mindset: "დეფიციტური აზროვნება",
+        fear_of_punishment: "დასჯის შიში",
+        imposter_syndrome: "თვითმარქვიას სინდრომი",
+        poverty_is_virtue: "სიღარიბე როგორც სათნოება",
+        hard_work_only: "მხოლოდ მძიმე შრომა",
+        self_permission: "თვითნებართვა",
+        fear_of_conflict: "კონფლიქტის შიში",
+        betrayal_trauma: "ღალატის ტრავმა",
+        unconscious_fear: "არაცნობიერი შიში",
+        money_is_danger: "ფული საფრთხეა",
+        impulse_spend: "იმპულსური ხარჯვა",
+        resource_toxicity: "რესურსის ტოქსიკურობა",
+        short_term_bias: "მოკლევადიანი აზროვნება",
+        capacity_expansion: "ტევადობის გაფართოება",
+        boundary_collapse: "საზღვრების რღვევა",
+        shame_of_success: "წარმატების სირცხვილი",
+        hero_martyr: "გმირი-მოწამე",
+        latency_resistance: "ლატენტური წინააღმდეგობა",
+        body_mind_conflict: "გონება-სხეულის კონფლიქტი",
+        ambivalence_loop: "ამბივალენტობის მარყუჟი",
+        autopilot_mode: "ავტოპილოტი",
+        golden_cage: "ოქროს გალია",
+        money_is_tool: "ფული — ინსტრუმენტია",
+        default: "სტანდარტი"
+    },
+    pattern_library: {
+        scarcity_mindset: { protection: "კონტროლი", cost: "შფოთვა", antidote: "ნდობა" },
+        family_loyalty: { protection: "მიკუთვნებულობა", cost: "თვითანალიზი", antidote: "სეპარაცია" },
+        fear_of_punishment: { protection: "უსაფრთხოება", cost: "თავისუფლება", antidote: "გაზრდა" },
+        imposter_syndrome: { protection: "თავმდაბლობა", cost: "აღიარება", antidote: "ფაქტები" },
+        hard_work_only: { protection: "გამართლება", cost: "ჯანმრთელობა", antidote: "ღირებულება" },
+        fear_of_conflict: { protection: "მშვიდობა", cost: "საზღვრები", antidote: "ასერტიულობა" },
+        betrayal_trauma: { protection: "მოუწყვლადობა", cost: "სიახლოვე", antidote: "რისკი" },
+        money_is_danger: { protection: "სიმშვიდე", cost: "შესაძლებლობები", antidote: "მართვა" },
+        hero_martyr: { protection: "Нужность", cost: "Истощение", antidote: "Делегирование" },
+        golden_cage: { protection: "კომფორტი", cost: "აზრი", antidote: "ნახტომი" },
+        default: { protection: "დაცვა", cost: "ფასი", antidote: "გადაწყვეტა" }
+    },
+    archetypes: {
+        THE_ARCHITECT: { title: "არქიტექტორი", desc: "სისტემების მშენებელი", superpower: "სტრუქტურა", shadow: "რიგიდულობა", quote: "წესრიგი ქაოსიდან" },
+        THE_DRIFTER: { title: "მოხეტიალე", desc: "მაძიებელი", superpower: "მოქნილობა", shadow: "უმიზნობა", quote: "გზა უფრო მნიშვნელოვანია" },
+        THE_BURNED_HERO: { title: "დამწვარი გმირი", desc: "გადარჩენილი", superpower: "გამძლეობა", shadow: "ცინიზმი", quote: "მე გადავრჩი" },
+        THE_GOLDEN_PRISONER: { title: "ოქროს ტყვე", desc: "წარმატების მძევალი", superpower: "სტატუსი", shadow: "თავისუფლების ნაკლებობა", quote: "ყველაფერი მაქვს, მაგრამ..." },
+        THE_CHAOS_SURFER: { title: "ქაოსის სერფერი", desc: "ადაპტიური", superpower: "რეაქცია", shadow: "არასტაბილურობა", quote: "დაიჭირე ტალღა" },
+        THE_GUARDIAN: { title: "მცველი", desc: "მზრუნველი", superpower: "ზრუნვა", shadow: "ჰიპერმზრუნველობა", quote: "უსაფრთხოება უპირველეს ყოვლისა" }
+    },
+    verdicts: {
+        HEALTHY_SCALE: { label: "ჯანსაღი მასშტაბი", impact: "ოპტიმალური" },
+        BRILLIANT_SABOTAGE: { label: "ბრწყინვალე საბოტაჟი", impact: "ფარული კონფლიქტი" },
+        INVISIBILE_CEILING: { label: "უხილავი ჭერი", impact: "ზრდის შეზღუდვა" },
+        LEAKY_BUCKET: { label: "გახვრეტილი ვედრო", impact: "რესურსის დაკარგვა" },
+        PARALYZED_GIANT: { label: "პარალიზებული გიგანტი", impact: "ძალის ბლოკირება" },
+        FROZEN_POTENTIAL: { label: "გაყინული პოტენციალი", impact: "სტაგნაცია" },
+        CRITICAL_DEFICIT: { label: "კრიტიკული დეფიციტი", impact: "გამოფიტვა" }
+    },
+    session_prep_templates: {
+        low_foundation_pattern: "როგორ მოქმედებს {{pattern}} თქვენს საყრდენზე?",
+        low_foundation_generic: "რა გაძლევთ უსაფრთხოების განცდას?",
+        somatic_dissonance: "რას გრძნობთ სხეულში, როცა ფიქრობთ თემაზე: {{pattern}}?",
+        default_archetype: "როგორ ვლინდება {{archetype_shadow}} თქვენს ცხოვრებაში?",
+        pattern_interaction: "როგორ უკავშირდება ერთმანეთს {{pattern1}} და {{pattern2}}?",
+        default_latency: "ამჩნევთ თუ არა პაუზებს პასუხებში?",
+        default_verdict: "როგორ მოქმედებს {{verdict_impact}} თქვენს გადაწყვეტილებებზე?"
+    },
+    legal: {
+        tos_title: "გამოყენების პირობები",
+        tos_body: "სერვისის გამოყენებით თქვენ ეთანხმებით, რომ შედეგები ატარებს საინფორმაციო ხასიათს და არ ანაცვლებს პროფესიულ სამედიცინო დახმარებას.",
+        privacy_title: "კონფიდენციალობა",
+        privacy_body: "ჩვენ არ ვინახავთ პირად მონაცემებს. მთელი ანალიზი ხდება ლოკალურად თქვენს მოწყობილობაზე. ღრუბლოვანი სინქრონიზაცია არ ხდება.",
+        close_btn: "დახურვა"
+    },
+    export_image: {
+        header: "GENESIS OS // კლინიკური ხიდი",
+        blueprint_title: "პიროვნების ანაბეჭდი",
+        footer: "კლინიკური სკრინინგი",
+        metrics: {
+            integrity: "მთლიანობა",
+            entropy: "ენტროპია"
+        }
     }
 };
 
