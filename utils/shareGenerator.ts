@@ -1,7 +1,6 @@
 
-import { AnalysisResult, Translations } from '../types';
+import { AnalysisResult, Translations, SubscriptionTier, DomainType } from '../types';
 
-// Helper to wrap text on Canvas
 const wrapText = (
   ctx: CanvasRenderingContext2D, 
   text: string, 
@@ -30,30 +29,126 @@ const wrapText = (
   return currentY + lineHeight;
 };
 
+const drawPentagonChart = (
+    ctx: CanvasRenderingContext2D,
+    centerX: number,
+    centerY: number,
+    radius: number,
+    profile: Record<DomainType, number>,
+    t: Translations
+) => {
+    const keys: DomainType[] = ['foundation', 'agency', 'social', 'legacy', 'money'];
+    const count = keys.length;
+    
+    // 1. Draw Grid (Web)
+    ctx.strokeStyle = 'rgba(99, 102, 241, 0.15)';
+    ctx.lineWidth = 2;
+    const levels = [0.2, 0.4, 0.6, 0.8, 1.0];
+    
+    levels.forEach(level => {
+        ctx.beginPath();
+        for (let i = 0; i < count; i++) {
+            const angle = (Math.PI * 2 * i) / count - Math.PI / 2;
+            const r = radius * level;
+            const x = centerX + Math.cos(angle) * r;
+            const y = centerY + Math.sin(angle) * r;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.stroke();
+    });
+
+    // 2. Draw Axes
+    ctx.beginPath();
+    for (let i = 0; i < count; i++) {
+        const angle = (Math.PI * 2 * i) / count - Math.PI / 2;
+        const x = centerX + Math.cos(angle) * radius;
+        const y = centerY + Math.sin(angle) * radius;
+        ctx.moveTo(centerX, centerY);
+        ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // 3. Draw Data Polygon
+    ctx.fillStyle = 'rgba(99, 102, 241, 0.3)';
+    ctx.strokeStyle = '#818cf8';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    
+    keys.forEach((key, i) => {
+        const value = profile[key] || 50;
+        const normalized = value / 100;
+        const angle = (Math.PI * 2 * i) / count - Math.PI / 2;
+        const r = radius * normalized;
+        const x = centerX + Math.cos(angle) * r;
+        const y = centerY + Math.sin(angle) * r;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+    });
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // 4. Draw Data Points & Labels
+    ctx.font = 'bold 24px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    keys.forEach((key, i) => {
+        const angle = (Math.PI * 2 * i) / count - Math.PI / 2;
+        // Label position
+        const labelR = radius + 50;
+        const lx = centerX + Math.cos(angle) * labelR;
+        const ly = centerY + Math.sin(angle) * labelR;
+        
+        const label = (t.domains[key] || key).toUpperCase();
+        const value = Math.round(profile[key] || 0);
+        
+        ctx.fillStyle = '#94a3b8';
+        ctx.fillText(label, lx, ly - 15);
+        
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(`${value}%`, lx, ly + 15);
+
+        // Dot on the chart
+        const valNorm = (profile[key] || 50) / 100;
+        const dotR = radius * valNorm;
+        const dotX = centerX + Math.cos(angle) * dotR;
+        const dotY = centerY + Math.sin(angle) * dotR;
+        
+        ctx.beginPath();
+        ctx.arc(dotX, dotY, 6, 0, Math.PI * 2);
+        ctx.fillStyle = '#fff';
+        ctx.fill();
+    });
+};
+
 export const generateShareImage = async (
   result: AnalysisResult, 
-  t: Translations
+  t: Translations,
+  tier: SubscriptionTier = 'FREE'
 ): Promise<Blob | null> => {
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
   if (!ctx) return null;
 
-  // Instagram Story Resolution
   canvas.width = 1080;
   canvas.height = 1920;
 
-  const archetype = t.archetypes[result.archetypeKey];
-  const verdict = t.verdicts[result.verdictKey];
+  // SAFE LOOKUP
+  const archetype = t.archetypes[result.archetypeKey] || t.archetypes.THE_ARCHITECT;
+  const verdict = t.verdicts[result.verdictKey] || t.verdicts.HEALTHY_SCALE;
 
   // 1. Background (Deep Premium Gradient)
   const gradient = ctx.createLinearGradient(0, 0, 0, 1920);
-  gradient.addColorStop(0, '#020617'); // slate-950
-  gradient.addColorStop(0.5, '#0f172a'); // slate-900
-  gradient.addColorStop(1, '#1e1b4b'); // indigo-950
+  gradient.addColorStop(0, '#020617');
+  gradient.addColorStop(0.5, '#0f172a');
+  gradient.addColorStop(1, '#1e1b4b');
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, 1080, 1920);
 
-  // 2. Mesh Grid (Subtle Background Detail)
+  // 2. Mesh Grid
   ctx.strokeStyle = 'rgba(99, 102, 241, 0.1)';
   ctx.lineWidth = 1;
   for(let i=0; i<canvas.width; i+=120) {
@@ -63,86 +158,92 @@ export const generateShareImage = async (
     ctx.beginPath(); ctx.moveTo(0, j); ctx.lineTo(canvas.width, j); ctx.stroke();
   }
 
-  // 3. Header
+  // 3. Header (SYSTEM IDENTITY)
   ctx.fillStyle = '#6366f1'; 
   ctx.font = 'bold 32px monospace';
   ctx.textAlign = 'center';
-  ctx.fillText('GENESIS OS // PERSONAL BLUEPRINT', 540, 100);
+  ctx.fillText('GENESIS OS // CLINICAL BRIDGE', 540, 100);
   
   ctx.fillStyle = '#ffffff';
   ctx.font = '900 64px sans-serif';
-  ctx.fillText('LUKA SULAVA', 540, 190);
+  // DYNAMIC NAME OR ID
+  const displayName = tier === 'FREE' ? 'GENESIS USER' : `SESSION_${result.shareCode.substring(0, 6)}`;
+  ctx.fillText(displayName, 540, 190);
+  
   ctx.fillStyle = 'rgba(99, 102, 241, 0.8)';
   ctx.font = 'bold 30px monospace';
-  ctx.fillText('@thndrrr', 540, 240);
+  ctx.fillText('IDENTITY BLUEPRINT', 540, 240);
 
   // 4. Archetype Box
-  const boxX = 80, boxY = 300, boxW = 920, boxH = 550;
+  const boxX = 80, boxY = 300, boxW = 920, boxH = 500;
   ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
   ctx.beginPath();
-  ctx.roundRect(boxX, boxY, boxW, boxH, 80);
+  ctx.roundRect(boxX, boxY, boxW, boxH, 60);
   ctx.fill();
   ctx.strokeStyle = 'rgba(99, 102, 241, 0.5)';
-  ctx.lineWidth = 4;
+  ctx.lineWidth = 3;
   ctx.stroke();
 
-  // Title
   ctx.fillStyle = '#ffffff';
-  ctx.font = '900 80px sans-serif';
-  ctx.fillText(archetype.title.toUpperCase(), 540, boxY + 120);
+  ctx.font = '900 70px sans-serif';
+  ctx.fillText((archetype.title || "").toUpperCase(), 540, boxY + 120);
   
-  // Quote (Wrapped)
   ctx.fillStyle = '#94a3b8';
-  ctx.font = 'italic 34px serif';
-  wrapText(ctx, `"${archetype.quote}"`, 540, boxY + 220, 800, 45);
+  ctx.font = 'italic 30px serif';
+  wrapText(ctx, `"${archetype.quote || ""}"`, 540, boxY + 200, 800, 40);
 
-  // Description (Wrapped)
-  ctx.font = '300 28px sans-serif';
+  ctx.font = '300 26px sans-serif';
   ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-  wrapText(ctx, archetype.desc, 540, boxY + 380, 820, 38);
+  wrapText(ctx, archetype.desc || "", 540, boxY + 320, 820, 36);
 
-  // 5. Metrics Section
-  const startY = 920;
-  const metrics = [
-    { label: t.results.integrity, value: result.integrity, color: '#10b981' },
-    { label: t.results.neuro_sync, value: result.neuroSync, color: '#6366f1' },
-    { label: t.results.capacity, value: result.capacity, color: '#f59e0b' },
-    { label: t.results.entropy, value: result.entropyScore, color: '#ef4444' }
+  // 5. 5-AXIS RADAR CHART (Visual Core)
+  const chartCenterY = 1200;
+  const chartRadius = 250;
+  
+  // Use the domainProfile from result, or fallback to state mapping if missing (compatibility)
+  const profile = result.domainProfile || {
+      foundation: result.state.foundation,
+      agency: result.state.agency,
+      money: result.state.resource,
+      social: 50,
+      legacy: 50
+  };
+
+  drawPentagonChart(ctx, 540, chartCenterY, chartRadius, profile, t);
+
+  // 6. Meta Metrics (Linear below chart)
+  const metaY = 1580;
+  const metaMetrics = [
+      { label: "INTEGRITY", val: result.integrity, color: "#10b981" },
+      { label: "ENTROPY", val: result.entropyScore, color: "#ef4444" }
   ];
-
-  metrics.forEach((m, i) => {
-    const yPos = startY + (i * 180);
-    ctx.textAlign = 'left';
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-    ctx.font = 'bold 36px monospace';
-    ctx.fillText(m.label.toUpperCase(), 120, yPos);
-    
-    ctx.textAlign = 'right';
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText(`${m.value}%`, 960, yPos);
-    
-    // Progress Bar
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-    ctx.fillRect(120, yPos + 35, 840, 25);
-    ctx.fillStyle = m.color;
-    ctx.fillRect(120, yPos + 35, 840 * (m.value/100), 25);
+  
+  metaMetrics.forEach((m, i) => {
+      const x = i === 0 ? 300 : 780;
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = 'bold 24px monospace';
+      ctx.fillText(m.label, x, metaY);
+      
+      ctx.fillStyle = m.color;
+      ctx.font = '900 48px sans-serif';
+      ctx.fillText(`${m.val}%`, x, metaY + 50);
   });
 
-  // 6. Verdict Banner
+  // 7. Verdict Banner
   ctx.fillStyle = '#6366f1';
-  ctx.fillRect(0, 1600, 1080, 240);
+  ctx.fillRect(0, 1700, 1080, 140);
   ctx.fillStyle = '#ffffff';
   ctx.textAlign = 'center';
-  ctx.font = '900 50px sans-serif';
-  ctx.fillText(verdict.label.toUpperCase(), 540, 1710);
-  ctx.font = 'bold 28px monospace';
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-  ctx.fillText('IDENTIFIER: ' + result.status, 540, 1770);
+  ctx.font = '900 42px sans-serif';
+  ctx.textBaseline = 'middle';
+  ctx.fillText((verdict.label || "").toUpperCase(), 540, 1770);
 
-  // 7. Call to Action
-  ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 34px monospace';
-  ctx.fillText('T.ME/thndrrr // START YOUR JOURNEY', 540, 1900);
+  // 8. Footer
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = 'bold 24px monospace';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText('GENESIS-OS.APP // CLINICAL SCREENING', 540, 1890);
 
   return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
 };

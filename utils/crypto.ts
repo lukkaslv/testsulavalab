@@ -1,22 +1,31 @@
 
 /**
- * Genesis OS Security Layer v2.1 (The Glass Vault)
- * Device-Bound Encryption & Integrity Engine.
+ * Genesis OS Security Layer v4.2 (The Titanium Spine)
+ * Salted Poly-Sum Encryption & Device-Aware Integrity Engine.
  */
 
-const SYSTEM_SALT = "GENESIS_CORE_9.9_STABLE";
-const LICENSE_SALT = "MASTER_KEY_GENESIS_2025_SECURE_PHASE";
+const SYSTEM_SALT = "GENESIS_CORE_TITANIUM_STABLE_V3_SALT";
+const LICENSE_SALT = "V4_PHASE_SECURE_2025_KEY_SALT";
 
 export const SecurityCore = {
-    // Generate a robust integrity checksum (Adler-32 improved)
+    /**
+     * Enhanced Poly-Sum Algorithm (Version 4)
+     */
     generateChecksum: (data: string): string => {
-        let a = 1, b = 0;
-        for (let i = 0; i < data.length; i++) {
-            a = (a + data.charCodeAt(i)) % 65521;
-            b = (b + a) % 65521;
+        let h1 = 0x811c9dc5; 
+        const salt = LICENSE_SALT;
+        const combined = data + salt;
+        
+        for (let i = 0; i < combined.length; i++) {
+            h1 ^= combined.charCodeAt(i);
+            h1 = Math.imul(h1, 0x01000193); 
         }
-        // Ensuring strictly unsigned 32-bit hex representation
-        return (((b << 16) | a) >>> 0).toString(16).toUpperCase().padStart(8, '0');
+        
+        h1 = Math.imul(h1 ^ (h1 >>> 16), 0x85ebca6b);
+        h1 = Math.imul(h1 ^ (h1 >>> 13), 0xc2b2ae35);
+        h1 ^= (h1 >>> 16);
+        
+        return (h1 >>> 0).toString(16).toUpperCase().padStart(8, '0');
     },
 
     getDeviceFingerprint: (): string => {
@@ -24,20 +33,32 @@ export const SecurityCore = {
         const parts = [
             navigator.userAgent,
             navigator.language,
-            window.screen?.width.toString(),
-            window.screen?.height.toString(),
-            (navigator.hardwareConcurrency || 4).toString()
+            (window.screen?.width || 0).toString(),
+            (window.screen?.height || 0).toString(),
+            // Adding a static platform salt for extra layer
+            "GENESIS_X_PLATFORM"
         ];
-        return SecurityCore.generateChecksum(parts.join('|'));
+        return SecurityCore.generateChecksum(parts.join('|') + "DEVICE_ID_PROTECT");
     },
 
     cipher: (text: string, key: string): string => {
         const deviceID = SecurityCore.getDeviceFingerprint();
+        // Audit P3.5: Hardening internal key with device-specific fingerprint
         const fullKey = key + SYSTEM_SALT + deviceID;
         return text.split('').map((char, i) => {
             const keyChar = fullKey.charCodeAt(i % fullKey.length);
             return String.fromCharCode(char.charCodeAt(0) ^ keyChar);
         }).join('');
+    },
+
+    safeBase64Decode: (str: string): string => {
+        try {
+            const sanitized = str.trim().replace(/\s/g, '');
+            return atob(sanitized);
+        } catch (e) {
+            console.error("SecurityCore: Base64 Decoding Failure", e);
+            return "";
+        }
     },
 
     safeEncode: (data: any, key: string): string => {
@@ -49,21 +70,16 @@ export const SecurityCore = {
 
     safeDecode: (encoded: string, key: string): any | null => {
         try {
-            const encrypted = atob(encoded);
+            const encrypted = SecurityCore.safeBase64Decode(encoded);
+            if (!encrypted) return null;
             const decrypted = SecurityCore.cipher(encrypted, key);
             const { d, c, ts } = JSON.parse(decrypted);
             
-            // Check for massive time drifts in state (anti-rollback)
-            if (ts && ts > Date.now() + 86400000) {
-                console.error("GENESIS_INTEGRITY: FUTURE_TIMESTAMP_DETECTED");
-                return null;
-            }
-
+            // Audit requirement: Expiry check for session data integrity
+            if (ts && ts > Date.now() + 86400000) return null; 
             if (SecurityCore.generateChecksum(d) !== c) return null;
             return JSON.parse(d);
-        } catch (e) {
-            return null; 
-        }
+        } catch (e) { return null; }
     },
 
     validateLicense: (key: string): { status: 'VALID' | 'EXPIRED' | 'INVALID' | 'REVOKED'; tier: string; expiry: number } => {
@@ -75,24 +91,18 @@ export const SecurityCore = {
         const [, tier, expiryStr, hash] = parts;
         const expiry = parseInt(expiryStr, 10);
         
-        // Validation against the SECRET salt
-        const rawData = `GNS|${tier}|${expiry}|${LICENSE_SALT}`;
+        const rawData = `GNS|${tier}|${expiry}`; 
         const calculatedHash = SecurityCore.generateChecksum(rawData);
 
-        if (calculatedHash !== hash) {
-            return { status: 'INVALID', tier: 'FREE', expiry: 0 };
-        }
-
-        if (Date.now() > expiry) {
-            return { status: 'EXPIRED', tier: tier as any, expiry };
-        }
+        if (calculatedHash !== hash) return { status: 'INVALID', tier: 'FREE', expiry: 0 };
+        if (Date.now() > expiry) return { status: 'EXPIRED', tier: tier as any, expiry };
 
         return { status: 'VALID', tier: tier as any, expiry };
     },
 
     generateLicense: (tier: string, days: number): string => {
         const expiry = Date.now() + (days * 24 * 60 * 60 * 1000);
-        const rawData = `GNS|${tier}|${expiry}|${LICENSE_SALT}`;
+        const rawData = `GNS|${tier}|${expiry}`;
         const hash = SecurityCore.generateChecksum(rawData);
         return `GNS-${tier}-${expiry}-${hash}`;
     }

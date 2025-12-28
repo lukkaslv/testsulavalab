@@ -34,13 +34,17 @@ type HapticStyle = 'light' | 'medium' | 'heavy' | 'rigid' | 'soft';
 type NotificationType = 'error' | 'success' | 'warning';
 
 export const PlatformBridge = {
-  isTelegram: (): boolean => !!(window.Telegram?.WebApp?.initData),
+  // FIX: Cast window to any for Telegram access
+  isTelegram: (): boolean => !!((window as any).Telegram?.WebApp?.initData),
 
-  expand: () => window.Telegram?.WebApp?.expand?.(),
-  ready: () => window.Telegram?.WebApp?.ready?.(),
+  // FIX: Cast window to any for Telegram access
+  expand: () => (window as any).Telegram?.WebApp?.expand?.(),
+  // FIX: Cast window to any for Telegram access
+  ready: () => (window as any).Telegram?.WebApp?.ready?.(),
 
   showConfirm: (message: string, callback: (confirmed: boolean) => void) => {
-    const tg = window.Telegram?.WebApp;
+    // FIX: Cast window to any for Telegram access
+    const tg = (window as any).Telegram?.WebApp;
     
     // Check for native Telegram confirmation support first (v6.2+)
     if (tg && tg.isVersionAtLeast && tg.isVersionAtLeast('6.2')) {
@@ -61,19 +65,23 @@ export const PlatformBridge = {
 
   haptic: {
     impact: (style: HapticStyle) => {
-      window.Telegram?.WebApp?.HapticFeedback?.impactOccurred(style);
+      // FIX: Cast window to any for Telegram access
+      (window as any).Telegram?.WebApp?.HapticFeedback?.impactOccurred(style);
     },
     notification: (type: NotificationType) => {
-      window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred(type);
+      // FIX: Cast window to any for Telegram access
+      (window as any).Telegram?.WebApp?.HapticFeedback?.notificationOccurred(type);
     },
     selection: () => {
-      window.Telegram?.WebApp?.HapticFeedback?.selectionChanged();
+      // FIX: Cast window to any for Telegram access
+      (window as any).Telegram?.WebApp?.HapticFeedback?.selectionChanged();
     }
   },
 
   openLink: (url: string) => {
-    if (window.Telegram?.WebApp?.openLink) {
-      window.Telegram.WebApp.openLink(url);
+    // FIX: Cast window to any for Telegram access
+    if ((window as any).Telegram?.WebApp?.openLink) {
+      (window as any).Telegram.WebApp.openLink(url);
     } else {
       window.open(url, '_blank', 'noopener,noreferrer');
     }

@@ -1,3 +1,4 @@
+
 import React, { memo, useEffect, useRef } from 'react';
 // FIXED: Removed .ts extension for consistent module imports
 import { translations } from './translations';
@@ -101,7 +102,8 @@ export const Layout = memo<LayoutProps>(({
   const toggleLang = () => {
     const nextLang = lang === 'ru' ? 'ka' : 'ru';
     onLangChange(nextLang);
-    window.Telegram?.WebApp?.HapticFeedback?.impactOccurred?.('light');
+    // FIX: Cast window to any for Telegram access
+    (window as any).Telegram?.WebApp?.HapticFeedback?.impactOccurred?.('light');
   };
 
   return (
