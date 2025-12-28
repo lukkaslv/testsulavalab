@@ -321,7 +321,7 @@ export const ResultsView = memo<ResultsViewProps>(({
         
         {showMethodology && (
           <div className="px-4 space-y-4 animate-in">
-             {t.methodology_faq?.map((item, i) => (
+             {t.methodology_faq?.map((item: {q: string, a: string}, i: number) => (
                <div key={i} className="space-y-1">
                  <h5 className="text-[10px] font-black text-indigo-600 uppercase tracking-tight">Q: {item.q}</h5>
                  <p className="text-[11px] text-slate-500 leading-relaxed font-medium">{item.a}</p>
