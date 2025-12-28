@@ -1,3 +1,4 @@
+
 import React, { useState, memo, useMemo } from 'react';
 import { AnalysisResult, Translations, BeliefKey, SessionPulseNode, MetricBreakdown } from '../../types';
 import { PlatformBridge } from '../../utils/helpers';
@@ -357,7 +358,7 @@ export const ResultsView = memo<ResultsViewProps>(({
 
       {/* Signal Decoder: High-Transparency Evidence Block (AXIS 9.1 FEATURE LOCK) */}
       {isPro ? (
-          <SignalDecoder history={history} t={t} baseline={baseline} lang={lang} />
+          <SignalDecoder history={history} t={t} baseline={baseline} />
       ) : (
           <div className="px-2">
              <div className="bg-slate-50 border border-slate-100 p-6 rounded-[2rem] text-center space-y-2 border-dashed">

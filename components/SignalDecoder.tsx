@@ -1,14 +1,12 @@
 
 import React, { memo } from 'react';
 import { GameHistoryItem, Translations, BeliefKey } from '../types';
-import { PlatformBridge } from '../../utils/helpers';
 import { WEIGHTS } from '../services/psychologyService';
 
 interface SignalDecoderProps {
   history: GameHistoryItem[];
   t: Translations;
   baseline: number;
-  lang: 'ru' | 'ka';
 }
 
 export const SignalDecoder: React.FC<SignalDecoderProps> = memo(({ history, t, baseline }) => {
