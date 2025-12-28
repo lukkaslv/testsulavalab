@@ -26,7 +26,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isMaster, setIsMaster] = useState(false); 
   const [licenseTier, setLicenseTier] = useState<SubscriptionTier>('FREE');
   const [bootShown] = useState(() => sessionStorage.getItem('genesis_boot_seen') === 'true');
-  const [soundEnabled, setSoundEnabled] = useState(false);
   const [scanHistory, setScanHistory] = useState<ScanHistory>({ scans: [], latestScan: null, evolutionMetrics: { entropyTrend: [], integrityTrend: [], dates: [] } });
 
   const isInitialized = useRef(false);
@@ -169,11 +168,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (force) action(); 
     else {
         PlatformBridge.showConfirm(
-            lang === 'ru' ? "СБРОСИТЬ ВСЕ ДАННЫЕ? Лицензия сохранится." : "ყველა მონაცემის წაშლა?", 
+            t.ui.reset_confirm,
             (confirmed) => { if (confirmed) action(); }
         );
     }
-  }, [lang]);
+  }, [t]);
 
   const onLangChange = useCallback((newLang: 'ru' | 'ka') => {
       setLang(newLang);
@@ -186,7 +185,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     completedNodeIds, setCompletedNodeIds: (fn: any) => setCompletedNodeIds(fn),
     history, setHistory: (fn: any) => setHistory(fn),
     dataStatus, scanHistory, usageStats,
-    soundEnabled, setSoundEnabled,
     handleLogin, handleLogout, handleReset, onLangChange
   };
 

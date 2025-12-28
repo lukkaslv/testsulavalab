@@ -1,12 +1,13 @@
-
 import React, { useState, memo, useMemo } from 'react';
-import { AnalysisResult, Translations, BeliefKey, SessionPulseNode } from '../../types';
+import { AnalysisResult, Translations, BeliefKey, SessionPulseNode, MetricBreakdown } from '../../types';
 import { PlatformBridge } from '../../utils/helpers';
 import { SessionPrepService } from '../../services/SessionPrepService';
 import { RadarChart } from '../RadarChart';
 import { BioSignature } from '../BioSignature';
 import { SignalDecoder } from '../SignalDecoder';
 import { useAppContext } from '../../hooks/useAppContext';
+import { SynthesisService } from '../../services/synthesisService';
+import { ClinicalSynthesisView } from './ClinicalSynthesisView';
 
 interface ResultsViewProps {
   lang: 'ru' | 'ka';
@@ -29,6 +30,58 @@ const DeltaMarker = ({ current, previous }: { current: number, previous?: number
             {diff > 0 ? '↑' : '↓'}{Math.abs(Math.round(diff))}%
         </span>
     );
+};
+
+const AlgorithmTransparency: React.FC<{ breakdown: MetricBreakdown[], t: Translations }> = ({ breakdown, t }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const tr = t.transparency;
+
+  return (
+    <section className="space-y-4">
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full bg-slate-900 border border-slate-800 p-6 rounded-[2rem] text-left group transition-all"
+      >
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <span className="text-xl">🧮</span>
+            <h4 className="text-[10px] font-black uppercase tracking-widest text-indigo-400">{tr.title}</h4>
+          </div>
+          <span className={`text-slate-500 transition-transform ${isOpen ? 'rotate-180' : ''}`}>▼</span>
+        </div>
+        <p className="text-[10px] text-slate-400 mt-2 italic">{tr.desc}</p>
+      </button>
+
+      {isOpen && (
+        <div className="space-y-3 animate-in">
+          {breakdown.map((item, idx) => (
+            <div key={idx} className="bg-slate-900/50 border border-slate-800/60 p-5 rounded-2xl space-y-3">
+              <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                <span className="text-[9px] font-black uppercase text-white tracking-widest">{tr[item.label as keyof typeof tr] || item.label.toUpperCase()}</span>
+                <span className="text-[8px] font-mono text-indigo-400">DET_KRNL_v5</span>
+              </div>
+              <div className="space-y-2">
+                <div className="flex flex-col gap-1">
+                  <span className="text-[7px] font-black text-slate-500 uppercase">{tr.formula_label}</span>
+                  <code className="text-[10px] text-emerald-400 font-mono bg-black/40 p-2 rounded-lg">{item.formula}</code>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <span className="text-[7px] font-black text-slate-500 uppercase">{tr.impact_label}</span>
+                    <span className="text-[11px] font-bold text-red-400">-{item.entropyImpact}%</span>
+                  </div>
+                  <div className="space-y-1 text-right">
+                    <span className="text-[7px] font-black text-slate-500 uppercase">{tr.final_label}</span>
+                    <span className="text-[11px] font-black text-white">{item.finalValue}%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
 };
 
 const SessionPulseGraph: React.FC<{ pulse: SessionPulseNode[], t: Translations, locked?: boolean }> = memo(({ pulse, t, locked }) => {
@@ -136,6 +189,7 @@ export const ResultsView = memo<ResultsViewProps>(({
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
   const [showMethodology, setShowMethodology] = useState(false);
+  const [showSynthesis, setShowSynthesis] = useState(false);
 
   const prevScan = useMemo(() => {
       if (!scanHistory || scanHistory.scans.length < 2) return undefined;
@@ -149,6 +203,11 @@ export const ResultsView = memo<ResultsViewProps>(({
   }, [history]);
 
   const sessionPrepQuestions = useMemo(() => SessionPrepService.generate(result, t), [result, t]);
+  
+  const synthesis = useMemo(() => {
+    if (!isPro) return null;
+    return SynthesisService.generateSynthesis(result, t);
+  }, [result, t, isPro]);
 
   const handleCopyCode = () => {
       navigator.clipboard.writeText(result.shareCode);
@@ -157,7 +216,6 @@ export const ResultsView = memo<ResultsViewProps>(({
       setTimeout(() => setCopySuccess(false), 2000);
   };
 
-  const isCriticalDeficit = result.state.foundation < 25;
   const isFragile = result.state.foundation < 40 || result.entropyScore > 55;
 
   const displayArchetype = useMemo(() => {
@@ -208,21 +266,10 @@ export const ResultsView = memo<ResultsViewProps>(({
 
   return (
     <div className={`space-y-10 pb-32 animate-in px-1 pt-2 font-sans ${isGlitchMode ? 'glitch' : ''}`}>
-      
-      {isCriticalDeficit && (
-          <div className="bg-red-600 text-white p-6 rounded-[2.5rem] shadow-xl border-4 border-red-500/20 space-y-2 animate-pulse">
-              <div className="flex items-center gap-3">
-                  <span className="text-2xl">🛑</span>
-                  <h3 className="text-[10px] font-black uppercase tracking-[0.3em]">{t.safety.alert}</h3>
-              </div>
-              <p className="text-[11px] font-bold leading-tight italic">
-                  {lang === 'ru' 
-                    ? "Ваши показатели устойчивости требуют внимания специалиста. Рекомендуется обсудить эти результаты с вашим психологом в приоритетном порядке. Не принимайте важных решений самостоятельно." 
-                    : "თქვენი მდგრადობის მაჩვენებლები მოითხოვს სპეციალისტის ყურადღებას. რეკომენდებულია ამ შედეგების განხილვა ფსიქოლოგთან."}
-              </p>
-          </div>
+      {showSynthesis && synthesis && (
+          <ClinicalSynthesisView synthesis={synthesis} t={t} onClose={() => setShowSynthesis(false)} />
       )}
-
+      
       <header className="dark-glass-card p-8 rounded-[2.5rem] shadow-2xl space-y-6 relative overflow-hidden border-b-4 border-indigo-500/30">
         <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
         <div className="relative z-10 space-y-4">
@@ -252,11 +299,26 @@ export const ResultsView = memo<ResultsViewProps>(({
             </div>
 
             <div className="pt-4 flex flex-col items-center">
-                <RadarChart points={result.graphPoints} onLabelClick={() => {}} lang={lang} />
+                <RadarChart points={result.graphPoints} onLabelClick={() => {}} t={t} />
                 <BioSignature f={result.state.foundation} a={result.state.agency} r={result.state.resource} e={result.state.entropy} className="mt-4 opacity-50" />
             </div>
         </div>
       </header>
+
+      {/* PRO SYNTHESIS BLOCK */}
+      {isPro && synthesis && (
+          <section>
+              <button 
+                onClick={() => setShowSynthesis(true)}
+                className="w-full bg-slate-900 border-2 border-dashed border-slate-700 p-6 rounded-[2rem] text-center group transition-all hover:border-indigo-500 hover:bg-indigo-950/30"
+              >
+                <div className="flex items-center justify-center gap-3">
+                    <span className="text-2xl filter grayscale group-hover:grayscale-0 transition-all">🔬</span>
+                    <h4 className="text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-indigo-300 transition-colors">{t.synthesis.synthesis_title}</h4>
+                </div>
+              </button>
+          </section>
+      )}
 
       {/* NEW: CONFLICT BLOCK */}
       <ConflictBlock conflictKey={coreConflictKey} t={t} />
@@ -288,15 +350,20 @@ export const ResultsView = memo<ResultsViewProps>(({
           )}
       </section>
 
+      {/* ALGORITHM TRANSPARENCY (Article 18) */}
+      {result.formulaBreakdown && (
+        <AlgorithmTransparency breakdown={result.formulaBreakdown} t={t} />
+      )}
+
       {/* Signal Decoder: High-Transparency Evidence Block (AXIS 9.1 FEATURE LOCK) */}
       {isPro ? (
           <SignalDecoder history={history} t={t} baseline={baseline} lang={lang} />
       ) : (
           <div className="px-2">
              <div className="bg-slate-50 border border-slate-100 p-6 rounded-[2rem] text-center space-y-2 border-dashed">
-                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Signal Decoder</span>
+                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{t.results.signal_decoder_label}</span>
                 <p className="text-[10px] font-bold text-slate-500 italic">
-                    {lang === 'ru' ? 'Доступно в тарифе Clinical' : 'ხელმისაწვდომია Clinical ტარიფში'}
+                    {t.results.pro_locked_desc}
                 </p>
              </div>
           </div>
@@ -309,11 +376,11 @@ export const ResultsView = memo<ResultsViewProps>(({
           <div className="space-y-2">
               <h3 className="text-[10px] font-black uppercase tracking-widest text-indigo-400">{t.results.brief_instruction}</h3>
               <p className="text-xs text-slate-400 leading-relaxed font-medium">
-                  {lang === 'ru' ? 'Этот код содержит ваш зашифрованный профиль для психолога.' : 'ეს კოდი შეიცავს თქვენს დაშიფრულ პროფილს ფსიქოლოგისთვის.'}
+                  {t.results.share_code_help}
               </p>
           </div>
           <button onClick={handleCopyCode} className={`w-full p-5 rounded-2xl font-black uppercase text-xs tracking-widest flex items-center justify-between transition-all active:scale-95 ${copySuccess ? 'bg-emerald-600 text-white' : 'bg-white text-slate-900 shadow-xl'}`}>
-              <span className="font-mono">{copySuccess ? 'SUCCESS' : result.shareCode.substring(0, 15) + '...'}</span>
+              <span className="font-mono">{copySuccess ? t.pro_terminal.copy_success : result.shareCode.substring(0, 15) + '...'}</span>
               <span>{copySuccess ? '✓' : '📋'}</span>
           </button>
       </div>
@@ -370,14 +437,8 @@ export const ResultsView = memo<ResultsViewProps>(({
 
       <footer className="pt-10 pb-20 px-4 text-center space-y-3 opacity-60">
           <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed">
-              {lang === 'ru' 
-                ? "Genesis OS не является медицинским изделием и не заменяет консультацию специалиста. Интерпретацию результатов проводит ваш психолог."
-                : "Genesis OS არ წარმოადგენს სამედიცინო მოწყობილობას და არ ანაცვლებს სპეციალისტის კონსულტაციას."}
+              {t.results.footer_disclaimer}
           </p>
-          <div className="flex justify-center gap-4 opacity-50">
-               <span className="text-[8px] font-mono">NON_MEDICAL_V3</span>
-               <span className="text-[8px] font-mono">DETERMINISTIC_CORE</span>
-          </div>
       </footer>
     </div>
   );

@@ -64,10 +64,10 @@ export const BriefExplainerView: React.FC<BriefExplainerViewProps> = ({ t, onBac
                 {/* METRICS GRID */}
                 <span className="text-[9px] font-black uppercase text-slate-400 tracking-[0.2em] block pt-2">{content.metrics_title}</span>
                 <div className="grid grid-cols-1 gap-3">
-                    <BlockCard label="F - Foundation" desc={content.foundation_desc} color="border-emerald-200 bg-emerald-50 text-emerald-900" />
-                    <BlockCard label="A - Agency" desc={content.agency_desc} color="border-blue-200 bg-blue-50 text-blue-900" />
-                    <BlockCard label="R - Resource" desc={content.resource_desc} color="border-amber-200 bg-amber-50 text-amber-900" />
-                    <BlockCard label="E - Entropy" desc={content.entropy_desc} color="border-red-200 bg-red-50 text-red-900" />
+                    <BlockCard label={t.brief_explainer.metric_labels.foundation} desc={content.foundation_desc} color="border-emerald-200 bg-emerald-50 text-emerald-900" />
+                    <BlockCard label={t.brief_explainer.metric_labels.agency} desc={content.agency_desc} color="border-blue-200 bg-blue-50 text-blue-900" />
+                    <BlockCard label={t.brief_explainer.metric_labels.resource} desc={content.resource_desc} color="border-amber-200 bg-amber-50 text-amber-900" />
+                    <BlockCard label={t.brief_explainer.metric_labels.entropy} desc={content.entropy_desc} color="border-red-200 bg-red-50 text-red-900" />
                 </div>
 
                 {/* NEUROSYNC & LATENCY */}

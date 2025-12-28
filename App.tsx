@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { Layout } from './components/Layout';
 import { MODULE_REGISTRY, ONBOARDING_NODES_COUNT, TOTAL_NODES, DOMAIN_SETTINGS } from './constants';
@@ -7,7 +6,7 @@ import { DiagnosticEngine } from './services/diagnosticEngine';
 import { DomainType, AnalysisResult } from './types';
 import { resolvePath, PlatformBridge } from './utils/helpers';
 import { useTestEngine } from './hooks/useTestEngine';
-import { AdaptiveQuestionEngine } from './services/adaptiveQuestionEngine';
+import { AdaptiveQuestionEngine, getDomainForNodeId } from './services/adaptiveQuestionEngine';
 import { PatternDetector } from './services/PatternDetector';
 import { useAppContext } from './hooks/useAppContext';
 import { generateShareImage } from './utils/shareGenerator';
@@ -26,6 +25,7 @@ import { DataCorruptionView } from './components/views/DataCorruptionView';
 import { InvalidResultsView } from './components/views/InvalidResultsView';
 import { SystemIntegrityView } from './components/views/SystemIntegrityView';
 import { SystemSimulationView } from './components/views/SystemSimulationView';
+import { CrisisView } from './components/views/CrisisView';
 
 const App: React.FC = () => {
   const {
@@ -65,41 +65,28 @@ const App: React.FC = () => {
   }, [isDemo, usageStats.canStart]);
 
   const handleContinue = useCallback(() => {
-    if (adaptiveState.isComplete) { 
-        setViewAndPersist('results'); 
-        return; 
-    }
-    
-    let nextIdStr = adaptiveState.suggestedNextNodeId;
-    const completedSet = new Set(completedNodeIds);
-    if (nextIdStr && completedSet.has(parseInt(nextIdStr, 10))) {
-        nextIdStr = null;
+    if (adaptiveState.isComplete) {
+      setViewAndPersist('results');
+      return;
     }
 
-    if (!nextIdStr) {
-        for(let i=0; i < TOTAL_NODES; i++) {
-            if (!completedSet.has(i)) {
-                nextIdStr = i.toString();
-                break;
-            }
-        }
-    }
+    const nextIdStr = adaptiveState.suggestedNextNodeId;
 
     if (nextIdStr) {
-        const numericId = parseInt(nextIdStr, 10);
-        let nextDomain: DomainType | null = null;
-        for (const d of DOMAIN_SETTINGS) {
-            if (numericId >= d.startId && numericId < (d.startId + d.count)) { 
-                nextDomain = d.key; 
-                break; 
-            }
-        }
-        if (nextDomain) handleStartNode(numericId, nextDomain);
-        else setViewAndPersist('dashboard');
+      const numericId = parseInt(nextIdStr, 10);
+      const nextDomain = getDomainForNodeId(numericId);
+      
+      if (nextDomain) {
+        handleStartNode(numericId, nextDomain);
+      } else {
+        // Fallback if domain is not found, which indicates completion or error
+        setViewAndPersist('dashboard');
+      }
     } else {
-        setViewAndPersist('results');
+      // No next ID suggests completion
+      setViewAndPersist('results');
     }
-  }, [adaptiveState, completedNodeIds, handleStartNode, setViewAndPersist]);
+  }, [adaptiveState, handleStartNode, setViewAndPersist]);
 
   const engineInstance = useTestEngine({
     setCompletedNodeIds,
@@ -149,7 +136,7 @@ const App: React.FC = () => {
     if (!result) return;
     PlatformBridge.haptic.impact('light');
     try {
-        const blob = await generateShareImage(result, t);
+        const blob = await generateShareImage(result, t, licenseTier);
         if (blob) {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -172,7 +159,15 @@ const App: React.FC = () => {
       case 'test': return <TestView key={activeTest.id} t={t} activeModule={activeTest.domain!} currentId={activeTest.id} scene={scene!} onChoice={engineInstance.handleChoice} onExit={() => setViewAndPersist('dashboard')} getSceneText={getSceneText} adaptiveState={adaptiveState} />;
       case 'body_sync': return <BodySyncView lang={lang} t={t} onSync={engineInstance.syncBodySensation} />;
       case 'reflection': return <ReflectionView t={t} sensation={history[history.length - 1]?.sensation} />;
-      case 'results': if (!result) return <div/>; return result.validity === 'INVALID' ? <InvalidResultsView t={t} onReset={() => handleReset(true)} patternFlags={result.patternFlags} /> : <ResultsView lang={lang} t={t} result={result} isGlitchMode={!!isGlitchMode} onContinue={handleContinue} onShare={handleShare} onBack={() => setViewAndPersist('dashboard')} onNewCycle={() => handleReset(false)} isPro={isPro} />;
+      case 'results':
+        if (!result) return <div/>;
+        // CONSTITUTIONAL FUSE: Crisis Protocol (Article 17.3)
+        if (result.state.foundation < 25) {
+            return <CrisisView t={t} onExit={() => setViewAndPersist('dashboard')} />;
+        }
+        return result.validity === 'INVALID' 
+            ? <InvalidResultsView t={t} onReset={() => handleReset(true)} patternFlags={result.patternFlags} /> 
+            : <ResultsView lang={lang} t={t} result={result} isGlitchMode={!!isGlitchMode} onContinue={handleContinue} onShare={handleShare} onBack={() => setViewAndPersist('dashboard')} onNewCycle={() => handleReset(false)} isPro={isPro} />;
       case 'admin': return <AdminPanel t={t} onExit={() => setViewAndPersist('dashboard')} history={history} onUnlockAll={engineInstance.forceCompleteAll} glitchEnabled={forceGlitch} onToggleGlitch={() => setForceGlitch(!forceGlitch)} onSetView={setViewAndPersist} />;
       case 'compatibility': return <CompatibilityView lang={lang} t={t} onBack={() => setViewAndPersist('dashboard')} />;
       case 'guide': return <GuideView t={t} onBack={() => setViewAndPersist('dashboard')} />;

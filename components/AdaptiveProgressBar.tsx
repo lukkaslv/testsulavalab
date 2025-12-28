@@ -11,7 +11,10 @@ interface AdaptiveProgressBarProps {
 
 export const AdaptiveProgressBar: React.FC<AdaptiveProgressBarProps> = memo(({ clarity, isAdaptive, contradictionsCount, confidenceScore }) => {
   const { t } = useAppContext();
-  const tm = t.test_metrics;
+  // Safe access to test_metrics to prevent runtime errors if translation is missing
+  const tm = t?.test_metrics;
+
+  if (!tm) return null;
 
   return (
     <div className="space-y-2 shrink-0 animate-in">
@@ -37,7 +40,6 @@ export const AdaptiveProgressBar: React.FC<AdaptiveProgressBarProps> = memo(({ c
                 {tm.adaptive_active}
            </span>
            <span className="text-[7px] font-black text-slate-500 uppercase">
-             // FIXED: Changed tm.signal_quality_clean to tm.signal_clean
              {contradictionsCount > 0 ? `${contradictionsCount} ${tm.dissonance_points}` : tm.signal_clean}
            </span>
         </div>

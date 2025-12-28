@@ -1,16 +1,15 @@
 
 import React, { memo } from 'react';
-import { translations } from '../translations';
+import { Translations } from '../types';
 
 interface RadarChartProps {
   points: { x: number; y: number; label?: string }[];
   onLabelClick: (metric: string) => void;
   className?: string;
-  lang: 'ru' | 'ka';
+  t: Translations;
 }
 
-export const RadarChart: React.FC<RadarChartProps> = memo(({ points, onLabelClick, className = "", lang }) => {
-  const t = translations[lang];
+export const RadarChart: React.FC<RadarChartProps> = memo(({ points, onLabelClick, className = "", t }) => {
   
   const handleInteraction = (metric: string) => {
     // FIX: Cast window to any to access Telegram property

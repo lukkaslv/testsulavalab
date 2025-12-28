@@ -1,4 +1,3 @@
-
 import { GameHistoryItem, Contradiction, AdaptiveState, BeliefKey, DomainType } from '../types';
 import { TOTAL_NODES, DOMAIN_SETTINGS } from '../constants';
 
@@ -9,6 +8,15 @@ const CONTRADICTION_PENALTY = 1.5;
 const MIN_REQUIRED_NODES = 40; // Hard limit for clinical validity
 
 const POSITIVE_BELIEFS: BeliefKey[] = ['money_is_tool', 'self_permission', 'capacity_expansion'];
+
+export const getDomainForNodeId = (nodeId: number): DomainType | null => {
+  for (const d of DOMAIN_SETTINGS) {
+    if (nodeId >= d.startId && nodeId < (d.startId + d.count)) {
+      return d.key;
+    }
+  }
+  return null;
+};
 
 export const AdaptiveQuestionEngine = {
   analyzeContradictions(history: GameHistoryItem[], userBaseline: number): Contradiction[] {

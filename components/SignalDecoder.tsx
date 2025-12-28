@@ -24,9 +24,9 @@ export const SignalDecoder: React.FC<SignalDecoderProps> = memo(({ history, t, b
     <section className="space-y-4 animate-in">
         <div className="flex justify-between items-center px-1">
             <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 italic">
-                Evidence // {lang === 'ru' ? 'Обоснование' : 'მტკიცებულება'}
+                {t.results.signal_decoder.title}
             </h3>
-            <span className="text-[8px] font-mono text-slate-300">CORE_SIGNALS_LOG</span>
+            <span className="text-[8px] font-mono text-slate-300">{t.results.signal_decoder.subtitle}</span>
         </div>
 
         <div className="space-y-2">
@@ -48,10 +48,10 @@ export const SignalDecoder: React.FC<SignalDecoderProps> = memo(({ history, t, b
                             </div>
                             <p className="text-[11px] font-bold text-slate-700 leading-tight italic">
                                 {isHighLatency && hasSomaticFriction 
-                                    ? (lang === 'ru' ? "Зафиксировано когнитивное усилие и телесный барьер." : "დაფიქსირდა კოგნიტური ძალისხმევა და სხეულის ბარიერი.")
+                                    ? t.results.signal_decoder.high_latency_friction
                                     : isHighLatency 
-                                    ? (lang === 'ru' ? "Микро-задержка указывает на внутренний конфликт в этой теме." : "მიკრო-დაყოვნება მიუთითებს შინაგან კონფლიქტზე.")
-                                    : (lang === 'ru' ? "Телесный отклик подтверждает наличие напряжения." : "სხეულის გამოძახილი ადასტურებს დაძაბულობას.")
+                                    ? t.results.signal_decoder.high_latency
+                                    : t.results.signal_decoder.friction
                                 }
                             </p>
                         </div>
@@ -60,9 +60,7 @@ export const SignalDecoder: React.FC<SignalDecoderProps> = memo(({ history, t, b
             })}
         </div>
         <p className="text-[9px] text-slate-400 text-center italic opacity-60">
-            {lang === 'ru' 
-                ? "* Эти сигналы стали основой для определения ваших паттернов." 
-                : "* ეს სიგნალები გახდა თქვენი პატერნების განსაზღვრის საფუძველი."}
+            {t.results.signal_decoder.footer}
         </p>
     </section>
   );

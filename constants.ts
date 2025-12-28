@@ -14,14 +14,15 @@ export const STORAGE_KEYS = {
 
 // SYSTEM VERSIONING & OVERSIGHT
 export const SYSTEM_METADATA = {
-    VERSION: '9.9.75-TITANIUM', // Bumped version for new math model
-    LOGIC_VERSION: '4E',
-    LAST_UPDATED: '2025-12-31',
-    CODENAME: 'Liquid State',
+    VERSION: '10.0.0-LEGACY', // PROTOCOL UPDATE
+    CONSTITUTION: '2.0',
+    LOGIC_VERSION: '5A-FINAL',
+    LAST_UPDATED: '2026-01-01',
+    CODENAME: 'The Mirror',
     GITHUB_LEDGER_URL: 'https://raw.githubusercontent.com/genesis-os/ledger/main/ledger.json',
     LANG_HEALTH: {
         ru: { status: 'VERIFIED', reliability: 1.0, notes: 'Content Complete.' },
-        ka: { status: 'VERIFIED', reliability: 0.95, notes: 'Linguistic Parity Achieved.' }
+        ka: { status: 'VERIFIED', reliability: 0.98, notes: 'Linguistic Parity Achieved.' }
     }
 };
 
@@ -41,10 +42,10 @@ export const PRICING_CONFIG = {
     }
 };
 
-// SYSTEM THRESHOLDS
+// SYSTEM THRESHOLDS (Refined for Clinical Validity)
 export const PSYCHO_CONFIG = {
   DISTRACTION_THRESHOLD_MS: 30000, 
-  IMPULSE_THRESHOLD_MS: 1000,      
+  IMPULSE_THRESHOLD_MS: 800,      
   LATENCY_PENALTY: 3,         
   IMPULSE_PENALTY: 5,         
   MAX_LATENCY_PENALTY: 30,

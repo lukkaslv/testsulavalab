@@ -25,7 +25,7 @@ export const BodySyncView = memo<BodySyncViewProps>(({ lang, t, onSync }) => {
            <div className="w-28 h-28 rounded-full bg-slate-950 flex flex-col items-center justify-center text-indigo-400 border-4 border-slate-100 shadow-2xl z-10 relative overflow-hidden">
              <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4xKSIvPjwvc3ZnPg==')] opacity-20"></div>
              <span className="text-3xl mb-1 animate-pulse">📡</span>
-             <span className="text-[8px] font-mono uppercase tracking-widest text-indigo-400/70">{lang === 'ka' ? 'კავშირი' : 'СВЯЗЬ'}</span>
+             <span className="text-[8px] font-mono uppercase tracking-widest text-indigo-400/70">{t.sync.connection_label}</span>
              
              <svg className="absolute inset-0 w-full h-full animate-spin-slow opacity-30" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="1" strokeDasharray="5,5" />

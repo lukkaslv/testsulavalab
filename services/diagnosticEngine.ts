@@ -1,5 +1,5 @@
 
-import { RawAnalysisResult, AnalysisResult, ArchetypeKey, VerdictKey, PhaseType, TaskKey, PatternFlags, DomainType } from '../types';
+import { RawAnalysisResult, AnalysisResult, ArchetypeKey, VerdictKey, PhaseType, TaskKey, PatternFlags, DomainType, MetricBreakdown } from '../types';
 import { SecurityCore } from '../utils/crypto';
 import { SYSTEM_METADATA } from '../constants';
 
@@ -38,6 +38,38 @@ const calculatePentagonPoints = (profile: Record<DomainType, number>) => {
         
         return { x, y, label: key };
     });
+};
+
+const generateFormulaBreakdown = (raw: RawAnalysisResult): MetricBreakdown[] => {
+    const { state, neuroSync, integrity } = raw;
+    const entropyFactor = 1 - (state.entropy / 280);
+    
+    return [
+        {
+            label: 'foundation',
+            formula: 'F = Σ(w_f * baseline_norm) * entropy_gravity',
+            baseValue: state.foundation,
+            entropyImpact: Math.round(state.foundation * (1 - entropyFactor)),
+            syncImpact: 0,
+            finalValue: state.foundation
+        },
+        {
+            label: 'integrity',
+            formula: 'I = [(F+A+R)/3] * [1 - (E/280)]',
+            baseValue: Math.round((state.foundation + state.agency + state.resource) / 3),
+            entropyImpact: Math.round(((state.foundation + state.agency + state.resource) / 3) * (state.entropy / 280)),
+            syncImpact: 0,
+            finalValue: integrity
+        },
+        {
+            label: 'neuro_sync',
+            formula: 'S = 100 - Σ(somatic_friction_penalty)',
+            baseValue: 100,
+            entropyImpact: 0,
+            syncImpact: 100 - neuroSync,
+            finalValue: neuroSync
+        }
+    ];
 };
 
 export const DiagnosticEngine = {
@@ -118,7 +150,8 @@ export const DiagnosticEngine = {
       interventionStrategy: f < 40 ? 'stabilize_foundation' : e > 50 ? 'lower_entropy' : 'activate_will',
       coreConflict: coreConflict,
       shadowDirective: 'integrity_boost',
-      patternFlags
+      patternFlags,
+      formulaBreakdown: generateFormulaBreakdown(raw)
     };
   }
 };

@@ -1,15 +1,15 @@
 
 import React, { memo, useMemo } from 'react';
-import { ScanHistory } from '../types';
-import { translations } from '../translations';
+import { ScanHistory, Translations } from '../types';
 
 interface EvolutionDashboardProps {
   history: ScanHistory | null;
   lang: 'ru' | 'ka';
+  t: Translations;
 }
 
-const Sparkline = ({ data, color, height = 40 }: { data: number[], color: string, height?: number }) => {
-  if (data.length < 2) return <div className="h-[40px] flex items-center bg-slate-900/20 rounded-lg px-3"><span className="text-[8px] text-slate-500 font-mono uppercase tracking-widest animate-pulse">...</span></div>;
+const Sparkline = ({ data, color, height = 40, t }: { data: number[], color: string, height?: number, t: Translations }) => {
+  if (data.length < 2) return <div className="h-[40px] flex items-center bg-slate-900/20 rounded-lg px-3"><span className="text-[8px] text-slate-500 font-mono uppercase tracking-widest animate-pulse">{t.evolution_insights.loading}</span></div>;
   
   const width = 200;
   const padding = 5;
@@ -42,8 +42,7 @@ const Sparkline = ({ data, color, height = 40 }: { data: number[], color: string
   );
 };
 
-export const EvolutionDashboard: React.FC<EvolutionDashboardProps> = memo(({ history, lang }) => {
-  const t = translations[lang];
+export const EvolutionDashboard: React.FC<EvolutionDashboardProps> = memo(({ history, lang, t }) => {
   const hasHistory = history && history.scans.length > 1;
   const scansCount = history?.scans.length || 0;
 
@@ -56,16 +55,14 @@ export const EvolutionDashboard: React.FC<EvolutionDashboardProps> = memo(({ his
       const integrityDiff = current.integrity - previous.integrity;
       const entropyDiff = current.entropyScore - previous.entropyScore;
 
-      let message = "";
       if (integrityDiff > 5) {
-          message = lang === 'ru' ? `Рост целостности (+${integrityDiff}%). Укрепление внутренних опор.` : `целостности ზრდა (+${integrityDiff}%). შინაგანი საყრდენების გამაგრება.`;
+          return `${t.evolution_insights.growth_detected} (+${integrityDiff}%)`;
       } else if (entropyDiff < -5) {
-          message = lang === 'ru' ? `Снижение хаоса. Система стабилизируется.` : `ქაოსის შემცირება. სისტემა სტაბილურდება.`;
+          return t.evolution_insights.chaos_reduction;
       } else {
-          message = lang === 'ru' ? `Динамика стабильна. Продолжайте работу.` : `დინამიკა სტაბილურია. გააგრძელეთ მუშაობა.`;
+          return t.evolution_insights.stable_dynamics;
       }
-      return message;
-  }, [history, lang]);
+  }, [history, t.evolution_insights]);
 
   return (
     <section className="dark-glass-card p-6 rounded-[2.5rem] border border-white/10 space-y-6 shadow-2xl relative overflow-hidden">
@@ -87,17 +84,17 @@ export const EvolutionDashboard: React.FC<EvolutionDashboardProps> = memo(({ his
              <div className="space-y-3">
                 <div className="flex justify-between text-[9px] font-black uppercase text-slate-400 tracking-widest">
                     <span>{t.ui.integrity_drift}</span>
-                    <span className="text-emerald-400 font-mono">OK</span>
+                    <span className="text-emerald-400 font-mono">{t.evolution_insights.status_ok}</span>
                 </div>
-                <Sparkline data={history.evolutionMetrics.integrityTrend} color="#10b981" />
+                <Sparkline data={history.evolutionMetrics.integrityTrend} color="#10b981" t={t} />
              </div>
 
              <div className="space-y-3">
                 <div className="flex justify-between text-[9px] font-black uppercase text-slate-400 tracking-widest">
                     <span>{t.ui.noise_tracking}</span>
-                    <span className="text-red-400 font-mono">{lang === 'ru' ? 'СЛЕЖЕНИЕ' : 'მონიტორინგი'}</span>
+                    <span className="text-red-400 font-mono">{t.evolution_insights.status_tracking}</span>
                 </div>
-                <Sparkline data={history.evolutionMetrics.entropyTrend} color="#f43f5e" />
+                <Sparkline data={history.evolutionMetrics.entropyTrend} color="#f43f5e" t={t} />
              </div>
 
              <div className="pt-2 border-t border-white/5">

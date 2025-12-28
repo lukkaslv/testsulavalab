@@ -9,9 +9,9 @@ interface ContradictionInsightsProps {
 
 export const ContradictionInsights: React.FC<ContradictionInsightsProps> = ({ contradictions }) => {
   const { t } = useAppContext();
-  const tm = t.test_metrics;
+  const tm = t?.test_metrics;
 
-  if (contradictions.length === 0) return null;
+  if (!tm || contradictions.length === 0) return null;
 
   return (
     <section className="space-y-4 animate-in">

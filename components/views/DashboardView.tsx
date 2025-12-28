@@ -1,15 +1,37 @@
-
 import { memo, useMemo, useState, useEffect } from 'react';
 import { DomainType, Translations, AnalysisResult, ScanHistory, LifeContext, SubscriptionTier } from '../../types';
 import { DOMAIN_SETTINGS, SYSTEM_METADATA, ONBOARDING_NODES_COUNT, TOTAL_NODES } from '../../constants';
 import { EvolutionDashboard } from '../EvolutionDashboard';
 import { PlatformBridge } from '../../utils/helpers';
+import { ClinicalDecoder } from '../../services/clinicalDecoder';
+import { useAppContext } from '../../hooks/useAppContext';
 
 export interface NodeUI {
   id: number;
   domain: DomainType;
   active: boolean;
   done: boolean;
+}
+
+// Moved interface definition before usage to prevent module parsing errors.
+interface DashboardViewProps {
+  lang: 'ru' | 'ka';
+  t: Translations;
+  isDemo: boolean;
+  isPro: boolean; 
+  globalProgress: number;
+  result: AnalysisResult | null;
+  currentDomain: DomainType | null;
+  nodes: NodeUI[];
+  completedNodeIds: number[];
+  onSetView: (view: any) => void;
+  onSetCurrentDomain: (domain: DomainType | null) => void;
+  onStartNode: (id: number, domain: DomainType) => void;
+  onLogout: () => void;
+  scanHistory: ScanHistory | null;
+  onResume?: () => void; 
+  licenseTier?: SubscriptionTier;
+  usageStats: { used: number; limit: number; isUnlimited: boolean; canStart: boolean; };
 }
 
 const ContextCheckModal = ({ t, onSelect }: { t: Translations, onSelect: (c: LifeContext) => void }) => {
@@ -44,17 +66,20 @@ const ContextCheckModal = ({ t, onSelect }: { t: Translations, onSelect: (c: Lif
     );
 };
 
-const getRiskLevel = (scan: AnalysisResult, t: Translations): { label: string; color: string } => {
-    if (scan.state.foundation < 35) return { label: t.pro_hub.risk_level_critical, color: 'text-red-400 border-red-500/30' };
-    if (scan.state.agency > 80 && scan.state.foundation < 45) return { label: t.pro_hub.risk_level_high, color: 'text-amber-400 border-amber-500/30' };
-    if (scan.state.entropy > 65) return { label: t.pro_hub.risk_level_high, color: 'text-amber-400 border-amber-500/30' };
-    return { label: t.pro_hub.risk_level_nominal, color: 'text-emerald-400 border-emerald-500/30' };
-};
-
-const ProDashboard = memo<DashboardViewProps>(({ t, usageStats, onSetView, onStartNode, onLogout, licenseTier, scanHistory }) => {
+const ProDashboard = memo<DashboardViewProps>(({ t, usageStats, onSetView, onLogout, licenseTier, scanHistory, onStartNode }) => {
     const ph = t.pro_hub;
     const recentScans = useMemo(() => scanHistory?.scans.slice().reverse().slice(0, 5) || [], [scanHistory]);
     const usagePercentage = usageStats.isUnlimited ? 0 : Math.round((usageStats.used / usageStats.limit) * 100);
+
+    const interpretations = useMemo(() => 
+        recentScans.map(scan => ClinicalDecoder.decode(scan, t)),
+    [recentScans, t]);
+
+    const riskLevelToColor: Record<string, string> = {
+        critical: 'text-red-400 border-red-500/30',
+        high: 'text-amber-400 border-amber-500/30',
+        nominal: 'text-emerald-400 border-emerald-500/30'
+    };
 
     return (
         <div className="flex flex-col h-full bg-slate-950 text-white p-4 space-y-4 animate-in select-none overflow-y-auto no-scrollbar">
@@ -73,7 +98,7 @@ const ProDashboard = memo<DashboardViewProps>(({ t, usageStats, onSetView, onSta
                         <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                         <span className="text-[8px] font-black uppercase text-slate-500 tracking-widest">{ph.system_status}</span>
                     </div>
-                    <div className="text-lg font-black text-emerald-400">NOMINAL</div>
+                    <div className="text-lg font-black text-emerald-400">{ph.risk_level_nominal}</div>
                     <div className="text-[8px] font-mono text-slate-600">{ph.license_expires}: 28 {ph.days_left}</div>
                 </div>
                 <div className="bg-slate-900 p-3 rounded-2xl border border-white/5 space-y-1.5">
@@ -96,16 +121,17 @@ const ProDashboard = memo<DashboardViewProps>(({ t, usageStats, onSetView, onSta
                 <h4 className="text-[9px] font-black uppercase tracking-widest text-slate-500 px-1">{ph.recent_activity}</h4>
                 <div className="space-y-2">
                     {recentScans.length > 0 ? (
-                    recentScans.map(scan => {
-                        const risk = getRiskLevel(scan, t);
+                    recentScans.map((scan, index) => {
+                        const interpretation = interpretations[index];
+                        const riskColor = riskLevelToColor[interpretation.riskProfile.level];
                         return (
                         <div key={scan.shareCode} className="bg-slate-900 p-3 rounded-xl border border-white/5 flex justify-between items-center hover:bg-slate-800/50 transition-colors">
                             <div>
                                 <span className="text-xs font-mono text-white font-bold">{ph.session_id} {scan.shareCode.substring(0, 8)}...</span>
                                 <span className="text-[8px] font-mono text-slate-500 block">{new Date(scan.createdAt).toLocaleDateString()}</span>
                             </div>
-                            <div className={`px-2 py-1 rounded border text-[8px] font-black ${risk.color}`}>
-                                {risk.label}
+                            <div className={`px-2 py-1 rounded border text-[8px] font-black ${riskColor}`}>
+                                {interpretation.riskProfile.label}
                             </div>
                         </div>
                         );
@@ -120,6 +146,7 @@ const ProDashboard = memo<DashboardViewProps>(({ t, usageStats, onSetView, onSta
             <div className="space-y-3 shrink-0 pt-2 border-t border-slate-800/50">
                 <h4 className="text-[9px] font-black uppercase tracking-widest text-slate-500 px-1">{ph.tools_panel}</h4>
                 <div className="grid grid-cols-3 gap-2">
+                    {/* FIX: Add onStartNode to destructured props to resolve reference error. */}
                     <button onClick={() => onStartNode(0, 'foundation')} className="p-3 bg-slate-900 border border-slate-800 rounded-xl text-[8px] font-black uppercase text-slate-400 hover:text-white transition-colors flex flex-col items-center gap-1.5">
                         <span className="text-lg">🔬</span>{ph.calibrate_instrument}
                     </button>
@@ -136,19 +163,20 @@ const ProDashboard = memo<DashboardViewProps>(({ t, usageStats, onSetView, onSta
 });
 
 const ClientDashboard = memo<DashboardViewProps>(({ lang, t, isPro, globalProgress, result, currentDomain, nodes, onSetView, onSetCurrentDomain, onStartNode, scanHistory, onResume, onLogout, completedNodeIds }) => {
+    const { handleReset } = useAppContext();
     const activeDomainCount = useMemo(() => DOMAIN_SETTINGS.filter(d => nodes.filter(n => n.domain === d.key && n.done).length === d.count).length, [nodes]);
 
     const remainingNodes = TOTAL_NODES - completedNodeIds.length;
     const estMinutes = Math.ceil((remainingNodes * 18) / 60); 
 
     const humanInsight = useMemo(() => {
-        if (!result) return t.dashboard?.desc || "Genesis OS"; // Defensive check
+        if (!result) return t.dashboard?.desc;
         if (globalProgress === 100) return t.global.complete + ". " + t.dashboard.insight_coherence;
         const { entropyScore, neuroSync, integrity } = result;
         if (entropyScore > 60) return t.dashboard.insight_noise;
         if (neuroSync < 45) return t.dashboard.insight_somatic_dissonance;
         if (integrity > 75) return t.dashboard.insight_coherence;
-        return t.dashboard?.desc || "Analyzing...";
+        return t.dashboard?.desc;
     }, [result, t, globalProgress]);
 
     const systemMessage = localStorage.getItem('genesis_system_message');
@@ -195,7 +223,7 @@ const ClientDashboard = memo<DashboardViewProps>(({ lang, t, isPro, globalProgre
                 </div>
             )}
           </header>
-          <EvolutionDashboard history={scanHistory} lang={lang} />
+          <EvolutionDashboard history={scanHistory} lang={lang} t={t} />
           
           <section 
             onClick={() => isTestComplete ? onSetView('results') : (onResume && onResume())} 
@@ -228,10 +256,17 @@ const ClientDashboard = memo<DashboardViewProps>(({ lang, t, isPro, globalProgre
              </div>
           </section>
 
-          <button onClick={() => onSetView('guide')} className="w-full py-4 bg-white rounded-2xl flex flex-col items-center justify-center px-4 active:scale-95 transition-all shadow-md border border-slate-200 group">
-             <span className="text-xl mb-1 group-hover:scale-110 transition-transform">🧭</span>
-             <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">{t.dashboard.manual_btn}</span>
-          </button>
+          <div className="grid grid-cols-2 gap-3">
+              <button onClick={() => onSetView('guide')} className="w-full py-4 bg-white rounded-2xl flex flex-col items-center justify-center px-4 active:scale-95 transition-all shadow-md border border-slate-200 group">
+                 <span className="text-xl mb-1 group-hover:scale-110 transition-transform">🧭</span>
+                 <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">{t.dashboard.manual_btn}</span>
+              </button>
+              <button onClick={() => handleReset(false)} className="w-full py-4 bg-white rounded-2xl flex flex-col items-center justify-center px-4 active:scale-95 transition-all shadow-md border border-slate-200 group">
+                 <span className="text-xl mb-1 text-red-400 group-hover:scale-110 transition-transform">🗑️</span>
+                 <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">{t.ui.reset_session_btn}</span>
+              </button>
+          </div>
+
 
           {isCalibrating && !currentDomain ? (
              <div className="space-y-4 flex-1 pb-10">
@@ -298,26 +333,6 @@ const ClientDashboard = memo<DashboardViewProps>(({ lang, t, isPro, globalProgre
         </div>
     );
 });
-
-interface DashboardViewProps {
-  lang: 'ru' | 'ka';
-  t: Translations;
-  isDemo: boolean;
-  isPro: boolean; 
-  globalProgress: number;
-  result: AnalysisResult | null;
-  currentDomain: DomainType | null;
-  nodes: NodeUI[];
-  completedNodeIds: number[];
-  onSetView: (view: any) => void;
-  onSetCurrentDomain: (domain: DomainType | null) => void;
-  onStartNode: (id: number, domain: DomainType) => void;
-  onLogout: () => void;
-  scanHistory: ScanHistory | null;
-  onResume?: () => void; 
-  licenseTier?: SubscriptionTier;
-  usageStats: { used: number; limit: number; isUnlimited: boolean; canStart: boolean; };
-}
 
 export const DashboardView = memo<DashboardViewProps>((props) => {
   const [showContextCheck, setShowContextCheck] = useState(false);

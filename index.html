@@ -10,8 +10,9 @@
     <style>
       :root { 
         --primary: #6366f1; 
-        --bg: #ffffff;
-        --text-main: #1e293b; 
+        --bg: #0f172a;
+        --text-main: #f8fafc; 
+        --crt-scan-color: rgba(16, 185, 129, 0.03);
       }
       
       html, body {
@@ -33,6 +34,36 @@
         letter-spacing: 0.01em;
       }
 
+      /* --- CLINICAL CYBERPUNK AESTHETICS --- */
+      
+      /* 1. CRT Scanlines Overlay */
+      body::before {
+        content: " ";
+        display: block;
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+        z-index: 9998;
+        background-size: 100% 2px, 3px 100%;
+        pointer-events: none;
+        opacity: 0.4;
+      }
+
+      /* 2. Signal Noise */
+      body::after {
+        content: "";
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+        pointer-events: none;
+        z-index: 9999;
+        opacity: 0.15;
+        mix-blend-mode: overlay;
+      }
+
       @media (prefers-reduced-motion: reduce) {
         *, ::before, ::after {
           animation-delay: -1ms !important;
@@ -41,9 +72,6 @@
           background-attachment: initial !important;
           scroll-behavior: auto !important;
           transition-duration: 0s !important;
-        }
-        .animate-pulse, .animate-bounce, .animate-spin-slow {
-          animation: none !important;
         }
       }
 
@@ -64,53 +92,36 @@
         padding-bottom: 0.1em;
       }
 
-      p, li {
-        max-width: 65ch;
-      }
-
-      @media (max-width: 640px) {
-        body { font-size: 17px; }
-        button { min-height: 44px; }
-      }
-
-      body::after {
-        content: "";
-        position: fixed;
-        top: 0; left: 0; width: 100%; height: 100%;
-        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-        pointer-events: none;
-        z-index: 1000;
-        opacity: 0.3;
-      }
-
       #root { height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
 
       .glass-card {
-        background: rgba(255, 255, 255, 0.82);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.5);
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.8);
       }
 
       .dark-glass-card {
-        background: rgba(15, 23, 42, 0.95);
+        background: rgba(2, 6, 23, 0.85);
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 0 40px rgba(99, 102, 241, 0.05);
       }
 
       .animate-in {
-        animation: slideUp 0.6s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+        animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       }
 
       @keyframes slideUp {
-        from { opacity: 0; transform: translateY(12px); }
-        to { opacity: 1; transform: translateY(0); }
+        from { opacity: 0; transform: translateY(8px) scale(0.98); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
       }
 
-      /* --- GLITCH PROTOCOL --- */
+      /* --- GLITCH PROTOCOL v2.0 --- */
       .glitch {
         position: relative;
+        overflow: hidden;
       }
       .glitch::before,
       .glitch::after {
@@ -120,18 +131,19 @@
         left: 0;
         width: 100%;
         height: 100%;
+        opacity: 0.8;
       }
       .glitch::before {
         left: 2px;
         text-shadow: -1px 0 #ff00c1;
         clip: rect(44px, 450px, 56px, 0);
-        animation: glitch-anim-1 5s infinite linear alternate-reverse;
+        animation: glitch-anim-1 2s infinite linear alternate-reverse;
       }
       .glitch::after {
         left: -2px;
         text-shadow: -1px 0 #00fff9;
         clip: rect(44px, 450px, 56px, 0);
-        animation: glitch-anim-2 5s infinite linear alternate-reverse;
+        animation: glitch-anim-2 2s infinite linear alternate-reverse;
       }
 
       @keyframes glitch-anim-1 {
@@ -151,13 +163,25 @@
         100% { clip: rect(50px, 9999px, 90px, 0); }
       }
 
+      /* Custom Scrollbar for Terminals */
+      .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.05);
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(16, 185, 129, 0.3);
+          border-radius: 2px;
+      }
+
       ::-webkit-scrollbar { display: none; }
       
       button, .card-interactive {
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       }
     </style>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
   <script type="importmap">
 {
   "imports": {

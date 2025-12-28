@@ -1,4 +1,3 @@
-
 import { ALL_BELIEFS, MODULE_REGISTRY, TOTAL_NODES } from '../constants';
 import { translations } from '../translations';
 import { WEIGHTS } from './psychologyService';
@@ -15,11 +14,14 @@ const pseudoRandom = (seed: number) => {
 
 /**
  * Mirror of core psychology logic to ensure simulation accuracy.
- * Genesis OS v4.6 Integrity Protocol.
+ * Genesis OS v5.3 Integrity Protocol.
  */
-const simulateSigmoidUpdate = (current: number, delta: number): number => {
+const simulateSigmoidUpdate = (current: number, delta: number, entropyCurrent: number): number => {
+    const chaos = entropyCurrent > 65 ? 1.05 : 1.0;
+    
     const x = Math.max(-5, Math.min(5, (current - 50) / 12));
-    const newX = x + (delta * 0.15); 
+    const newX = x + (delta * 0.10 * chaos); 
+    
     const result = 100 / (1 + Math.exp(-newX));
     return Math.max(5, Math.min(95, result));
 };
@@ -66,12 +68,15 @@ export const SimulationService = {
             const w = WEIGHTS[b] || WEIGHTS.default;
             
             // Use Sigmoid for CORE metrics (F, A, R)
-            f = simulateSigmoidUpdate(f, w.f);
-            a = simulateSigmoidUpdate(a, w.a);
-            r = simulateSigmoidUpdate(r, w.r);
+            f = simulateSigmoidUpdate(f, w.f, e);
+            a = simulateSigmoidUpdate(a, w.a, e);
+            r = simulateSigmoidUpdate(r, w.r, e);
             
-            // Linear bounded update for Entropy (E)
-            e = Math.max(5, Math.min(95, e + w.e));
+            // Linear bounded update for Entropy (E) with resistance
+            let entropyResistance = 1.0;
+            if (e > 70) entropyResistance = 0.8;
+            if (e > 85) entropyResistance = 0.6;
+            e = Math.max(5, Math.min(95, e + (w.e * entropyResistance)));
         }
         
         // Final boundary validation (Math Integrity Check)

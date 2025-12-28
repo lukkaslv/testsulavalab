@@ -204,7 +204,7 @@ export const AdminPanel = memo<AdminPanelProps>(({ t, onExit, history, onUnlockA
       downloadAnchorNode.click();
       downloadAnchorNode.remove();
       PlatformBridge.haptic.notification('success');
-      alert("✅ Ledger Generated.\n\nACTION REQUIRED:\nCommit this 'ledger.json' to your GitHub repository to apply global changes.");
+      alert(`${t.admin.ledger_success}\n\n${t.admin.ledger_action}`);
   };
 
   const handleExportData = () => {
@@ -238,11 +238,11 @@ export const AdminPanel = memo<AdminPanelProps>(({ t, onExit, history, onUnlockA
               const success = StorageService.injectState(content);
               if (success) {
                   PlatformBridge.haptic.notification('success');
-                  alert("✅ SYSTEM STATE RESTORED.\n\nReloading kernel...");
+                  alert(t.admin.import_success);
                   window.location.reload();
               } else {
                   PlatformBridge.haptic.notification('error');
-                  alert("❌ CORRUPTED OR INVALID BACKUP FILE.");
+                  alert(t.admin.import_fail);
               }
           }
       };

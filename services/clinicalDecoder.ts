@@ -1,11 +1,12 @@
-
 import { AnalysisResult, ClinicalInterpretation, TherapyHypothesis, Translations } from '../types';
 
 export const ClinicalDecoder = {
   decode(result: AnalysisResult, t: Translations): ClinicalInterpretation {
-    const { state, neuroSync, archetypeKey, activePatterns, flags, sessionPulse } = result;
+    const { state, neuroSync, activePatterns, archetypeKey, flags, sessionPulse } = result;
     const cd = t.clinical_decoder;
     const p = cd.provocations;
+    const pt = t.pro_terminal;
+    const ph = t.pro_hub;
 
     // 1. EXPERT SYSTEM: CONFIGURATION DETECTION
     let configKey = 'balanced';
@@ -39,8 +40,23 @@ export const ClinicalDecoder = {
         trapType = "SOMATIC_WALL";
         provocation = p.wall;
     }
+    
+    // 3. PRIORITY LOGIC (Centralized)
+    let priority = pt.priority_stable;
+    let priorityLevel: 'low' | 'medium' | 'high' = 'low';
+    if (state.foundation < 30) {
+        priority = pt.priority_critical_deficit;
+        priorityLevel = 'high';
+    } else if (state.agency > 80 && state.foundation < 40) {
+        priority = pt.priority_manic_defense;
+        priorityLevel = 'high';
+    } else if (neuroSync < 40) {
+        priority = pt.priority_dissociation;
+        priorityLevel = 'medium';
+    }
 
-    // 3. DIFFERENTIAL MATRIX (Refined Weights v4.2)
+
+    // 4. DIFFERENTIAL MATRIX (Refined Weights v4.2)
     const diffProb: Record<string, number> = {
         narcissistic: Math.min(95, (state.agency * 0.65 + (100 - state.foundation) * 0.35)),
         borderline: Math.min(95, ((100 - state.foundation) * 0.7 + state.entropy * 0.3)),
@@ -48,12 +64,12 @@ export const ClinicalDecoder = {
         systemic: activePatterns.includes('family_loyalty') ? 92 : (100 - state.foundation) * 0.4 + 20
     };
 
-    // 4. NEURAL HEATMAP
+    // 5. NEURAL HEATMAP
     const criticalNodes = (sessionPulse || [])
         .filter(n => n.zScore > 1.8 || (n.tension > 85 && n.isBlock))
         .map(n => n.id);
 
-    // 5. HYPOTHESES GENERATION
+    // 6. HYPOTHESES GENERATION
     const hypotheses: TherapyHypothesis[] = [];
     const h = cd.common_hypotheses;
     
@@ -72,6 +88,21 @@ export const ClinicalDecoder = {
             basedOn: `FND:${Math.round(state.foundation)}`,
             focusForSession: h.survival_priority.q
         });
+    }
+
+    // 7. RISK PROFILE (for Dashboard)
+    let riskLabel = ph.risk_level_nominal;
+    let riskLevel: 'critical' | 'high' | 'nominal' = 'nominal';
+    
+    if (state.foundation < 35) {
+        riskLabel = ph.risk_level_critical;
+        riskLevel = 'critical';
+    } else if (state.agency > 80 && state.foundation < 45) {
+        riskLabel = ph.risk_level_high;
+        riskLevel = 'high';
+    } else if (state.entropy > 65) {
+        riskLabel = ph.risk_level_high;
+        riskLevel = 'high';
     }
 
     return {
@@ -97,6 +128,12 @@ export const ClinicalDecoder = {
         hypotheses,
         risks: state.foundation < 30 ? [cd.risks.decompensation] : [],
         sessionEntry: cd.session_entries[trapType.toLowerCase().split('_')[1]] || cd.session_entries.intellectual,
+        priority,
+        priorityLevel,
+        riskProfile: {
+            label: riskLabel,
+            level: riskLevel
+        },
         extra: {
             diffProb,
             criticalNodes,

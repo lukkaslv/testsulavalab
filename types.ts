@@ -75,6 +75,15 @@ export interface NeuralCorrelation {
   type: string;
 }
 
+export interface MetricBreakdown {
+  label: string;
+  formula: string;
+  baseValue: number;
+  entropyImpact: number;
+  syncImpact: number;
+  finalValue: number;
+}
+
 export interface RawAnalysisResult {
   context: LifeContext;
   state: { foundation: number; agency: number; resource: number; entropy: number };
@@ -136,6 +145,7 @@ export interface AnalysisResult extends RawAnalysisResult {
   interventionStrategy: string;
   coreConflict: string;
   shadowDirective: string;
+  formulaBreakdown?: MetricBreakdown[];
 }
 
 export interface ScanHistory {
@@ -193,13 +203,56 @@ export class DataCorruptionError extends Error {
 
 export type TaskKey = string;
 
+export interface TestMetrics {
+  insight_resolution: string;
+  confidence: string;
+  adaptive_active: string;
+  dissonance_points: string;
+  signal_clean: string;
+  structural_contradictions: string;
+  persona_conflict_hint: string;
+}
+
+export interface EvolutionInsights {
+  growth_detected: string;
+  chaos_reduction: string;
+  stable_dynamics: string;
+  loading: string;
+  status_ok: string;
+  status_tracking: string;
+}
+
+export interface SynthesisInsight {
+    title: string;
+    icon: string;
+    analysis: string;
+    recommendation: string;
+}
+
+export interface ClinicalSynthesis {
+    coreTension: SynthesisInsight;
+    behavioralPrediction: SynthesisInsight;
+    therapeuticFocus: SynthesisInsight;
+    keyQuestion: string;
+}
+
 export interface Translations {
   subtitle: string;
+  informed_consent: any;
   onboarding: any;
   pro_hub: any;
   invalid_results: any;
   data_corruption: any;
-  boot_sequence: string[];
+  boot_sequence: {
+    kernel_init: string;
+    load_constitution: string;
+    mount_volumes: string;
+    load_psychometrics: string;
+    calibrate_neuro_sync: string;
+    secure_link: string;
+    system_ready: string;
+    copyright: string;
+  };
   ui: any;
   auth_ui: any;
   context_check: any;
@@ -232,6 +285,7 @@ export interface Translations {
   auth_hint: string;
   legal_disclaimer: string;
   safety: any;
+  crisis_view: any;
   session_prep_templates: any;
   synthesis_categories: any;
   synthesis: any;
@@ -242,10 +296,22 @@ export interface Translations {
   integrity_audit: any;
   methodology_faq: { q: string; a: string }[];
   soft_mode: { archetype_prefix: string; verdict_softened: Record<string, string> };
-  test_metrics: any;
+  test_metrics: TestMetrics;
+  evolution_insights: EvolutionInsights;
   legal: any;
   oracle: any;
   export_image: any;
+  transparency: {
+    title: string;
+    desc: string;
+    formula_label: string;
+    impact_label: string;
+    final_label: string;
+    foundation: string;
+    agency: string;
+    resource: string;
+    entropy: string;
+  };
 }
 
 export interface ConfigError {
@@ -320,8 +386,6 @@ export interface AppContextType {
   dataStatus: string;
   scanHistory: ScanHistory;
   usageStats: { used: number; limit: number; isUnlimited: boolean; canStart: boolean };
-  soundEnabled: boolean;
-  setSoundEnabled: (enabled: boolean) => void;
   handleLogin: (password: string, demo?: boolean, tier?: SubscriptionTier) => boolean;
   handleLogout: () => void;
   handleReset: (force?: boolean) => void;
@@ -395,6 +459,12 @@ export interface ClinicalInterpretation {
     hypotheses: TherapyHypothesis[];
     risks: string[];
     sessionEntry: string;
+    priority: string;
+    priorityLevel: 'low' | 'medium' | 'high';
+    riskProfile: {
+        label: string;
+        level: 'critical' | 'high' | 'nominal';
+    };
     extra: {
         diffProb: Record<string, number>;
         criticalNodes: number[];

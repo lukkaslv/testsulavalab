@@ -54,13 +54,9 @@ export function generateClinicalNarrative(result: AnalysisResult, lang: Lang): C
     // --- DYNAMIC SHADOW CONTRACT GENERATION ---
     let shadowContract = p.contract;
     if (isCompensatory && neuroSync < 50) {
-        shadowContract = lang === 'ru' 
-            ? "Я буду самым успешным клиентом, чтобы ты никогда не увидел, как я на самом деле мертв внутри."
-            : "ვიქნები ყველაზე წარმატებული კლიენტი, რომ ვერასდროს დაინახო რამდენად მკვდარი ვარ შიგნიდან.";
+        shadowContract = cn.shadow_contracts.compensatory_dissonance;
     } else if (isBorderline && e > 50) {
-        shadowContract = lang === 'ru'
-            ? "Я разрушу всё, что ты построишь, чтобы доказать, что меня невозможно спасти."
-            : "დავანგრევ ყველაფერს რასაც ააშენებ, რომ დავამტკიცო - ჩემი გადარჩენა შეუძლებელია.";
+        shadowContract = cn.shadow_contracts.borderline_chaos;
     }
 
     return {

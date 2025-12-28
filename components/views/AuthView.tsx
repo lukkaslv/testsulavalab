@@ -31,9 +31,66 @@ const LegalModal = ({ t, type, onClose }: { t: Translations, type: 'tos' | 'priv
     </div>
 );
 
-export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t, lang }) => {
+const ConsentModal = ({ t, onConfirm, onCancel, lang, onLangChange }: { t: Translations, onConfirm: () => void, onCancel: () => void, lang: 'ru'|'ka', onLangChange: (l:'ru'|'ka')=>void }) => {
+    const [checked, setChecked] = useState(false);
+    const ic = t.informed_consent;
+
+    return (
+        <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center p-6 animate-in backdrop-blur-3xl bg-slate-950/90 text-slate-200">
+            <div className="absolute top-4 right-4 z-50">
+                <button onClick={() => onLangChange(lang === 'ru' ? 'ka' : 'ru')} className="bg-white/10 px-3 py-1 rounded text-[10px] font-bold uppercase">{lang === 'ru' ? 'KA' : 'RU'}</button>
+            </div>
+            <div className="w-full max-w-sm rounded-[2rem] border border-slate-700 bg-slate-900 p-6 shadow-2xl space-y-6 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 opacity-5 text-4xl">📜</div>
+                <h2 className="text-sm font-black uppercase tracking-widest text-indigo-400 text-center border-b border-slate-800 pb-4">
+                    {ic.title}
+                </h2>
+                
+                <div className="space-y-4 text-[10px] font-medium leading-relaxed text-slate-400">
+                    <div className="space-y-1">
+                        <span className="text-white font-bold block">{ic.measures_title}</span>
+                        <ul className="list-disc pl-4 space-y-0.5">
+                            {ic.measures.map((m: string, i: number) => <li key={i}>{m}</li>)}
+                        </ul>
+                    </div>
+                    <div className="space-y-1">
+                        <span className="text-white font-bold block">{ic.usage_title}</span>
+                        <ul className="list-disc pl-4 space-y-0.5">
+                            {ic.usage.map((m: string, i: number) => <li key={i}>{m}</li>)}
+                        </ul>
+                    </div>
+                    <div className="space-y-1">
+                        <span className="text-white font-bold block">{ic.data_title}</span>
+                        <ul className="list-disc pl-4 space-y-0.5">
+                            {ic.data.map((m: string, i: number) => <li key={i}>{m}</li>)}
+                        </ul>
+                    </div>
+                </div>
+
+                <div className="pt-2">
+                    <label className="flex items-center gap-3 p-4 bg-slate-800/50 rounded-xl cursor-pointer hover:bg-slate-800 transition-colors">
+                        <input type="checkbox" checked={checked} onChange={e => { PlatformBridge.haptic.selection(); setChecked(e.target.checked); }} className="w-5 h-5 rounded border-slate-600 bg-slate-700 text-indigo-500 focus:ring-indigo-500" />
+                        <span className="text-[9px] font-bold uppercase text-white leading-tight">{ic.checkbox}</span>
+                    </label>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                    <button onClick={onCancel} className="py-4 bg-slate-800 text-slate-400 rounded-xl font-black uppercase text-[9px] tracking-widest hover:text-white transition-colors">
+                        {t.auth_ui.cancel}
+                    </button>
+                    <button onClick={() => { if(checked) onConfirm(); }} disabled={!checked} className={`py-4 rounded-xl font-black uppercase text-[9px] tracking-widest transition-all ${checked ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/20' : 'bg-slate-800 text-slate-600 cursor-not-allowed'}`}>
+                        {ic.start_btn}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t, lang, onLangChange }) => {
   const [showPricing, setShowPricing] = useState(false);
   const [showAdminInput, setShowAdminInput] = useState(false);
+  const [showConsent, setShowConsent] = useState(false);
   const [legalType, setLegalType] = useState<'tos' | 'privacy' | null>(null);
   const [adminPwd, setAdminPwd] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
@@ -49,7 +106,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t, lang }) => {
 
   const handleAuthAttempt = async () => {
       if (!adminPwd.trim()) {
-          setStatusMessage(lang === 'ru' ? 'ВВЕДИТЕ КЛЮЧ' : 'შეიყვანეთ კოდი');
+          setStatusMessage(t.auth_ui.enter_key_placeholder);
           return;
       }
       
@@ -110,6 +167,16 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t, lang }) => {
     <div className="relative flex flex-col items-center animate-in h-full select-none max-w-sm mx-auto bg-white overflow-hidden">
       
       {legalType && <LegalModal t={t} type={legalType} onClose={() => setLegalType(null)} />}
+      
+      {showConsent && (
+          <ConsentModal 
+            t={t} 
+            lang={lang}
+            onLangChange={onLangChange}
+            onConfirm={() => { setShowConsent(false); handleClientEntry(); }} 
+            onCancel={() => setShowConsent(false)} 
+          />
+      )}
 
       {showAdminInput && (
         <div className="absolute inset-0 z-[100] bg-white/98 flex flex-col items-center justify-center p-6 animate-in backdrop-blur-3xl">
@@ -119,7 +186,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t, lang }) => {
               </div>
               <h3 className="text-slate-900 font-black text-lg uppercase tracking-widest">{t.ui.auth_title}</h3>
               <p className="text-[8px] text-slate-400 font-bold uppercase tracking-widest px-8 text-center leading-relaxed">
-                {lang === 'ru' ? 'Доступ только для владельцев профессиональных лицензий' : 'წვდომა მხოლოდ პროფესიული ლიცენზიის მფლობელებისთვის'}
+                {t.auth_ui.admin_access_hint}
               </p>
            </div>
            
@@ -174,15 +241,15 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t, lang }) => {
 
             <div className="w-full space-y-3 flex-1 flex flex-col justify-center max-w-[300px]">
                 <div className="bg-slate-50 p-6 rounded-[2.5rem] border border-slate-100 space-y-4">
-                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block text-center">Для клиентов</span>
+                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block text-center">{t.onboarding.for_clients}</span>
                     <button 
-                        onClick={handleClientEntry} 
+                        onClick={() => setShowConsent(true)} 
                         className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-[0.3em] shadow-xl shadow-indigo-100 active:scale-[0.98] transition-all"
                     >
                         {t.onboarding.protocol_btn}
                     </button>
                     <p className="text-[9px] text-slate-400 font-medium text-center leading-tight italic px-2">
-                        {lang === 'ru' ? 'Получите Blueprint личности и подготовьтесь к сессии' : 'მიიღეთ პიროვნების Blueprint და მოემზადეთ სესიისთვის'}
+                        {t.onboarding.client_card_desc}
                     </p>
                 </div>
 
@@ -204,8 +271,8 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t, lang }) => {
             </div>
 
             <div className="flex gap-4 opacity-40 pt-2 shrink-0">
-                <button onClick={() => setLegalType('tos')} className="text-[7px] font-black uppercase tracking-widest text-slate-500 hover:text-indigo-600 underline">Terms</button>
-                <button onClick={() => setLegalType('privacy')} className="text-[7px] font-black uppercase tracking-widest text-slate-500 hover:text-indigo-600 underline">Privacy</button>
+                <button onClick={() => setLegalType('tos')} className="text-[7px] font-black uppercase tracking-widest text-slate-500 hover:text-indigo-600 underline">{t.auth_ui.terms_link}</button>
+                <button onClick={() => setLegalType('privacy')} className="text-[7px] font-black uppercase tracking-widest text-slate-500 hover:text-indigo-600 underline">{t.auth_ui.privacy_link}</button>
             </div>
         </div>
       ) : (
@@ -247,7 +314,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t, lang }) => {
                         onClick={() => PlatformBridge.openLink("https://t.me/thndrrr")}
                         className="w-full py-5 bg-indigo-600 text-white rounded-[1.5rem] font-black uppercase text-xs tracking-widest shadow-xl shadow-indigo-100 active:scale-95 transition-all"
                     >
-                        {lang === 'ru' ? 'Активировать Доступ' : 'წვდომის გააქტიურება'}
+                        {t.onboarding.activate_access_btn}
                     </button>
                 </div>
 
@@ -258,13 +325,13 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t, lang }) => {
                         <span className="text-[11px] font-black">0{currency}</span>
                     </div>
                     <p className="text-[10px] font-medium leading-relaxed italic opacity-80">
-                        {lang === 'ru' ? 'Попробуйте систему на себе бесплатно.' : 'სცადეთ სისტემა თქვენს თავზე უფასოდ.'}
+                        {t.onboarding.free_trial_desc}
                     </p>
                     <button 
-                        onClick={handleClientEntry}
+                        onClick={() => setShowConsent(true)}
                         className="w-full py-3 bg-white border border-slate-300 rounded-xl font-black uppercase text-[9px] tracking-widest text-slate-500 active:scale-95 transition-all"
                     >
-                        {lang === 'ru' ? 'Начать бесплатно' : 'უფასოდ დაწყება'}
+                        {t.onboarding.start_free_btn}
                     </button>
                 </div>
 
@@ -272,9 +339,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t, lang }) => {
                     <div className="absolute top-0 right-0 p-4 opacity-10 text-6xl italic font-black">?</div>
                     <h4 className="text-[10px] font-black uppercase tracking-widest text-indigo-300">Что входит в Pro?</h4>
                     <p className="text-xs leading-relaxed font-bold italic opacity-90">
-                        {lang === 'ru' 
-                          ? "Полный Clinical Terminal для анализа клиентов, автоматические гипотезы и неограниченный доступ к методологии."
-                          : "სრული Clinical Terminal კლიენტების ანალიზისთვის, ავტომატური ჰიპოთეზები და მეთოდოლოგიაზე შეუზღუდავი წვდომა."}
+                        {t.onboarding.pro_features_expl}
                     </p>
                 </div>
 
@@ -292,7 +357,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t, lang }) => {
       {!showPricing && (
         <footer className="px-10 text-center opacity-30 pb-6 shrink-0">
             <p className="text-[7px] font-black font-mono text-slate-500 uppercase tracking-[0.4em]">
-                GENESIS_CORE // BUSINESS_READY_v3.7
+                {t.auth_ui.footer_tagline}
             </p>
         </footer>
       )}
