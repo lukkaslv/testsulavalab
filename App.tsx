@@ -168,7 +168,7 @@ const App: React.FC = () => {
         }
         return result.validity === 'INVALID' 
             ? <InvalidResultsView t={t} onReset={() => handleReset(true)} patternFlags={result.patternFlags} /> 
-            : <ResultsView lang={lang} t={t} result={result} isGlitchMode={!!isGlitchMode} onContinue={handleContinue} onShare={handleShare} onBack={() => setViewAndPersist('dashboard')} onNewCycle={() => handleReset(false)} isPro={isPro} />;
+            : <ResultsView t={t} result={result} isGlitchMode={!!isGlitchMode} onContinue={handleContinue} onShare={handleShare} onBack={() => setViewAndPersist('dashboard')} onNewCycle={() => handleReset(false)} isPro={isPro} />;
       case 'admin': return <AdminPanel t={t} onExit={() => setViewAndPersist('dashboard')} history={history} onUnlockAll={engineInstance.forceCompleteAll} glitchEnabled={forceGlitch} onToggleGlitch={() => setForceGlitch(!forceGlitch)} onSetView={setViewAndPersist} />;
       case 'compatibility': return <CompatibilityView lang={lang} t={t} onBack={() => setViewAndPersist('dashboard')} />;
       case 'guide': return <GuideView t={t} onBack={() => setViewAndPersist('dashboard')} />;

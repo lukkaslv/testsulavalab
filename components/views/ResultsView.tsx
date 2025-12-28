@@ -11,7 +11,6 @@ import { SynthesisService } from '../../services/synthesisService';
 import { ClinicalSynthesisView } from './ClinicalSynthesisView';
 
 interface ResultsViewProps {
-  lang: 'ru' | 'ka';
   t: Translations;
   result: AnalysisResult;
   isGlitchMode: boolean;
@@ -184,7 +183,7 @@ const ConflictBlock: React.FC<{ conflictKey: string, t: Translations }> = ({ con
 };
 
 export const ResultsView = memo<ResultsViewProps>(({ 
-  lang, t, result, isGlitchMode, onShare, onBack, onNewCycle, isPro
+  t, result, isGlitchMode, onShare, onBack, onNewCycle, isPro
 }) => {
   const { history, scanHistory } = useAppContext();
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
