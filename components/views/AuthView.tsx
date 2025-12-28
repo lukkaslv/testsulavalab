@@ -5,6 +5,7 @@ import { PlatformBridge } from '../../utils/helpers';
 import { SecurityCore } from '../../utils/crypto';
 import { STORAGE_KEYS, StorageService } from '../../services/storageService';
 import { RemoteAccess } from '../../services/remoteAccess';
+import { PRICING_CONFIG, SUBSCRIPTION_LIMITS } from '../../constants';
 import { Logo } from '../Logo';
 
 interface AuthViewProps {
@@ -14,12 +15,32 @@ interface AuthViewProps {
   onLangChange: (lang: 'ru' | 'ka') => void;
 }
 
+const LegalModal = ({ t, type, onClose }: { t: Translations, type: 'tos' | 'privacy', onClose: () => void }) => (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 animate-in backdrop-blur-xl bg-slate-900/60">
+        <div className="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl space-y-6 border border-slate-100 max-h-[80vh] overflow-y-auto">
+            <h2 className="text-lg font-black uppercase text-slate-900 tracking-tight">
+                {type === 'tos' ? t.legal.tos_title : t.legal.privacy_title}
+            </h2>
+            <div className="text-[11px] text-slate-600 leading-relaxed font-medium space-y-4">
+                {type === 'tos' ? t.legal.tos_body : t.legal.privacy_body}
+            </div>
+            <button onClick={onClose} className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest mt-4">
+                {t.legal.close_btn}
+            </button>
+        </div>
+    </div>
+);
+
 export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t, lang }) => {
   const [showPricing, setShowPricing] = useState(false);
   const [showAdminInput, setShowAdminInput] = useState(false);
+  const [legalType, setLegalType] = useState<'tos' | 'privacy' | null>(null);
   const [adminPwd, setAdminPwd] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
+
+  const currency = PRICING_CONFIG.CURRENCY[lang];
+  const plansData = PRICING_CONFIG.PLANS;
 
   const handleClientEntry = () => {
     PlatformBridge.haptic.notification('success');
@@ -88,6 +109,8 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t, lang }) => {
   return (
     <div className="relative flex flex-col items-center animate-in h-full select-none max-w-sm mx-auto bg-white overflow-hidden">
       
+      {legalType && <LegalModal t={t} type={legalType} onClose={() => setLegalType(null)} />}
+
       {showAdminInput && (
         <div className="absolute inset-0 z-[100] bg-white/98 flex flex-col items-center justify-center p-6 animate-in backdrop-blur-3xl">
            <div className="text-center mb-8 space-y-4">
@@ -96,7 +119,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t, lang }) => {
               </div>
               <h3 className="text-slate-900 font-black text-lg uppercase tracking-widest">{t.ui.auth_title}</h3>
               <p className="text-[8px] text-slate-400 font-bold uppercase tracking-widest px-8 text-center leading-relaxed">
-                Доступ ограничен для владельцев профессиональных лицензий
+                {lang === 'ru' ? 'Доступ только для владельцев профессиональных лицензий' : 'წვდომა მხოლოდ პროფესიული ლიცენზიის მფლობელებისთვის'}
               </p>
            </div>
            
@@ -131,58 +154,62 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t, lang }) => {
         </div>
       )}
 
-      {/* COMPACT MAIN VIEW */}
       {!showPricing ? (
-        <div className="flex flex-col items-center h-full w-full pt-10 pb-8 px-6 space-y-8 overflow-y-auto no-scrollbar">
+        <div className="flex flex-col items-center h-full w-full pt-8 pb-8 px-6 space-y-6 overflow-y-auto no-scrollbar">
             <div 
                 onDoubleClick={() => setShowAdminInput(true)}
-                className="w-24 h-24 flex items-center justify-center shrink-0 active:scale-90 transition-transform cursor-pointer"
+                className="w-20 h-20 flex items-center justify-center shrink-0 active:scale-90 transition-transform cursor-pointer"
             >
                 <Logo size="lg" />
             </div>
 
-            <div className="text-center space-y-2 relative z-10 shrink-0">
-                <h2 className="text-4xl font-black text-slate-900 uppercase tracking-tighter italic leading-none">
+            <div className="text-center space-y-1 relative z-10 shrink-0">
+                <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter italic leading-none">
                     GENESIS<span className="text-indigo-600">OS</span>
                 </h2>
-                <p className="text-[9px] text-slate-400 font-black uppercase tracking-[0.4em] pt-1">
+                <p className="text-[8px] text-indigo-500 font-black uppercase tracking-[0.4em] pt-1">
                     {t.subtitle.split('//')[0]}
                 </p>
             </div>
 
-            <div className="w-full space-y-6 flex-1 flex flex-col justify-center max-w-[280px]">
-                <button 
-                    onClick={handleClientEntry} 
-                    className="w-full py-6 bg-slate-900 text-white rounded-2xl font-black uppercase text-[11px] tracking-[0.4em] shadow-2xl hover:bg-slate-800 active:scale-[0.98] transition-all relative overflow-hidden group"
-                >
-                    <span className="relative z-10">{t.onboarding.protocol_btn}</span>
-                </button>
-                
-                <div className="flex flex-col items-center gap-3">
-                    <div className="flex items-center gap-2">
-                        <span className="w-1 h-1 rounded-full bg-emerald-500"></span>
-                        <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">
-                            {lang === 'ru' ? 'ВХОД ДЛЯ КЛИЕНТОВ' : 'შესვლა კლიენტებისთვის'}
-                        </span>
-                        <span className="w-1 h-1 rounded-full bg-emerald-500"></span>
-                    </div>
+            <div className="w-full space-y-3 flex-1 flex flex-col justify-center max-w-[300px]">
+                <div className="bg-slate-50 p-6 rounded-[2.5rem] border border-slate-100 space-y-4">
+                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block text-center">Для клиентов</span>
+                    <button 
+                        onClick={handleClientEntry} 
+                        className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-[0.3em] shadow-xl shadow-indigo-100 active:scale-[0.98] transition-all"
+                    >
+                        {t.onboarding.protocol_btn}
+                    </button>
+                    <p className="text-[9px] text-slate-400 font-medium text-center leading-tight italic px-2">
+                        {lang === 'ru' ? 'Получите Blueprint личности и подготовьтесь к сессии' : 'მიიღეთ პიროვნების Blueprint და მოემზადეთ სესიისთვის'}
+                    </p>
+                </div>
+
+                <div className="pt-2">
+                    <button 
+                        onClick={() => setShowAdminInput(true)}
+                        className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-[9px] tracking-widest shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-3"
+                    >
+                        <span>🛡️</span> {t.ui.enter_code_btn}
+                    </button>
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 w-full pt-6 border-t border-slate-100 shrink-0">
-                <button onClick={() => setShowPricing(true)} className="flex flex-col items-center gap-1.5 group transition-all">
-                    <span className="text-xl group-hover:scale-110 transition-transform">💎</span>
-                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{t.onboarding.pricing_btn}</span>
+            <div className="grid grid-cols-1 gap-3 w-full pt-4 border-t border-slate-100 shrink-0">
+                <button onClick={() => setShowPricing(true)} className="bg-indigo-50 p-4 rounded-2xl flex items-center justify-center gap-3 group transition-all border border-indigo-100">
+                    <span className="text-xl">💎</span>
+                    <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest">{t.onboarding.pricing_btn}</span>
                 </button>
-                <button onClick={() => setShowAdminInput(true)} className="flex flex-col items-center gap-1.5 group opacity-40 hover:opacity-100 transition-opacity">
-                    <span className="text-xl group-hover:scale-110 transition-transform">🔑</span>
-                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{t.ui.enter_code_btn}</span>
-                </button>
+            </div>
+
+            <div className="flex gap-4 opacity-40 pt-2 shrink-0">
+                <button onClick={() => setLegalType('tos')} className="text-[7px] font-black uppercase tracking-widest text-slate-500 hover:text-indigo-600 underline">Terms</button>
+                <button onClick={() => setLegalType('privacy')} className="text-[7px] font-black uppercase tracking-widest text-slate-500 hover:text-indigo-600 underline">Privacy</button>
             </div>
         </div>
       ) : (
         <div className="w-full h-full flex flex-col bg-slate-50 animate-in overflow-hidden">
-            {/* STICKY PRICING HEADER */}
             <header className="bg-white px-6 pt-8 pb-4 border-b border-slate-200 shrink-0 relative z-20">
                 <div className="flex justify-between items-center mb-2">
                     <h3 className="text-lg font-black uppercase text-slate-900 tracking-tight leading-none">{t.onboarding.promo_title}</h3>
@@ -191,76 +218,69 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t, lang }) => {
                 <p className="text-[9px] text-indigo-600 font-bold uppercase tracking-widest">{t.onboarding.promo_desc}</p>
             </header>
 
-            {/* SCROLLABLE CARDS */}
-            <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6 no-scrollbar">
+            <div className="flex-1 overflow-y-auto px-6 py-8 space-y-8 no-scrollbar">
                 
-                {/* VALUE PROPOSITION BLOCK */}
-                <div className="bg-white border border-indigo-100 p-4 rounded-3xl shadow-sm space-y-3">
-                    <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50 pb-2">Почему это нужно вашей практике?</h4>
-                    <div className="grid grid-cols-1 gap-2.5">
-                        {[
-                            { icon: '⏱️', text: t.onboarding.promo_value_1 },
-                            { icon: '👁️', text: t.onboarding.promo_value_2 },
-                            { icon: '🤝', text: t.onboarding.promo_value_3 }
-                        ].map((v, i) => (
-                            <div key={i} className="flex items-center gap-3">
-                                <span className="text-lg">{v.icon}</span>
-                                <p className="text-[10px] font-bold text-slate-700 leading-tight">{v.text}</p>
-                            </div>
-                        ))}
+                {/* PRO PLAN CARD ($80) */}
+                <div className="w-full p-8 rounded-[2.5rem] border-4 border-indigo-100 bg-white text-slate-900 shadow-2xl relative overflow-hidden flex flex-col gap-6">
+                    <div className="absolute top-0 right-0 bg-indigo-600 text-white text-[8px] font-black px-4 py-1.5 uppercase tracking-widest rounded-bl-2xl">
+                        {t.onboarding.recommended_tag}
                     </div>
-                </div>
-
-                <div className="space-y-4">
-                    {[
-                        { id: 'SOLO', name: t.onboarding.solo_plan, price: t.onboarding.price_solo, features: t.onboarding.features_solo.split(';'), icon: '🌱' },
-                        { id: 'CLINICAL', name: t.onboarding.clinical_plan, price: t.onboarding.price_clinical, highlight: true, features: t.onboarding.features_clinical.split(';'), icon: '💎' },
-                        { id: 'LAB', name: t.onboarding.lab_plan, price: t.onboarding.price_lab, features: t.onboarding.features_lab.split(';'), icon: '🔬' }
-                    ].map(plan => (
-                        <div 
-                            key={plan.id} 
-                            className={`w-full p-5 rounded-[1.5rem] border-2 transition-all relative overflow-hidden flex flex-col gap-4 ${plan.highlight ? 'bg-indigo-600 border-indigo-700 text-white shadow-xl' : 'bg-white border-slate-200 text-slate-900'}`}
-                        >
-                            {plan.highlight && (
-                                <div className="absolute top-0 right-0 bg-emerald-400 text-slate-900 text-[6px] font-black px-2 py-1 uppercase tracking-widest rounded-bl-lg">
-                                    {t.onboarding.recommended_tag}
-                                </div>
-                            )}
-                            
-                            <div className="flex justify-between items-start">
-                                <div className="space-y-0.5">
-                                    <span className={`text-[9px] font-black uppercase tracking-widest block ${plan.highlight ? 'text-indigo-200' : 'text-slate-400'}`}>{plan.name}</span>
-                                    <div className="flex items-baseline gap-1">
-                                        <span className="text-2xl font-black">{plan.price}</span>
-                                        <span className={`text-[8px] font-bold ${plan.highlight ? 'text-indigo-300' : 'text-slate-400'}`}>{t.onboarding.price_per_month}</span>
-                                    </div>
-                                </div>
-                                <span className="text-2xl opacity-80">{plan.icon}</span>
-                            </div>
-
-                            <ul className="space-y-1.5">
-                                {plan.features.map((feat, i) => (
-                                    <li key={i} className="flex items-start gap-2.5">
-                                        <span className={`w-3.5 h-3.5 mt-0.5 rounded-full flex items-center justify-center text-[7px] shrink-0 ${plan.highlight ? 'bg-indigo-400 text-white' : 'bg-slate-100 text-slate-400'}`}>✓</span>
-                                        <span className={`text-[10px] font-bold leading-tight ${plan.highlight ? 'text-white' : 'text-slate-600'}`}>{feat}</span>
-                                    </li>
-                                ))}
-                            </ul>
-
-                            <button 
-                                onClick={() => PlatformBridge.openLink("https://t.me/thndrrr")}
-                                className={`w-full py-3.5 rounded-xl font-black uppercase text-[9px] tracking-widest transition-all active:scale-95 ${plan.highlight ? 'bg-white text-indigo-600' : 'bg-slate-900 text-white'}`}
-                            >
-                                {t.onboarding.buy_btn}
-                            </button>
+                    
+                    <div className="space-y-1">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-indigo-500">Genesis Professional</span>
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-5xl font-black text-slate-900">{plansData.PRO[lang]}{currency}</span>
+                            <span className="text-[10px] font-bold text-slate-400">{t.onboarding.price_per_month}</span>
                         </div>
-                    ))}
+                    </div>
+
+                    <ul className="space-y-3">
+                        {t.onboarding.features_clinical.split(';').map((feat, i) => (
+                            <li key={i} className="flex items-start gap-3">
+                                <span className="w-5 h-5 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center text-[10px] shrink-0 font-bold">✓</span>
+                                <span className="text-xs font-bold text-slate-700 leading-snug">{feat}</span>
+                            </li>
+                        ))}
+                    </ul>
+
+                    <button 
+                        onClick={() => PlatformBridge.openLink("https://t.me/thndrrr")}
+                        className="w-full py-5 bg-indigo-600 text-white rounded-[1.5rem] font-black uppercase text-xs tracking-widest shadow-xl shadow-indigo-100 active:scale-95 transition-all"
+                    >
+                        {lang === 'ru' ? 'Активировать Доступ' : 'წვდომის გააქტიურება'}
+                    </button>
                 </div>
-                
+
+                {/* FREE TRIAL CARD */}
+                <div className="w-full p-6 rounded-[2rem] border border-slate-200 bg-slate-50 text-slate-600 flex flex-col gap-4">
+                    <div className="flex justify-between items-center">
+                        <span className="text-[9px] font-black uppercase tracking-widest">Free Trial</span>
+                        <span className="text-[11px] font-black">0{currency}</span>
+                    </div>
+                    <p className="text-[10px] font-medium leading-relaxed italic opacity-80">
+                        {lang === 'ru' ? 'Попробуйте систему на себе бесплатно.' : 'სცადეთ სისტემა თქვენს თავზე უფასოდ.'}
+                    </p>
+                    <button 
+                        onClick={handleClientEntry}
+                        className="w-full py-3 bg-white border border-slate-300 rounded-xl font-black uppercase text-[9px] tracking-widest text-slate-500 active:scale-95 transition-all"
+                    >
+                        {lang === 'ru' ? 'Начать бесплатно' : 'უფასოდ დაწყება'}
+                    </button>
+                </div>
+
+                <div className="bg-indigo-900 p-8 rounded-[2.5rem] text-white space-y-3 relative overflow-hidden shadow-2xl">
+                    <div className="absolute top-0 right-0 p-4 opacity-10 text-6xl italic font-black">?</div>
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-indigo-300">Что входит в Pro?</h4>
+                    <p className="text-xs leading-relaxed font-bold italic opacity-90">
+                        {lang === 'ru' 
+                          ? "Полный Clinical Terminal для анализа клиентов, автоматические гипотезы и неограниченный доступ к методологии."
+                          : "სრული Clinical Terminal კლიენტების ანალიზისთვის, ავტომატური ჰიპოთეზები და მეთოდოლოგიაზე შეუზღუდავი წვდომა."}
+                    </p>
+                </div>
+
                 <div className="h-10 shrink-0"></div>
             </div>
             
-            {/* FIXED BACK BUTTON FOOTER */}
             <footer className="bg-white p-4 border-t border-slate-200 shrink-0">
                 <button onClick={() => setShowPricing(false)} className="w-full py-2 text-[9px] font-black text-slate-400 uppercase tracking-[0.4em] hover:text-slate-600 transition-colors">
                     ← {t.global.back}
@@ -272,7 +292,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t, lang }) => {
       {!showPricing && (
         <footer className="px-10 text-center opacity-30 pb-6 shrink-0">
             <p className="text-[7px] font-black font-mono text-slate-500 uppercase tracking-[0.4em]">
-                GENESIS_CORE // PRO_VERSION
+                GENESIS_CORE // BUSINESS_READY_v3.7
             </p>
         </footer>
       )}

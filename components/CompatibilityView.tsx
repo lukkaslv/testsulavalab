@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { AnalysisResult, Translations, SessionStep } from '../types';
 import { CompatibilityEngine } from '../services/compatibilityEngine';
@@ -145,9 +146,11 @@ export const CompatibilityView: React.FC<CompatibilityViewProps> = ({ t, onBack 
     const decodedClient = CompatibilityEngine.decodeSmartCode(partnerCode);
     if (decodedClient) {
         setClientResult(decodedClient);
-        window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred?.('success');
+        // FIX: Cast window to any for Telegram access
+        (window as any).Telegram?.WebApp?.HapticFeedback?.notificationOccurred?.('success');
     } else {
-        window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred?.('error');
+        // FIX: Cast window to any for Telegram access
+        (window as any).Telegram?.WebApp?.HapticFeedback?.notificationOccurred?.('error');
     }
   };
 

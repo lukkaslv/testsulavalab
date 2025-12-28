@@ -1,18 +1,23 @@
+
 import React from 'react';
 import { Contradiction } from '../types';
+import { useAppContext } from '../hooks/useAppContext';
 
 interface ContradictionInsightsProps {
   contradictions: Contradiction[];
 }
 
 export const ContradictionInsights: React.FC<ContradictionInsightsProps> = ({ contradictions }) => {
+  const { t } = useAppContext();
+  const tm = t.test_metrics;
+
   if (contradictions.length === 0) return null;
 
   return (
     <section className="space-y-4 animate-in">
         <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-amber-600 px-2 flex items-center gap-2">
             <span className="w-2 h-2 bg-amber-500 rounded-full animate-ping"></span>
-            Structural Contradictions
+            {tm.structural_contradictions}
         </h3>
         <div className="space-y-3">
             {contradictions.slice(0, 5).map((c, i) => (
@@ -22,7 +27,7 @@ export const ContradictionInsights: React.FC<ContradictionInsightsProps> = ({ co
                         <span className="text-[7px] bg-amber-500 text-white px-1.5 py-0.5 rounded uppercase font-bold">{c.type.replace('_', ' ')}</span>
                     </div>
                     <p className="text-[11px] font-bold text-amber-900 italic leading-tight">
-                        {c.description}. Your social persona is conflicting with your internal system signals here.
+                        {c.description}. {tm.persona_conflict_hint}
                     </p>
                 </div>
             ))}

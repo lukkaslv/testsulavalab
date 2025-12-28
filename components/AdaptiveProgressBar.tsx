@@ -1,5 +1,6 @@
 
 import React, { memo } from 'react';
+import { useAppContext } from '../hooks/useAppContext';
 
 interface AdaptiveProgressBarProps {
   clarity: number;
@@ -9,15 +10,18 @@ interface AdaptiveProgressBarProps {
 }
 
 export const AdaptiveProgressBar: React.FC<AdaptiveProgressBarProps> = memo(({ clarity, isAdaptive, contradictionsCount, confidenceScore }) => {
+  const { t } = useAppContext();
+  const tm = t.test_metrics;
+
   return (
     <div className="space-y-2 shrink-0 animate-in">
       <div className="flex justify-between items-end">
          <div className="flex flex-col">
-            <span className="text-[8px] font-mono font-black text-slate-500 uppercase tracking-widest">Insight Resolution</span>
+            <span className="text-[8px] font-mono font-black text-slate-500 uppercase tracking-widest">{tm.insight_resolution}</span>
             <span className={`text-[12px] font-black italic ${clarity > 80 ? 'text-emerald-600' : 'text-indigo-600'}`}>{Math.round(clarity)}%</span>
          </div>
          <div className="flex flex-col items-end">
-            <span className="text-[8px] font-mono font-black text-slate-500 uppercase tracking-widest">Confidence</span>
+            <span className="text-[8px] font-mono font-black text-slate-500 uppercase tracking-widest">{tm.confidence}</span>
             <span className="text-[10px] font-black text-slate-700">{confidenceScore ?? 100}%</span>
          </div>
       </div>
@@ -30,10 +34,11 @@ export const AdaptiveProgressBar: React.FC<AdaptiveProgressBarProps> = memo(({ c
       {isAdaptive && (
         <div className="flex justify-between">
            <span className="text-[7px] font-black text-amber-600 uppercase tracking-widest animate-pulse flex items-center gap-1">
-                Adaptive Scanning Active
+                {tm.adaptive_active}
            </span>
            <span className="text-[7px] font-black text-slate-500 uppercase">
-             {contradictionsCount > 0 ? `${contradictionsCount} Cognitive Dissonance Points` : 'Signal Clean'}
+             // FIXED: Changed tm.signal_quality_clean to tm.signal_clean
+             {contradictionsCount > 0 ? `${contradictionsCount} ${tm.dissonance_points}` : tm.signal_clean}
            </span>
         </div>
       )}

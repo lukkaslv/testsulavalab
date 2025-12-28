@@ -5,6 +5,8 @@ import { PlatformBridge } from '../../utils/helpers';
 import { SessionPrepService } from '../../services/SessionPrepService';
 import { RadarChart } from '../RadarChart';
 import { BioSignature } from '../BioSignature';
+import { SignalDecoder } from '../SignalDecoder';
+import { useAppContext } from '../../hooks/useAppContext';
 
 interface ResultsViewProps {
   lang: 'ru' | 'ka';
@@ -17,6 +19,17 @@ interface ResultsViewProps {
   onNewCycle?: () => void; 
   isPro?: boolean; 
 }
+
+const DeltaMarker = ({ current, previous, t }: { current: number, previous?: number, t: Translations }) => {
+    if (previous === undefined) return null;
+    const diff = current - previous;
+    if (Math.abs(diff) < 2) return <span className="text-[7px] text-slate-400 opacity-50 ml-1 font-mono">≈</span>;
+    return (
+        <span className={`text-[7px] ml-1 font-black ${diff > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+            {diff > 0 ? '↑' : '↓'}{Math.abs(Math.round(diff))}%
+        </span>
+    );
+};
 
 const SessionPulseGraph: React.FC<{ pulse: SessionPulseNode[], t: Translations, locked?: boolean }> = memo(({ pulse, t, locked }) => {
     if (!pulse || pulse.length < 5) return null;
@@ -105,8 +118,21 @@ const PatternCard: React.FC<{ beliefKey: BeliefKey, t: Translations }> = ({ beli
 export const ResultsView = memo<ResultsViewProps>(({ 
   lang, t, result, isGlitchMode, onShare, onBack, onNewCycle, isPro
 }) => {
+  const { history, scanHistory } = useAppContext();
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
+  const [showMethodology, setShowMethodology] = useState(false);
+
+  const prevScan = useMemo(() => {
+      if (!scanHistory || scanHistory.scans.length < 2) return undefined;
+      return scanHistory.scans[scanHistory.scans.length - 2];
+  }, [scanHistory]);
+
+  const baseline = useMemo(() => {
+    if (history.length === 0) return 2000;
+    const samples = history.slice(0, 5);
+    return samples.reduce((acc, h) => acc + h.latency, 0) / samples.length;
+  }, [history]);
 
   const sessionPrepQuestions = useMemo(() => SessionPrepService.generate(result, t), [result, t]);
 
@@ -116,6 +142,25 @@ export const ResultsView = memo<ResultsViewProps>(({
       PlatformBridge.haptic.notification('success');
       setTimeout(() => setCopySuccess(false), 2000);
   };
+
+  const isCriticalDeficit = result.state.foundation < 25;
+  const isFragile = result.state.foundation < 40 || result.entropyScore > 55;
+
+  const displayArchetype = useMemo(() => {
+    const arch = t.archetypes[result.archetypeKey] || t.archetypes.THE_ARCHITECT;
+    if (isFragile && t.soft_mode) {
+      return { ...arch, title: `${t.soft_mode.archetype_prefix}${arch.title}` };
+    }
+    return arch;
+  }, [result.archetypeKey, t, isFragile]);
+
+  const displayVerdict = useMemo(() => {
+    const v = t.verdicts[result.verdictKey] || t.verdicts.HEALTHY_SCALE;
+    if (isFragile && t.soft_mode?.verdict_softened[result.verdictKey]) {
+      return { ...v, label: t.soft_mode.verdict_softened[result.verdictKey] };
+    }
+    return v;
+  }, [result.verdictKey, t, isFragile]);
 
   if (!disclaimerAccepted) {
     return (
@@ -135,6 +180,20 @@ export const ResultsView = memo<ResultsViewProps>(({
   return (
     <div className={`space-y-10 pb-32 animate-in px-1 pt-2 font-sans ${isGlitchMode ? 'glitch' : ''}`}>
       
+      {isCriticalDeficit && (
+          <div className="bg-red-600 text-white p-6 rounded-[2.5rem] shadow-xl border-4 border-red-500/20 space-y-2 animate-pulse">
+              <div className="flex items-center gap-3">
+                  <span className="text-2xl">🛑</span>
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.3em]">{t.safety.alert}</h3>
+              </div>
+              <p className="text-[11px] font-bold leading-tight italic">
+                  {lang === 'ru' 
+                    ? "Ваши показатели устойчивости требуют внимания специалиста. Рекомендуется обсудить эти результаты с вашим психологом в приоритетном порядке. Не принимайте важных решений самостоятельно." 
+                    : "თქვენი მდგრადობის მაჩვენებლები მოითხოვს სპეციალისტის ყურადღებას. რეკომენდებულია ამ შედეგების განხილვა ფსიქოლოგთან."}
+              </p>
+          </div>
+      )}
+
       <header className="dark-glass-card p-8 rounded-[2.5rem] shadow-2xl space-y-6 relative overflow-hidden border-b-4 border-indigo-500/30">
         <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
         <div className="relative z-10 space-y-4">
@@ -143,23 +202,32 @@ export const ResultsView = memo<ResultsViewProps>(({
               <span className={`text-[10px] font-mono font-bold ${result.confidenceScore > 80 ? 'text-emerald-400' : 'text-amber-400'}`}>{result.confidenceScore}% {t.results.confidence}</span>
             </div>
             <div className="space-y-1">
-              <h1 className="text-4xl font-black italic uppercase text-white leading-none tracking-tighter">{t.archetypes[result.archetypeKey]?.title}</h1>
-              <p className="text-sm text-slate-400 font-medium leading-relaxed opacity-85 pt-2 border-l-2 border-indigo-500/50 pl-4">{t.archetypes[result.archetypeKey]?.desc}</p>
+              <h1 className="text-4xl font-black italic uppercase text-white leading-none tracking-tighter">{displayArchetype.title}</h1>
+              <p className="text-sm text-slate-400 font-medium leading-relaxed opacity-85 pt-2 border-l-2 border-indigo-500/50 pl-4">{displayArchetype.desc}</p>
             </div>
+
+            {/* QUICK STATS WITH DELTA */}
+            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/5">
+                {[
+                    { key: 'integrity', label: t.results.integrity, val: result.integrity, prev: prevScan?.integrity },
+                    { key: 'neuro_sync', label: t.results.neuro_sync, val: result.neuroSync, prev: prevScan?.neuroSync }
+                ].map(stat => (
+                    <div key={stat.key} className="space-y-0.5">
+                        <span className="text-[8px] font-black uppercase text-slate-500 tracking-widest">{stat.label}</span>
+                        <div className="flex items-baseline gap-1">
+                            <span className="text-lg font-black text-white">{stat.val}%</span>
+                            <DeltaMarker current={stat.val} previous={stat.prev} t={t} />
+                        </div>
+                    </div>
+                ))}
+            </div>
+
             <div className="pt-4 flex flex-col items-center">
                 <RadarChart points={result.graphPoints} onLabelClick={() => {}} lang={lang} />
                 <BioSignature f={result.state.foundation} a={result.state.agency} r={result.state.resource} e={result.state.entropy} className="mt-4 opacity-50" />
             </div>
         </div>
       </header>
-
-      {/* METHODOLOGY BLOCK (Pro-transparency) */}
-      <section className="bg-slate-50 border border-slate-200 p-6 rounded-[2rem] space-y-3">
-          <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t.results.methodology_title}</h4>
-          <p className="text-xs text-slate-600 leading-relaxed font-medium italic opacity-80">
-              {t.results.methodology_desc}
-          </p>
-      </section>
 
       {/* SESSION PREP BLOCK */}
       <section className="bg-indigo-600 p-8 rounded-[2.5rem] shadow-xl space-y-6 relative overflow-hidden text-white">
@@ -188,6 +256,20 @@ export const ResultsView = memo<ResultsViewProps>(({
           )}
       </section>
 
+      {/* Signal Decoder: High-Transparency Evidence Block (AXIS 9.1 FEATURE LOCK) */}
+      {isPro ? (
+          <SignalDecoder history={history} t={t} baseline={baseline} lang={lang} />
+      ) : (
+          <div className="px-2">
+             <div className="bg-slate-50 border border-slate-100 p-6 rounded-[2rem] text-center space-y-2 border-dashed">
+                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Signal Decoder</span>
+                <p className="text-[10px] font-bold text-slate-500 italic">
+                    {lang === 'ru' ? 'Доступно в тарифе Clinical' : 'ხელმისაწვდომია Clinical ტარიფში'}
+                </p>
+             </div>
+          </div>
+      )}
+
       <SessionPulseGraph pulse={result.sessionPulse} t={t} locked={!isPro} />
 
       {/* PRO SHARE CARD */}
@@ -195,13 +277,20 @@ export const ResultsView = memo<ResultsViewProps>(({
           <div className="space-y-2">
               <h3 className="text-[10px] font-black uppercase tracking-widest text-indigo-400">{t.results.brief_instruction}</h3>
               <p className="text-xs text-slate-400 leading-relaxed font-medium">
-                  {lang === 'ru' ? 'Этот код содержит зашифрованный соматический профиль и динамику латентности для вашего психолога.' : 'ეს კოდი განკუთვნილია თქვენი ფსიქოლოგისთვის.'}
+                  {lang === 'ru' ? 'Этот код содержит ваш зашифрованный профиль для психолога.' : 'ეს კოდი შეიცავს თქვენს დაშიფრულ პროფილს ფსიქოლოგისთვის.'}
               </p>
           </div>
           <button onClick={handleCopyCode} className={`w-full p-5 rounded-2xl font-black uppercase text-xs tracking-widest flex items-center justify-between transition-all active:scale-95 ${copySuccess ? 'bg-emerald-600 text-white' : 'bg-white text-slate-900 shadow-xl'}`}>
               <span className="font-mono">{copySuccess ? 'SUCCESS' : result.shareCode.substring(0, 15) + '...'}</span>
               <span>{copySuccess ? '✓' : '📋'}</span>
           </button>
+      </div>
+
+      <div className="px-2">
+         <div className={`p-4 rounded-2xl border border-dashed text-center ${isFragile ? 'bg-indigo-50 border-indigo-200' : 'bg-slate-50 border-slate-200'}`}>
+            <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 block mb-1">VERDICT</span>
+            <p className={`text-xs font-black uppercase italic ${isFragile ? 'text-indigo-600' : 'text-slate-600'}`}>{displayVerdict.label}</p>
+         </div>
       </div>
 
       {(result.activePatterns && result.activePatterns.length > 0) && (
@@ -215,10 +304,49 @@ export const ResultsView = memo<ResultsViewProps>(({
           </section>
       )}
 
+      {/* Methodology Section */}
+      <section className="space-y-4">
+        <button 
+          onClick={() => setShowMethodology(!showMethodology)}
+          className="w-full bg-slate-50 border border-slate-200 p-6 rounded-[2rem] space-y-3 text-left group"
+        >
+            <div className="flex justify-between items-center">
+              <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t.results.methodology_title}</h4>
+              <span className="text-slate-300 group-hover:text-indigo-400 transition-colors">❯</span>
+            </div>
+            <p className="text-xs text-slate-600 leading-relaxed font-medium italic opacity-80">
+                {t.results.methodology_desc}
+            </p>
+        </button>
+        
+        {showMethodology && (
+          <div className="px-4 space-y-4 animate-in">
+             {t.methodology_faq?.map((item, i) => (
+               <div key={i} className="space-y-1">
+                 <h5 className="text-[10px] font-black text-indigo-600 uppercase tracking-tight">Q: {item.q}</h5>
+                 <p className="text-[11px] text-slate-500 leading-relaxed font-medium">{item.a}</p>
+               </div>
+             ))}
+          </div>
+        )}
+      </section>
+
       <div className="grid grid-cols-2 gap-3 pt-6">
           <button onClick={onShare} className="py-5 bg-indigo-600 text-white rounded-[2rem] font-black uppercase text-[10px] tracking-widest shadow-lg active:scale-95 transition-all">{t.results.share_button}</button>
           <button onClick={onBack} className="py-5 bg-white text-slate-900 border border-slate-200 rounded-[2rem] font-black uppercase text-[10px] tracking-widest active:scale-95 transition-all">{t.results.back}</button>
       </div>
+
+      <footer className="pt-10 pb-20 px-4 text-center space-y-3 opacity-60">
+          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed">
+              {lang === 'ru' 
+                ? "Genesis OS не является медицинским изделием и не заменяет консультацию специалиста. Интерпретацию результатов проводит ваш психолог."
+                : "Genesis OS არ წარმოადგენს სამედიცინო მოწყობილობას და არ ანაცვლებს სპეციალისტის კონსულტაციას."}
+          </p>
+          <div className="flex justify-center gap-4 opacity-50">
+               <span className="text-[8px] font-mono">NON_MEDICAL_V3</span>
+               <span className="text-[8px] font-mono">DETERMINISTIC_CORE</span>
+          </div>
+      </footer>
     </div>
   );
 });

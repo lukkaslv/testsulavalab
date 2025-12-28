@@ -1,5 +1,6 @@
-import React, { memo } from 'react';
-import { ScanHistory } from '../types';
+
+import React, { memo, useMemo } from 'react';
+import { ScanHistory, Translations } from '../types';
 import { translations } from '../translations';
 
 interface EvolutionDashboardProps {
@@ -43,8 +44,28 @@ const Sparkline = ({ data, color, height = 40 }: { data: number[], color: string
 
 export const EvolutionDashboard: React.FC<EvolutionDashboardProps> = memo(({ history, lang }) => {
   const t = translations[lang];
-  const hasHistory = history && history.scans.length > 0;
+  const hasHistory = history && history.scans.length > 1;
   const scansCount = history?.scans.length || 0;
+
+  const deltaInsight = useMemo(() => {
+      if (!history || history.scans.length < 2) return null;
+      const scans = history.scans;
+      const current = scans[scans.length - 1];
+      const previous = scans[scans.length - 2];
+      
+      const integrityDiff = current.integrity - previous.integrity;
+      const entropyDiff = current.entropyScore - previous.entropyScore;
+
+      let message = "";
+      if (integrityDiff > 5) {
+          message = lang === 'ru' ? `Рост целостности (+${integrityDiff}%). Укрепление внутренних опор.` : `целостности ზრდა (+${integrityDiff}%). შინაგანი საყრდენების გამაგრება.`;
+      } else if (entropyDiff < -5) {
+          message = lang === 'ru' ? `Снижение хаоса. Система стабилизируется.` : `ქაოსის შემცირება. სისტემა სტაბილურდება.`;
+      } else {
+          message = lang === 'ru' ? `Динамика стабильна. Продолжайте работу.` : `დინამიკა სტაბილურია. გააგრძელეთ მუშაობა.`;
+      }
+      return message;
+  }, [history, lang]);
 
   return (
     <section className="dark-glass-card p-6 rounded-[2.5rem] border border-white/10 space-y-6 shadow-2xl relative overflow-hidden">
@@ -80,9 +101,8 @@ export const EvolutionDashboard: React.FC<EvolutionDashboardProps> = memo(({ his
              </div>
 
              <div className="pt-2 border-t border-white/5">
-                <p className="text-[9px] text-slate-500 leading-relaxed italic">
-                    {(history.evolutionMetrics.integrityTrend[history.evolutionMetrics.integrityTrend.length-1] > 70) ? t.ui.evolution_insight_optimizing : t.ui.evolution_insight_stabilizing}. 
-                    {t.ui.evolution_insight_desc}
+                <p className="text-[10px] text-indigo-300 leading-relaxed italic font-bold">
+                    {deltaInsight || t.ui.evolution_insight_desc}
                 </p>
              </div>
         </div>

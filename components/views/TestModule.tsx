@@ -1,5 +1,5 @@
 
-import { memo, useState } from 'react';
+import { memo, useState, useEffect } from 'react';
 import { DomainType, Translations, Choice, Scene, AdaptiveState } from '../../types';
 import { AdaptiveProgressBar } from '../AdaptiveProgressBar';
 import { PlatformBridge } from '../../utils/helpers';
@@ -15,40 +15,99 @@ interface TestViewProps {
   adaptiveState: AdaptiveState;
 }
 
+const SomaticBreak = ({ t, onContinue }: { t: Translations, onContinue: () => void }) => (
+    <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center p-8 animate-in backdrop-blur-2xl bg-indigo-950/90 text-center">
+        <div className="w-24 h-24 bg-white/10 rounded-full flex items-center justify-center text-4xl mb-8 animate-pulse-slow">🧘</div>
+        <h2 className="text-2xl font-black uppercase text-white mb-4 italic tracking-tight">{t.sync.break_title}</h2>
+        <p className="text-sm text-indigo-200 mb-10 leading-relaxed font-medium">
+            {t.sync.break_desc}
+        </p>
+        <button 
+            onClick={onContinue} 
+            className="w-full max-w-xs py-5 bg-white text-indigo-950 rounded-[1.5rem] font-black uppercase text-xs tracking-widest shadow-2xl active:scale-95 transition-all"
+        >
+            {t.sync.break_btn}
+        </button>
+    </div>
+);
+
+const SoftTriggerWarning = ({ t }: { t: Translations }) => (
+    <div className="bg-amber-50 border border-amber-100 p-3 rounded-xl flex items-center gap-3 animate-in shadow-sm">
+        <span className="text-lg">⚠️</span>
+        <div className="flex-1">
+            <h4 className="text-[9px] font-black uppercase text-amber-900 tracking-widest">{t.safety.trigger_warning_title}</h4>
+            <p className="text-[8px] font-bold text-amber-700 leading-tight uppercase opacity-80">{t.safety.trigger_warning_desc}</p>
+        </div>
+    </div>
+);
+
+const EmergencyModal = ({ t, onReturn, onExit }: { t: Translations, onReturn: () => void, onExit: () => void }) => (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 animate-in backdrop-blur-xl bg-slate-900/80">
+        <div className="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl space-y-6 text-center border border-slate-100">
+            <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center text-3xl mx-auto shadow-inner">🆘</div>
+            <div className="space-y-2">
+                <h2 className="text-lg font-black uppercase text-slate-900 tracking-tight">{t.safety.emergency_contacts_title}</h2>
+                <p className="text-[11px] font-bold text-slate-500 leading-relaxed italic">{t.safety.emergency_contacts_desc}</p>
+            </div>
+            <div className="space-y-3">
+                <button onClick={onReturn} className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg active:scale-95 transition-all">
+                    {t.safety.return_btn}
+                </button>
+                <button onClick={onExit} className="w-full py-4 bg-slate-100 text-slate-500 rounded-2xl font-black uppercase text-[10px] tracking-widest active:scale-95 transition-all">
+                    {t.global.back}
+                </button>
+            </div>
+        </div>
+    </div>
+);
+
 export const TestView = memo<TestViewProps>(({ t, activeModule, currentId, scene, onChoice, onExit, getSceneText, adaptiveState }) => {
   const numericId = parseInt(currentId);
   const isCalibration = numericId < 3;
   const isAdaptive = adaptiveState.clarity > 20;
 
   const [selectedChoiceId, setSelectedChoiceId] = useState<string | null>(null);
+  const [showEmergency, setShowEmergency] = useState(false);
+  const [showBreak, setShowBreak] = useState(false);
+  const isIntense = scene.intensity >= 5;
+
+  // Fatigue Mitigation: Every 20 nodes, suggest a break
+  useEffect(() => {
+      if (numericId > 0 && numericId % 20 === 0) {
+          setShowBreak(true);
+      }
+      setSelectedChoiceId(null);
+  }, [currentId, numericId]);
 
   const handleChoiceClick = (c: Choice) => {
-    if (selectedChoiceId) return; // Prevent double clicks
+    if (selectedChoiceId) return; 
     
     setSelectedChoiceId(c.id);
     PlatformBridge.haptic.impact('medium');
     
-    // Give time for visual feedback before proceeding
     setTimeout(() => {
         onChoice(c);
-    }, 150);
+    }, 120);
   };
 
-  const showComment = numericId > 0 && (numericId % 7 === 0 || numericId % 11 === 0);
-  const commentIndex = (numericId * 3) % t.system_commentary.length;
-  const comment = t.system_commentary[commentIndex];
-
   return (
-    <div className="space-y-8 py-8 px-4 animate-in flex flex-col h-full">
+    <div className="space-y-6 py-6 px-4 animate-in flex flex-col h-full relative">
+      
+      {showEmergency && <EmergencyModal t={t} onReturn={() => setShowEmergency(false)} onExit={onExit} />}
+      {showBreak && <SomaticBreak t={t} onContinue={() => setShowBreak(false)} />}
+
       <div className="flex justify-between items-center shrink-0">
          <div className="flex items-center gap-3">
-             <button onClick={onExit} className="w-10 h-10 flex items-center justify-center bg-slate-100 rounded-full text-slate-500 font-black text-sm hover:bg-slate-200 transition-colors active:scale-90">✕</button>
+             <button onClick={onExit} aria-label={t.global.back} className="w-10 h-10 flex items-center justify-center bg-slate-100 rounded-full text-slate-500 font-black text-sm hover:bg-slate-200 transition-colors active:scale-90">✕</button>
              <div className="flex flex-col">
                 <span className="text-[9px] font-mono text-slate-400 font-bold uppercase tracking-widest leading-none">{t.ui.module_label}</span>
                 <span className="text-[11px] font-black text-indigo-600 uppercase tracking-widest leading-none mt-1">
                   {isCalibration ? t.global.calibrating : t.domains[activeModule]}
                 </span>
              </div>
+         </div>
+         <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
+             <span className="text-[8px] font-mono font-bold text-slate-400">NODE_{currentId.padStart(2, '0')}</span>
          </div>
       </div>
       
@@ -59,35 +118,9 @@ export const TestView = memo<TestViewProps>(({ t, activeModule, currentId, scene
         confidenceScore={adaptiveState.confidenceScore}
       />
 
-      {isCalibration && (
-        <div className="bg-slate-900 p-6 rounded-[2rem] border border-indigo-500/30 space-y-3 relative overflow-hidden group">
-            <div className="absolute inset-0 opacity-10 pointer-events-none overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-full animate-pulse flex items-center justify-center">
-                    <div className="w-[200%] h-[1px] bg-indigo-400 rotate-45 transform translate-y-[-50%] animate-spin-slow"></div>
-                </div>
-            </div>
-            <div className="flex items-center gap-3 relative z-10">
-                <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center animate-ping">
-                    <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
-                </div>
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-indigo-400">{t.global.calibrating}</h4>
-            </div>
-            <div className="text-[10px] text-slate-400 font-medium leading-relaxed relative z-10">
-                {t.global.calib_desc}
-            </div>
-        </div>
-      )}
+      {isIntense && <SoftTriggerWarning t={t} />}
 
-      {showComment && !isCalibration && (
-        <div className="bg-indigo-50/50 p-4 rounded-2xl border border-indigo-100/50 animate-pulse flex items-center gap-3 shrink-0">
-            <span className="text-lg">📡</span>
-            <p className="text-[10px] font-mono font-black text-indigo-600 uppercase tracking-wider leading-tight">
-                {comment}
-            </p>
-        </div>
-      )}
-      
-      <div className="flex-1 flex flex-col justify-center space-y-6">
+      <div className="flex-1 flex flex-col justify-center space-y-6 transition-all">
         <h3 className="text-2xl font-black uppercase text-slate-900 leading-tight tracking-tight">
             {getSceneText(scene.titleKey)}
         </h3>
@@ -100,12 +133,19 @@ export const TestView = memo<TestViewProps>(({ t, activeModule, currentId, scene
         </div>
       </div>
 
-      <div className="space-y-3 shrink-0 pb-6">
+      <div 
+        className="space-y-3 shrink-0 transition-all"
+        role="radiogroup"
+        aria-label="Choices"
+      >
         {scene.choices.map((c, i) => {
           const isSelected = selectedChoiceId === c.id;
           return (
             <button 
                 key={c.id} 
+                role="radio"
+                aria-checked={isSelected}
+                disabled={!!selectedChoiceId}
                 onClick={() => handleChoiceClick(c)} 
                 className={`w-full p-6 text-left border rounded-[1.5rem] shadow-sm font-bold text-sm uppercase flex items-center gap-4 transition-all duration-150 active:scale-[0.97] group 
                 ${isSelected 
@@ -119,21 +159,15 @@ export const TestView = memo<TestViewProps>(({ t, activeModule, currentId, scene
                 <span className={`flex-1 leading-snug ${isSelected ? 'text-white' : 'text-slate-700'}`}>
                     {getSceneText(c.textKey)}
                 </span>
-                <span className={`transition-opacity ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                    {isSelected ? '✓' : '➜'}
-                </span>
             </button>
           );
         })}
-        
-        {!selectedChoiceId && (
-            <button 
-                onClick={() => handleChoiceClick({ id: `${currentId}_skip`, textKey: '', beliefKey: 'default', position: -1 })}
-                className="w-full p-4 text-center bg-slate-100 border border-slate-200 rounded-[1.5rem] shadow-sm font-black text-[10px] uppercase text-slate-500 active:scale-[0.98] transition-all hover:border-slate-300"
-            >
-                {t.ui.skip_button}
-            </button>
-        )}
+      </div>
+
+      <div className="pt-2 pb-6 flex justify-center">
+         <button onClick={() => setShowEmergency(true)} className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] px-4 py-2 rounded-full border border-slate-100 hover:bg-red-50 hover:text-red-400 hover:border-red-100 transition-all">
+            {t.safety.uncomfortable_btn}
+         </button>
       </div>
     </div>
   );

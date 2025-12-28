@@ -3,7 +3,7 @@ import React, { memo } from 'react';
 import { translations } from '../translations';
 
 interface RadarChartProps {
-  points: { x: number; y: number }[];
+  points: { x: number; y: number; label?: string }[];
   onLabelClick: (metric: string) => void;
   className?: string;
   lang: 'ru' | 'ka';
@@ -13,55 +13,101 @@ export const RadarChart: React.FC<RadarChartProps> = memo(({ points, onLabelClic
   const t = translations[lang];
   
   const handleInteraction = (metric: string) => {
-    window.Telegram?.WebApp?.HapticFeedback?.impactOccurred?.('light');
+    // FIX: Cast window to any to access Telegram property
+    (window as any).Telegram?.WebApp?.HapticFeedback?.impactOccurred?.('light');
     onLabelClick(metric);
   };
 
+  const polyPoints = points.map(p => `${p.x},${p.y}`).join(' ');
+
+  // Pentagon Grid Generation
+  const center = 50;
+  const levels = [20, 30, 45]; // radius levels
+  const pentagonGrid = levels.map((r, idx) => {
+      const pts = points.map((_, i) => {
+          const angle = (Math.PI * 2 * i) / points.length - Math.PI / 2;
+          const x = center + Math.cos(angle) * r;
+          const y = center + Math.sin(angle) * r;
+          return `${x},${y}`;
+      }).join(' ');
+      return (
+          <polygon 
+            key={idx} 
+            points={pts} 
+            fill="none" 
+            stroke="#94a3b8" 
+            strokeWidth="0.5" 
+            strokeDasharray={idx === 1 ? "2 2" : "none"} 
+            opacity={0.3 + (idx * 0.1)}
+          />
+      );
+  });
+
+  const axisLines = points.map((_, i) => {
+      const angle = (Math.PI * 2 * i) / points.length - Math.PI / 2;
+      const x2 = center + Math.cos(angle) * 48;
+      const y2 = center + Math.sin(angle) * 48;
+      return <line key={i} x1={center} y1={center} x2={x2} y2={y2} stroke="#94a3b8" strokeWidth="0.5" opacity="0.3" />;
+  });
+
   return (
-    <div className={`relative w-64 h-64 mx-auto ${className}`}>
-      <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible opacity-30 select-none">
-        <circle cx="50" cy="50" r="45" fill="none" stroke="#94a3b8" strokeWidth="0.5" />
-        <circle cx="50" cy="50" r="30" fill="none" stroke="#94a3b8" strokeDasharray="2 2" strokeWidth="0.5" />
-        <circle cx="50" cy="50" r="15" fill="none" stroke="#94a3b8" strokeDasharray="1 3" strokeWidth="0.5" />
-        <line x1="50" y1="5" x2="50" y2="50" stroke="#94a3b8" strokeWidth="0.5" />
-        <line x1="50" y1="50" x2="90" y2="85" stroke="#94a3b8" strokeWidth="0.5" />
-        <line x1="50" y1="50" x2="10" y2="85" stroke="#94a3b8" strokeWidth="0.5" />
-      </svg>
-      
-      <svg viewBox="0 0 100 100" className="absolute top-0 left-0 w-full h-full overflow-visible drop-shadow-xl">
+    <div className={`relative w-72 h-72 mx-auto ${className}`}>
+      <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible select-none">
+        {/* Grid and Axes */}
+        {pentagonGrid}
+        {axisLines}
+        
+        {/* Data Shape */}
         <polygon 
-          points={`${points[0].x},${points[0].y} ${points[1].x},${points[1].y} ${points[2].x},${points[2].y}`}
+          points={polyPoints}
           fill="rgba(99, 102, 241, 0.2)"
           stroke="#6366f1"
           strokeWidth="2"
           strokeLinejoin="round"
-          className="animate-in"
+          className="animate-in drop-shadow-xl"
         />
         
-        <circle cx={points[0].x} cy={points[0].y} r="2" fill="#6366f1" className="animate-pulse" />
-        <circle cx={points[1].x} cy={points[1].y} r="2" fill="#6366f1" className="animate-pulse" style={{ animationDelay: "0.2s" }} />
-        <circle cx={points[2].x} cy={points[2].y} r="2" fill="#6366f1" className="animate-pulse" style={{ animationDelay: "0.4s" }} />
-
-        <g onClick={(e) => { e.stopPropagation(); handleInteraction('foundation'); }} className="cursor-pointer hover:opacity-70 transition-opacity">
-          <rect x="30" y="-15" width="40" height="20" fill="transparent" />
-          <text x="50" y="-5" textAnchor="middle" className="text-[9px] fill-slate-600 font-black uppercase tracking-widest">
-            {t.domains.foundation}
-          </text>
-        </g>
-
-        <g onClick={(e) => { e.stopPropagation(); handleInteraction('money'); }} className="cursor-pointer hover:opacity-70 transition-opacity">
-          <rect x="70" y="85" width="40" height="20" fill="transparent" />
-          <text x="98" y="98" textAnchor="middle" className="text-[9px] fill-slate-600 font-black uppercase tracking-widest">
-            {t.domains.money}
-          </text>
-        </g>
-
-        <g onClick={(e) => { e.stopPropagation(); handleInteraction('agency'); }} className="cursor-pointer hover:opacity-70 transition-opacity">
-          <rect x="-10" y="85" width="40" height="20" fill="transparent" />
-          <text x="2" y="98" textAnchor="middle" className="text-[9px] fill-slate-600 font-black uppercase tracking-widest">
-            {t.domains.agency}
-          </text>
-        </g>
+        {/* Points and Labels */}
+        {points.map((p, i) => {
+            // Label Positioning logic
+            const angle = (Math.PI * 2 * i) / points.length - Math.PI / 2;
+            const labelRadius = 58; 
+            const lx = center + Math.cos(angle) * labelRadius;
+            const ly = center + Math.sin(angle) * labelRadius;
+            
+            // Icon Mapping (Visual Sugar)
+            const icons: Record<string, string> = {
+                foundation: '⚓',
+                agency: '⚡',
+                social: '👥',
+                legacy: '🌳',
+                money: '💎'
+            };
+            
+            const key = p.label || 'unknown';
+            
+            return (
+                <g key={i} className="group cursor-pointer" onClick={(e) => { e.stopPropagation(); handleInteraction(key); }}>
+                    <circle 
+                        cx={p.x} cy={p.y} r="2" 
+                        fill="#6366f1" 
+                        className="animate-pulse" 
+                        style={{ animationDelay: `${i * 0.1}s` }} 
+                    />
+                    
+                    <g transform={`translate(${lx}, ${ly})`}>
+                        <text 
+                            textAnchor="middle" 
+                            dy="0.3em" 
+                            className="text-[5px] fill-slate-400 font-bold uppercase tracking-widest pointer-events-none"
+                            style={{ fontSize: '4px' }}
+                        >
+                            {icons[key]} {t.domains[key]?.substring(0, 3)}
+                        </text>
+                    </g>
+                </g>
+            );
+        })}
       </svg>
     </div>
   );
