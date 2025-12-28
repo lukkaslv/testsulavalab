@@ -1,5 +1,5 @@
 
-import { AnalysisResult, ArchetypeKey, VerdictKey, DomainType } from '../types';
+import { AnalysisResult, ArchetypeKey, VerdictKey } from '../types';
 import { SecurityCore } from '../utils/crypto';
 import { SYSTEM_METADATA } from '../constants';
 

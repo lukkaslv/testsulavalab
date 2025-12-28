@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { Layout } from './components/Layout';
 import { MODULE_REGISTRY, ONBOARDING_NODES_COUNT, TOTAL_NODES, DOMAIN_SETTINGS } from './constants';
@@ -175,7 +174,7 @@ const App: React.FC = () => {
       case 'reflection': return <ReflectionView t={t} sensation={history[history.length - 1]?.sensation} />;
       case 'results': if (!result) return <div/>; return result.validity === 'INVALID' ? <InvalidResultsView t={t} onReset={() => handleReset(true)} patternFlags={result.patternFlags} /> : <ResultsView lang={lang} t={t} result={result} isGlitchMode={!!isGlitchMode} onContinue={handleContinue} onShare={handleShare} onBack={() => setViewAndPersist('dashboard')} onNewCycle={() => handleReset(false)} isPro={isPro} />;
       case 'admin': return <AdminPanel t={t} onExit={() => setViewAndPersist('dashboard')} history={history} onUnlockAll={engineInstance.forceCompleteAll} glitchEnabled={forceGlitch} onToggleGlitch={() => setForceGlitch(!forceGlitch)} onSetView={setViewAndPersist} />;
-      case 'compatibility': return <CompatibilityView lang={lang} licenseTier={licenseTier} t={t} onBack={() => setViewAndPersist('dashboard')} />;
+      case 'compatibility': return <CompatibilityView lang={lang} t={t} onBack={() => setViewAndPersist('dashboard')} />;
       case 'guide': return <GuideView t={t} onBack={() => setViewAndPersist('dashboard')} />;
       case 'system_integrity': return <SystemIntegrityView t={t} onBack={() => setViewAndPersist('admin')} />;
       case 'system_simulation': return <SystemSimulationView t={t} onBack={() => setViewAndPersist('admin')} />;

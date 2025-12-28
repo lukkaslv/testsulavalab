@@ -25,7 +25,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isPro, setIsPro] = useState(false);
   const [isMaster, setIsMaster] = useState(false); 
   const [licenseTier, setLicenseTier] = useState<SubscriptionTier>('FREE');
-  const [bootShown, setBootShown] = useState(() => sessionStorage.getItem('genesis_boot_seen') === 'true');
+  const [bootShown] = useState(() => sessionStorage.getItem('genesis_boot_seen') === 'true');
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [scanHistory, setScanHistory] = useState<ScanHistory>({ scans: [], latestScan: null, evolutionMetrics: { entropyTrend: [], integrityTrend: [], dates: [] } });
 

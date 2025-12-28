@@ -1,8 +1,8 @@
 
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { DomainType, GameHistoryItem, Choice, ChoiceWithLatency, BeliefKey } from '../types';
-import { StorageService, STORAGE_KEYS, SessionState } from '../services/storageService';
-import { MODULE_REGISTRY, ONBOARDING_NODES_COUNT, TOTAL_NODES, DOMAIN_SETTINGS } from '../constants';
+import { useState, useRef, useCallback } from 'react';
+import { DomainType, GameHistoryItem, Choice, ChoiceWithLatency } from '../types';
+import { StorageService, STORAGE_KEYS } from '../services/storageService';
+import { MODULE_REGISTRY, ONBOARDING_NODES_COUNT, TOTAL_NODES } from '../constants';
 
 interface UseTestEngineProps {
   setCompletedNodeIds: (fn: (prev: number[]) => number[]) => void;

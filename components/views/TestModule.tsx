@@ -41,6 +41,18 @@ const SoftTriggerWarning = ({ t }: { t: Translations }) => (
     </div>
 );
 
+const IntensityMeter = ({ intensity }: { intensity: number }) => (
+    <div className="flex items-center gap-1">
+        {[1, 2, 3, 4, 5].map((lvl) => (
+            <div 
+                key={lvl} 
+                className={`w-1 h-3 rounded-full transition-all duration-500 ${lvl <= intensity ? 'bg-indigo-500' : 'bg-slate-200'}`}
+                style={{ opacity: lvl <= intensity ? 1 : 0.3 }}
+            ></div>
+        ))}
+    </div>
+);
+
 const EmergencyModal = ({ t, onReturn, onExit }: { t: Translations, onReturn: () => void, onExit: () => void }) => (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 animate-in backdrop-blur-xl bg-slate-900/80">
         <div className="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl space-y-6 text-center border border-slate-100">
@@ -106,8 +118,11 @@ export const TestView = memo<TestViewProps>(({ t, activeModule, currentId, scene
                 </span>
              </div>
          </div>
-         <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
-             <span className="text-[8px] font-mono font-bold text-slate-400">NODE_{currentId.padStart(2, '0')}</span>
+         <div className="flex flex-col items-end gap-1">
+             <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
+                 <span className="text-[8px] font-mono font-bold text-slate-400">NODE_{currentId.padStart(2, '0')}</span>
+             </div>
+             <IntensityMeter intensity={scene.intensity} />
          </div>
       </div>
       
@@ -173,22 +188,17 @@ export const TestView = memo<TestViewProps>(({ t, activeModule, currentId, scene
   );
 });
 
-export const ReflectionView = memo<{ t: Translations, sensation: string | undefined }>(({ t, sensation }) => {
-  const feedbackKey = (sensation || 's0') as keyof typeof t.sensation_feedback;
-  const message = t.sensation_feedback[feedbackKey] || t.sensation_feedback.s0;
-
+export const ReflectionView = ({ t, sensation }: { t: Translations, sensation?: string }) => {
+  const message = t.sensation_feedback[sensation as keyof typeof t.sensation_feedback] || t.sensation_feedback.s4;
+  
   return (
-    <div className="h-full flex flex-col items-center justify-center space-y-8 animate-in px-6 text-center py-20 bg-white">
-       <div className="w-20 h-20 bg-indigo-50 rounded-3xl flex items-center justify-center text-3xl shadow-inner border border-indigo-100/50">
-         {sensation === 's1' ? '🧱' : sensation === 's2' ? '🔥' : sensation === 's3' ? '❄️' : sensation === 's4' ? '🫨' : '✅'}
-       </div>
-       <div className="space-y-2">
-         <h3 className="text-xl font-black uppercase text-slate-900 tracking-tight">{message}</h3>
-         <p className="text-sm text-slate-500 font-medium leading-relaxed italic">{t.sync.processing}</p>
-       </div>
-       <div className="w-32 h-1 bg-slate-100 rounded-full overflow-hidden">
-         <div className="h-full bg-indigo-500 animate-pulse"></div>
-       </div>
+    <div className="flex flex-col items-center justify-center h-full animate-in bg-white">
+        <div className="w-24 h-24 bg-indigo-50 rounded-full flex items-center justify-center mb-6 animate-pulse">
+            <span className="text-4xl">📡</span>
+        </div>
+        <h3 className="text-lg font-black uppercase text-indigo-900 tracking-widest text-center max-w-[200px] leading-relaxed">
+            {message}
+        </h3>
     </div>
   );
-});
+};

@@ -67,13 +67,13 @@ export const GuideView: React.FC<GuideViewProps> = ({ t, onBack }) => {
 
             {/* SECTIONS */}
             <div className="space-y-8">
-                {content.sections.map((section, idx) => (
+                {content.sections.map((section: any, idx: number) => (
                     <div key={idx} className="space-y-4">
                         <h4 className={`text-sm font-black uppercase tracking-tight border-l-4 pl-4 py-1 ${mode === 'pro' ? 'text-indigo-900 border-indigo-600' : 'text-slate-900 border-indigo-400'}`}>
                             {section.title}
                         </h4>
                         <ul className="space-y-3 pl-2">
-                            {section.content.map((point, pIdx) => (
+                            {section.content.map((point: string, pIdx: number) => (
                                 <li key={pIdx} className="text-[11px] leading-relaxed text-slate-600 font-medium relative pl-4">
                                     <span className={`absolute left-0 top-1.5 w-1.5 h-1.5 rounded-full ${mode === 'pro' ? 'bg-indigo-400' : 'bg-slate-300'}`}></span>
                                     {point}

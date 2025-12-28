@@ -25,7 +25,7 @@ const OrganMiniStatus = ({ report }: { report: IntegrityReport | null }) => {
     );
 };
 
-const SessionAnomalyAnalyzer: React.FC<{ history: GameHistoryItem[], completedNodeIds: number[], telemetry: TelemetryEvent[], t: Translations }> = ({ history, completedNodeIds, telemetry, t }) => {
+const SessionAnomalyAnalyzer: React.FC<{ history: GameHistoryItem[], completedNodeIds: number[], telemetry: TelemetryEvent[] }> = ({ history, completedNodeIds, telemetry }) => {
     const [anomalies, setAnomalies] = useState<Anomaly[]>([]);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
 
@@ -148,7 +148,7 @@ export const AdminPanel = memo<AdminPanelProps>(({ t, onExit, history, onUnlockA
 
   const telemetry = useMemo(() => StorageService.getTelemetry(), []);
   const completedNodeIds = useMemo(() => {
-      const state = StorageService.load<any>(STORAGE_KEYS.SESSION_STATE, { nodes: [] });
+      const state = StorageService.load<any>(STORAGE_KEYS.SESSION_STATE, { nodes: [], history: [] });
       return state.nodes || [];
   }, []);
 
@@ -529,7 +529,7 @@ export const AdminPanel = memo<AdminPanelProps>(({ t, onExit, history, onUnlockA
         {activeTab === 'anomaly' && (
             <div className="space-y-4 animate-in">
                 <h4 className="text-[9px] font-black text-amber-400 uppercase tracking-widest pl-1">Анализатор Аномалий Сессии</h4>
-                <SessionAnomalyAnalyzer history={history} completedNodeIds={completedNodeIds} telemetry={telemetry} t={t} />
+                <SessionAnomalyAnalyzer history={history} completedNodeIds={completedNodeIds} telemetry={telemetry} />
             </div>
         )}
       </div>

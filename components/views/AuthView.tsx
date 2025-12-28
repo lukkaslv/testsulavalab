@@ -5,7 +5,7 @@ import { PlatformBridge } from '../../utils/helpers';
 import { SecurityCore } from '../../utils/crypto';
 import { STORAGE_KEYS, StorageService } from '../../services/storageService';
 import { RemoteAccess } from '../../services/remoteAccess';
-import { PRICING_CONFIG, SUBSCRIPTION_LIMITS } from '../../constants';
+import { PRICING_CONFIG } from '../../constants';
 import { Logo } from '../Logo';
 
 interface AuthViewProps {
@@ -235,7 +235,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t, lang }) => {
                     </div>
 
                     <ul className="space-y-3">
-                        {t.onboarding.features_clinical.split(';').map((feat, i) => (
+                        {t.onboarding.features_clinical.split(';').map((feat: string, i: number) => (
                             <li key={i} className="flex items-start gap-3">
                                 <span className="w-5 h-5 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center text-[10px] shrink-0 font-bold">✓</span>
                                 <span className="text-xs font-bold text-slate-700 leading-snug">{feat}</span>

@@ -154,7 +154,7 @@ const AnomalyList = ({ structural, labels, t }: { structural: StructuralAnomalie
             {activeKeys.map(key => (
                 <div key={key as string} className="flex-shrink-0 bg-slate-800/50 border border-slate-700 p-3 rounded-xl min-w-[120px]">
                     <span className="text-[7px] font-black text-indigo-400 uppercase block mb-1 tracking-wider">
-                        {labels[key] || String(key)}
+                        {labels[key as string] || String(key)}
                     </span>
                     <span className="text-lg font-black text-white block leading-none">{structural[key].length}</span>
                 </div>

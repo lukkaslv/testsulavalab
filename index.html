@@ -30,11 +30,9 @@
         line-height: 1.6;
         -webkit-font-smoothing: antialiased;
         font-size: 16px;
-        /* Dyslexia friendly letter spacing */
         letter-spacing: 0.01em;
       }
 
-      /* Accessibility: Support for users who prefer reduced motion (ADHD/Vestibular) */
       @media (prefers-reduced-motion: reduce) {
         *, ::before, ::after {
           animation-delay: -1ms !important;
@@ -49,12 +47,10 @@
         }
       }
 
-      /* Tabular numbers for clean timers and scores */
       .font-mono, .tabular-nums {
         font-variant-numeric: tabular-nums;
       }
 
-      /* Professional Mkhedruli Harmony Protocol */
       [lang="ka"] {
         line-height: 1.85 !important;
         letter-spacing: 0.02em !important;
@@ -68,17 +64,15 @@
         padding-bottom: 0.1em;
       }
 
-      /* Global readability enhancements */
       p, li {
-        max-width: 65ch; /* Optimal line length for focus */
+        max-width: 65ch;
       }
 
       @media (max-width: 640px) {
         body { font-size: 17px; }
-        button { min-height: 44px; } /* Mobile touch targets */
+        button { min-height: 44px; }
       }
 
-      /* Noise Overlay */
       body::after {
         content: "";
         position: fixed;
@@ -112,6 +106,49 @@
       @keyframes slideUp {
         from { opacity: 0; transform: translateY(12px); }
         to { opacity: 1; transform: translateY(0); }
+      }
+
+      /* --- GLITCH PROTOCOL --- */
+      .glitch {
+        position: relative;
+      }
+      .glitch::before,
+      .glitch::after {
+        content: attr(data-text);
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+      }
+      .glitch::before {
+        left: 2px;
+        text-shadow: -1px 0 #ff00c1;
+        clip: rect(44px, 450px, 56px, 0);
+        animation: glitch-anim-1 5s infinite linear alternate-reverse;
+      }
+      .glitch::after {
+        left: -2px;
+        text-shadow: -1px 0 #00fff9;
+        clip: rect(44px, 450px, 56px, 0);
+        animation: glitch-anim-2 5s infinite linear alternate-reverse;
+      }
+
+      @keyframes glitch-anim-1 {
+        0% { clip: rect(20px, 9999px, 81px, 0); }
+        20% { clip: rect(62px, 9999px, 12px, 0); }
+        40% { clip: rect(10px, 9999px, 60px, 0); }
+        60% { clip: rect(45px, 9999px, 85px, 0); }
+        80% { clip: rect(12px, 9999px, 30px, 0); }
+        100% { clip: rect(55px, 9999px, 10px, 0); }
+      }
+      @keyframes glitch-anim-2 {
+        0% { clip: rect(65px, 9999px, 10px, 0); }
+        20% { clip: rect(10px, 9999px, 80px, 0); }
+        40% { clip: rect(35px, 9999px, 25px, 0); }
+        60% { clip: rect(70px, 9999px, 50px, 0); }
+        80% { clip: rect(20px, 9999px, 15px, 0); }
+        100% { clip: rect(50px, 9999px, 90px, 0); }
       }
 
       ::-webkit-scrollbar { display: none; }

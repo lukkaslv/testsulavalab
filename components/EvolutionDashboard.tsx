@@ -1,6 +1,6 @@
 
 import React, { memo, useMemo } from 'react';
-import { ScanHistory, Translations } from '../types';
+import { ScanHistory } from '../types';
 import { translations } from '../translations';
 
 interface EvolutionDashboardProps {

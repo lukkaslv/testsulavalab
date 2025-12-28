@@ -20,7 +20,7 @@ interface ResultsViewProps {
   isPro?: boolean; 
 }
 
-const DeltaMarker = ({ current, previous, t }: { current: number, previous?: number, t: Translations }) => {
+const DeltaMarker = ({ current, previous }: { current: number, previous?: number }) => {
     if (previous === undefined) return null;
     const diff = current - previous;
     if (Math.abs(diff) < 2) return <span className="text-[7px] text-slate-400 opacity-50 ml-1 font-mono">≈</span>;
@@ -115,6 +115,21 @@ const PatternCard: React.FC<{ beliefKey: BeliefKey, t: Translations }> = ({ beli
     );
 };
 
+// NEW: Core Conflict Visualization
+const ConflictBlock: React.FC<{ conflictKey: string, t: Translations }> = ({ conflictKey, t }) => {
+    const conflict = t.conflicts?.[conflictKey];
+    if (!conflict) return null;
+
+    return (
+        <div className="mx-2 bg-amber-950/5 border border-amber-900/10 p-5 rounded-[2rem] space-y-2 animate-in relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-4 opacity-10 text-4xl grayscale">⚡</div>
+            <span className="text-[8px] font-black uppercase tracking-widest text-amber-600 block">CORE_CONFLICT_DETECTED</span>
+            <h4 className="text-[11px] font-black uppercase text-amber-900 leading-tight">{conflict.title}</h4>
+            <p className="text-[10px] text-amber-800/80 font-medium leading-relaxed italic">{conflict.desc}</p>
+        </div>
+    );
+};
+
 export const ResultsView = memo<ResultsViewProps>(({ 
   lang, t, result, isGlitchMode, onShare, onBack, onNewCycle, isPro
 }) => {
@@ -161,6 +176,8 @@ export const ResultsView = memo<ResultsViewProps>(({
     }
     return v;
   }, [result.verdictKey, t, isFragile]);
+
+  const coreConflictKey = result.coreConflict !== 'none' ? result.coreConflict : result.verdictKey.toLowerCase();
 
   if (!disclaimerAccepted) {
     return (
@@ -216,7 +233,7 @@ export const ResultsView = memo<ResultsViewProps>(({
                         <span className="text-[8px] font-black uppercase text-slate-500 tracking-widest">{stat.label}</span>
                         <div className="flex items-baseline gap-1">
                             <span className="text-lg font-black text-white">{stat.val}%</span>
-                            <DeltaMarker current={stat.val} previous={stat.prev} t={t} />
+                            <DeltaMarker current={stat.val} previous={stat.prev} />
                         </div>
                     </div>
                 ))}
@@ -228,6 +245,9 @@ export const ResultsView = memo<ResultsViewProps>(({
             </div>
         </div>
       </header>
+
+      {/* NEW: CONFLICT BLOCK */}
+      <ConflictBlock conflictKey={coreConflictKey} t={t} />
 
       {/* SESSION PREP BLOCK */}
       <section className="bg-indigo-600 p-8 rounded-[2.5rem] shadow-xl space-y-6 relative overflow-hidden text-white">
