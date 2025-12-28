@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Translations, SimulationReport, PersonaResult, JourneyAnomaly } from '../../types';
 import { PlatformBridge } from '../../utils/helpers';
 import { SimulationService } from '../../services/simulationService';
@@ -9,7 +9,7 @@ interface SystemSimulationViewProps {
   onBack: () => void;
 }
 
-const AnomalyCard: React.FC<{ anomaly: any, type: string }> = ({ anomaly, type }) => (
+const AnomalyCard: React.FC<{ anomaly: JourneyAnomaly, type: string }> = ({ anomaly, type }) => (
     <div className="p-3 bg-red-950/20 border border-red-500/30 rounded-lg space-y-1">
         <p className="text-[9px] font-bold text-red-400">{type.toUpperCase()}: {anomaly.type || 'DUPLICATE'}</p>
         <p className="text-[8px] text-slate-400 italic">{anomaly.details}</p>
@@ -31,7 +31,7 @@ const PersonaCard: React.FC<{ result: PersonaResult }> = ({ result }) => (
     </div>
 );
 
-export const SystemSimulationView: React.FC<SystemSimulationViewProps> = ({ t, onBack }) => {
+export const SystemSimulationView: React.FC<SystemSimulationViewProps> = ({ onBack }) => {
   const [report, setReport] = useState<SimulationReport | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -56,9 +56,9 @@ export const SystemSimulationView: React.FC<SystemSimulationViewProps> = ({ t, o
   };
   
   const allAnomalies = report ? [
-      ...report.pathfinder.anomalies.map(a => ({...a, source: 'Pathfinder'})),
-      ...report.semanticGhost.duplicates.map(d => ({...d, source: 'Semantic Ghost'})),
-      ...report.assetGuardian.orphans.map(o => ({...o, source: 'Asset Guardian'})),
+      ...report.pathfinder.anomalies.map((a: JourneyAnomaly) => ({...a, source: 'Pathfinder'})),
+      ...report.semanticGhost.duplicates.map((d: JourneyAnomaly) => ({...d, source: 'Semantic Ghost'})),
+      ...report.assetGuardian.orphans.map((o: JourneyAnomaly) => ({...o, source: 'Asset Guardian'})),
   ] : [];
 
   return (
@@ -94,7 +94,7 @@ export const SystemSimulationView: React.FC<SystemSimulationViewProps> = ({ t, o
                   <section className="space-y-3">
                       <h3 className="text-slate-500 font-black tracking-widest uppercase text-[9px]">ОБНАРУЖЕННЫЕ АНОМАЛИИ ({allAnomalies.length})</h3>
                       {allAnomalies.length > 0 ? (
-                        allAnomalies.map((a, i) => <AnomalyCard key={i} anomaly={a} type={a.source} />)
+                        allAnomalies.map((a: JourneyAnomaly, i: number) => <AnomalyCard key={i} anomaly={a} type={a.source || 'UNKNOWN'} />)
                       ) : (
                         <div className="p-4 bg-emerald-950/20 border border-emerald-500/30 rounded-lg text-center text-emerald-400 text-[9px]">
                             Аномалий не обнаружено.
@@ -104,7 +104,7 @@ export const SystemSimulationView: React.FC<SystemSimulationViewProps> = ({ t, o
                   <section className="space-y-3">
                       <h3 className="text-slate-500 font-black tracking-widest uppercase text-[9px]">ПСИХОМЕТРИЧЕСКИЙ КАЛИБРАТОР</h3>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                        {report.calibrator.results.map(r => <PersonaCard key={r.persona} result={r} />)}
+                        {report.calibrator.results.map((r: PersonaResult) => <PersonaCard key={r.persona} result={r} />)}
                       </div>
                   </section>
               </div>

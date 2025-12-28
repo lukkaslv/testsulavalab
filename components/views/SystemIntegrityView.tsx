@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Translations, IntegrityReport, IntegrityCategory, StructuralAnomalies, ComplexityMetrics } from '../../types';
+import { Translations, IntegrityReport, IntegrityCategory, StructuralAnomalies, ComplexityMetrics, ConfigError } from '../../types';
 import { IntegrityService } from '../../services/integrityService';
 
 const ORGAN_ICONS: Record<string, string> = {
@@ -228,7 +228,7 @@ export const SystemIntegrityView: React.FC<{ t: Translations; onBack: () => void
                       status={report.status} 
                       t={t}
                   />
-                  {report.categories.map((cat, i) => (
+                  {report.categories.map((cat: IntegrityCategory, i: number) => (
                       <SatelliteOrgan 
                           key={cat.name} 
                           category={cat} 
@@ -270,13 +270,13 @@ export const SystemIntegrityView: React.FC<{ t: Translations; onBack: () => void
                           </div>
                       ) : (
                           <>
-                            {selectedOrgan.errors.map((e, i) => (
+                            {selectedOrgan.errors.map((e: ConfigError, i: number) => (
                                 <div key={i} className="p-3 bg-red-950/20 border-l-2 border-red-500 rounded-r-lg">
                                     <span className="text-[8px] font-black text-red-400 block mb-1">[CRITICAL] {e.type}</span>
                                     <p className="text-[10px] text-slate-300 font-medium">{e.details}</p>
                                 </div>
                             ))}
-                            {selectedOrgan.warnings.map((w, i) => (
+                            {selectedOrgan.warnings.map((w: ConfigError, i: number) => (
                                 <div key={i} className="p-3 bg-amber-950/20 border-l-2 border-amber-500 rounded-r-lg">
                                     <span className="text-[8px] font-black text-amber-400 block mb-1">[WARNING] {w.type}</span>
                                     <p className="text-[10px] text-slate-300 font-medium">{w.details}</p>
