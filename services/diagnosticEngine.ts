@@ -129,7 +129,8 @@ export const DiagnosticEngine = {
       interventionStrategy: f < 35 ? 'STABILIZATION' : 'GROWTH',
       coreConflict: e > 50 ? 'IDENTITY_DIFFUSION' : 'STRUCTURAL_RESISTANCE',
       shadowDirective: 'INTEGRATE_SHADOW',
-      shareCode: btoa(`${headerData}#${sig}`),
+      // FIX: Use SecurityCore.toBase64 to handle Cyrillic characters in headerData
+      shareCode: SecurityCore.toBase64(`${headerData}#${sig}`),
       archetypeKey: spectrum[0].key,
       secondaryArchetypeKey: spectrum[1]?.key,
       archetypeSpectrum: spectrum,

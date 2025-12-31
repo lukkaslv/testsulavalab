@@ -1,5 +1,4 @@
-
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { AnalysisResult, Translations } from '../../types';
 import { CompatibilityEngine } from '../../services/compatibilityEngine';
 import { ClinicalDecoder } from '../../services/clinicalDecoder';
@@ -50,7 +49,7 @@ const DecryptionCore = ({ onDecrypt, onBack }: { onDecrypt: (code: string) => vo
     };
 
     return (
-        <div className="h-full flex flex-col items-center justify-center p-8 bg-[#020617] animate-in relative overflow-hidden">
+        <div className="h-full flex flex-col items-center justify-center p-4 sm:p-8 bg-[#020617] animate-in relative overflow-hidden">
             {/* Background Grid */}
             <div className="absolute inset-0 bg-[linear-gradient(rgba(99,102,241,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(99,102,241,0.03)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none"></div>
 
@@ -60,8 +59,8 @@ const DecryptionCore = ({ onDecrypt, onBack }: { onDecrypt: (code: string) => vo
                         <div className="absolute inset-0 border-2 border-indigo-500/30 rounded-3xl animate-pulse"></div>
                         🔑
                     </div>
-                    <h2 className="text-lg font-black uppercase text-indigo-400 tracking-[0.3em]">Forensic_Lab</h2>
-                    <p className="text-[9px] text-slate-500 font-mono uppercase">Clinical Data Decryption Unit</p>
+                    <h2 className="text-lg font-black uppercase text-indigo-400 tracking-[0.3em]">ЛАБОРАТОРИЯ ФОРЕНЗИКИ</h2>
+                    <p className="text-[9px] text-slate-500 font-mono uppercase">Модуль Дешифровки Клинических Данных</p>
                 </div>
 
                 <div className="space-y-4">
@@ -70,7 +69,7 @@ const DecryptionCore = ({ onDecrypt, onBack }: { onDecrypt: (code: string) => vo
                             type="text" 
                             value={code}
                             onChange={(e) => { setCode(e.target.value); setStatus('IDLE'); }}
-                            placeholder="PASTE_SESSION_HASH" 
+                            placeholder="ВСТАВИТЬ ХЕШ СЕССИИ" 
                             className={`w-full bg-slate-950/80 border-2 rounded-2xl p-5 text-center font-mono text-xs uppercase outline-none transition-all placeholder-slate-700
                                 ${status === 'INVALID' ? 'border-red-500 text-red-400' : 'border-slate-800 text-indigo-300 focus:border-indigo-500'}`}
                         />
@@ -86,12 +85,12 @@ const DecryptionCore = ({ onDecrypt, onBack }: { onDecrypt: (code: string) => vo
                         disabled={status === 'ANALYZING' || !code}
                         className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] shadow-lg active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {status === 'INVALID' ? 'CHECKSUM_FAILED' : 'INITIALIZE_DECODER'}
+                        {status === 'INVALID' ? 'ОШИБКА КОНТРОЛЬНОЙ СУММЫ' : 'ИНИЦИАЛИЗАЦИЯ ДЕКОДЕРА'}
                     </button>
                 </div>
 
                 <button onClick={onBack} className="w-full text-[9px] font-black uppercase text-slate-600 hover:text-slate-400 transition-colors tracking-widest">
-                    [ ABORT_SEQUENCE ]
+                    [ ПРЕРВАТЬ ПОСЛЕДОВАТЕЛЬНОСТЬ ]
                 </button>
             </div>
         </div>
@@ -104,11 +103,22 @@ export const ProTerminalView: React.FC<ProTerminalViewProps> = ({ t, onBack }) =
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState<'report' | 'stats' | 'neuro' | 'tactics'>('report');
 
+  useEffect(() => {
+      const cachedCode = sessionStorage.getItem('genesis_last_analysis_code');
+      if (cachedCode && !clientResult) {
+          const result = CompatibilityEngine.decodeSmartCode(cachedCode);
+          if (result) setClientResult(result);
+      }
+  }, []);
+
   const interpretation = useMemo(() => clientResult ? ClinicalDecoder.decode(clientResult, t) : null, [clientResult, t]);
 
   const handleDecrypt = (code: string) => {
     const result = CompatibilityEngine.decodeSmartCode(code);
-    if (result) setClientResult(result);
+    if (result) {
+        setClientResult(result);
+        sessionStorage.setItem('genesis_last_analysis_code', code);
+    }
   };
 
   const copyToClipboard = () => {
@@ -122,23 +132,34 @@ export const ProTerminalView: React.FC<ProTerminalViewProps> = ({ t, onBack }) =
       return <DecryptionCore onDecrypt={handleDecrypt} onBack={onBack} />;
   }
 
+  const TAB_LABELS: Record<string, string> = {
+      report: 'ДОСЬЕ',
+      stats: 'МЕТРИКИ',
+      neuro: 'НЕЙРО',
+      tactics: 'ТАКТИКА'
+  };
+
   return (
     <section className="flex flex-col h-full bg-[#020617] text-slate-400 font-mono overflow-hidden select-none">
         
         {/* HEADER: SESSION CONTROL */}
-        <header className="p-5 border-b border-white/5 flex justify-between items-center bg-slate-950/80 backdrop-blur-xl shrink-0 z-20">
+        <header className="p-4 sm:p-5 border-b border-white/5 flex justify-between items-center bg-slate-950/80 backdrop-blur-xl shrink-0 z-20">
             <div className="flex items-center gap-3">
                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
                 <div className="flex flex-col">
-                    <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">SESSION_ACTIVE</span>
+                    <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">СЕССИЯ АКТИВНА</span>
                     <span className="text-[7px] text-slate-600 font-black uppercase tracking-widest">ID: {clientResult.shareCode.substring(0, 8)}</span>
                 </div>
             </div>
             <button 
-                onClick={() => { PlatformBridge.haptic.impact('heavy'); setClientResult(null); }} 
+                onClick={() => { 
+                    PlatformBridge.haptic.impact('heavy'); 
+                    setClientResult(null); 
+                    sessionStorage.removeItem('genesis_last_analysis_code');
+                }} 
                 className="px-4 py-2 bg-red-950/20 text-red-500 border border-red-500/20 rounded-xl text-[8px] font-black uppercase tracking-widest hover:bg-red-950/40 transition-all active:scale-95"
             >
-                EJECT
+                ИЗВЛЕЧЬ
             </button>
         </header>
 
@@ -155,14 +176,14 @@ export const ProTerminalView: React.FC<ProTerminalViewProps> = ({ t, onBack }) =
                                 : 'text-slate-500 hover:text-slate-300'}`}
                     >
                         <span>{tab === 'report' ? '📂' : tab === 'stats' ? '📊' : tab === 'neuro' ? '🧠' : '⚡'}</span>
-                        {tab}
+                        {TAB_LABELS[tab]}
                     </button>
                 ))}
             </div>
         </nav>
 
         {/* WORKBENCH AREA */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-8 pb-32">
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-5 space-y-8 pb-32">
             
             {activeTab === 'report' && (
                 <div className="space-y-6 animate-in">
@@ -170,8 +191,8 @@ export const ProTerminalView: React.FC<ProTerminalViewProps> = ({ t, onBack }) =
                     <div className="bg-gradient-to-br from-slate-900 to-slate-950 border border-indigo-500/20 p-6 rounded-[2.5rem] shadow-2xl relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-6 opacity-5 text-6xl font-black">?</div>
                         <div className="relative z-10 space-y-4">
-                            <span className="text-[8px] font-black text-indigo-400 uppercase tracking-[0.3em]">Core_Configuration</span>
-                            <h2 className="text-xl font-black text-white italic uppercase tracking-tight leading-none">
+                            <span className="text-[8px] font-black text-indigo-400 uppercase tracking-[0.3em]">Ядерная Конфигурация</span>
+                            <h2 className="text-xl font-black text-white italic uppercase tracking-tight leading-none break-words">
                                 {interpretation.systemConfiguration.title}
                             </h2>
                             <div className="h-px bg-indigo-500/20 w-full"></div>
@@ -191,15 +212,15 @@ export const ProTerminalView: React.FC<ProTerminalViewProps> = ({ t, onBack }) =
                     {/* VITAL GRID */}
                     <div className="grid grid-cols-2 gap-3">
                         <MonitorCard 
-                            label="Entropy_Load" 
+                            label="Энтропийная Нагрузка" 
                             value={`${interpretation.extra.homeostasisCost}%`} 
-                            sub="Energy Waste" 
+                            sub="Потеря Энергии" 
                             color="text-amber-400" 
                         />
                         <MonitorCard 
-                            label="Resistance" 
+                            label="Сопротивление" 
                             value={`${interpretation.extra.prognosis.allianceRisk}%`} 
-                            sub="Alliance Risk" 
+                            sub="Риск Альянса" 
                             color={interpretation.extra.prognosis.allianceRisk > 60 ? 'text-red-400' : 'text-emerald-400'} 
                             warning={interpretation.extra.prognosis.allianceRisk > 60}
                         />
@@ -219,7 +240,7 @@ export const ProTerminalView: React.FC<ProTerminalViewProps> = ({ t, onBack }) =
                 <div className="space-y-6 animate-in">
                     <div className="bg-slate-900/40 border border-white/5 p-6 rounded-[2.5rem] space-y-6">
                         <div className="flex justify-between items-center">
-                            <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Cognitive_Friction_Scan</span>
+                            <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Скан Когнитивного Трения</span>
                             <span className="text-[10px] font-mono text-slate-400">{interpretation.stats?.standardDeviation}ms σ</span>
                         </div>
                         
@@ -240,18 +261,18 @@ export const ProTerminalView: React.FC<ProTerminalViewProps> = ({ t, onBack }) =
                         </div>
                         
                         <div className="flex justify-between text-[7px] text-slate-600 font-mono uppercase tracking-widest">
-                            <span>START_SESSION</span>
-                            <span>END_SESSION</span>
+                            <span>НАЧАЛО</span>
+                            <span>КОНЕЦ</span>
                         </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
                         <div className="p-4 bg-black/30 rounded-xl border border-white/5 space-y-1">
-                            <span className="text-[7px] text-slate-500 uppercase">Skewness</span>
+                            <span className="text-[7px] text-slate-500 uppercase">Асимметрия</span>
                             <span className="text-xl font-mono text-white">{interpretation.stats?.skewness}</span>
                         </div>
                         <div className="p-4 bg-black/30 rounded-xl border border-white/5 space-y-1">
-                            <span className="text-[7px] text-slate-500 uppercase">Var(σ²)</span>
+                            <span className="text-[7px] text-slate-500 uppercase">Дисперсия (σ²)</span>
                             <span className="text-xl font-mono text-white">{interpretation.stats?.variance}</span>
                         </div>
                     </div>
@@ -275,9 +296,9 @@ export const ProTerminalView: React.FC<ProTerminalViewProps> = ({ t, onBack }) =
                             <span className="absolute text-lg font-black text-white">{interpretation.neuro?.alexithymiaIndex}%</span>
                         </div>
                         <div>
-                            <span className="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em] block mb-1">Alexithymia_Index</span>
+                            <span className="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em] block mb-1">Индекс Алекситимии</span>
                             <h3 className="text-sm font-bold text-slate-200 uppercase leading-tight">
-                                {interpretation.neuro?.alexithymiaIndex && interpretation.neuro.alexithymiaIndex > 60 ? 'HIGH DISSOCIATION' : 'NOMINAL CONNECTION'}
+                                {interpretation.neuro?.alexithymiaIndex && interpretation.neuro.alexithymiaIndex > 60 ? 'ВЫСОКАЯ ДИССОЦИАЦИЯ' : 'НОМИНАЛЬНАЯ СВЯЗЬ'}
                             </h3>
                             <p className="text-[8px] text-slate-500 mt-2 leading-relaxed">
                                 Процент "Нейтральных" ответов в телесном чек-ине. Высокий уровень блокирует аффект.
@@ -286,7 +307,7 @@ export const ProTerminalView: React.FC<ProTerminalViewProps> = ({ t, onBack }) =
                     </div>
 
                     <div className="space-y-3">
-                        <h4 className="text-[9px] font-black text-slate-500 uppercase ml-2 tracking-widest">Self-Repair Capacity</h4>
+                        <h4 className="text-[9px] font-black text-slate-500 uppercase ml-2 tracking-widest">Потенциал Самовосстановления</h4>
                         <AutopoiesisNucleus metrics={interpretation.extra.autopoiesis} t={t} className="h-64" />
                     </div>
                 </div>
@@ -299,7 +320,7 @@ export const ProTerminalView: React.FC<ProTerminalViewProps> = ({ t, onBack }) =
                     <div className="space-y-3">
                         <div className="flex items-center gap-2 px-2">
                             <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
-                            <h4 className="text-[9px] font-black text-indigo-400 uppercase tracking-[0.3em]">Intervention_Protocol</h4>
+                            <h4 className="text-[9px] font-black text-indigo-400 uppercase tracking-[0.3em]">Протокол Интервенций</h4>
                         </div>
                         {interpretation.extra.directives.map((d, i) => (
                             <div key={i} className="bg-slate-900 border-l-2 border-indigo-500 p-4 rounded-r-xl shadow-sm">
@@ -324,20 +345,20 @@ export const ProTerminalView: React.FC<ProTerminalViewProps> = ({ t, onBack }) =
                             className="w-full py-6 bg-emerald-600/10 border border-emerald-500/30 text-emerald-400 rounded-[2rem] font-black text-[10px] uppercase tracking-[0.3em] shadow-[0_0_30px_rgba(16,185,129,0.1)] active:scale-95 transition-all flex flex-col items-center gap-2 hover:bg-emerald-600/20"
                         >
                             {isProcessing ? (
-                                <span className="animate-pulse">COMPILING_NEURAL_TRACE...</span>
+                                <span className="animate-pulse">КОМПИЛЯЦИЯ КЛИНИЧЕСКОГО АНАЛИЗА...</span>
                             ) : (
                                 <>
                                     <span className="text-xl">🖨️</span>
-                                    <span>СГЕНЕРИРОВАТЬ ПРОТОКОЛ (20K)</span>
+                                    <span>СГЕНЕРИРОВАТЬ ОТЧЕТ (V2.0)</span>
                                 </>
                             )}
                         </button>
                     ) : (
                         <div className="space-y-4 animate-in">
                             <div className="flex justify-between items-center px-2">
-                                <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest">REPORT_READY</span>
-                                <button onClick={copyToClipboard} className="text-[8px] bg-emerald-600 text-white px-3 py-1.5 rounded-lg font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all">
-                                    COPY_TEXT
+                                <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest">ОТЧЕТ ГОТОВ</span>
+                                <button onClick={copyToClipboard} className="text-[8px] font-black uppercase text-slate-400 bg-slate-900 px-3 py-1.5 rounded hover:text-white transition-colors">
+                                    КОПИРОВАТЬ
                                 </button>
                             </div>
                             <div className="bg-black/80 border border-emerald-500/20 p-6 rounded-[2rem] shadow-2xl relative overflow-hidden">

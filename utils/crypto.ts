@@ -46,19 +46,42 @@ export const SecurityCore = {
         }).join('');
     },
 
+    // Unicode-safe Base64 Encode
+    toBase64: (str: string): string => {
+        try {
+            return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
+                (_match, p1) => String.fromCharCode(parseInt(p1, 16)))
+            );
+        } catch (e) {
+            console.error("Base64 Encode Error", e);
+            return "";
+        }
+    },
+
+    // Unicode-safe Base64 Decode
+    fromBase64: (str: string): string => {
+        try {
+            return decodeURIComponent(atob(str).split('').map((c) => {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+        } catch (e) {
+            return "";
+        }
+    },
+
     safeEncode: (data: any, key: string): string => {
         const json = JSON.stringify(data);
         const checksum = SecurityCore.generateChecksum(json);
         const ts = Date.now().toString();
         const payload = JSON.stringify({ d: json, c: checksum, ts: ts });
         const encryptedPayload = SecurityCore.cipher(payload, key, ts);
-        return btoa(`${ts}::${encryptedPayload}`);
+        return SecurityCore.toBase64(`${ts}::${encryptedPayload}`);
     },
 
     safeDecode: (encoded: string, key: string): any | null => {
         try {
-            const decodedB64 = atob(encoded.trim().replace(/\s/g, ''));
-            const parts = decodedB64.split('::');
+            const decodedString = SecurityCore.fromBase64(encoded.trim().replace(/\s/g, ''));
+            const parts = decodedString.split('::');
             if (parts.length !== 2) return null;
             
             const [ts, encrypted] = parts;

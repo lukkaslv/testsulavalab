@@ -25,6 +25,7 @@ import { InterferenceMoire } from '../InterferenceMoire';
 import { StrangeAttractor } from '../StrangeAttractor';
 import { ReliefMap } from '../ReliefMap';
 import { TensegrityStructure } from '../TensegrityStructure';
+import { SomaticTopography } from '../SomaticTopography'; // NEW
 import { SynthesisService } from '../../services/synthesisService';
 import { RefractionEngine } from '../../services/refractionEngine';
 import { StabilityEngine } from '../../services/stabilityEngine';
@@ -48,7 +49,7 @@ interface ResultsViewProps {
   isPro: boolean;
 }
 
-type Mode = 'blueprint' | 'emg' | 'sim' | 'paths' | 'lattice' | 'field' | 'nucleus' | 'signature' | 'flux' | 'dossier' | 'prism' | 'well' | 'shadow' | 'void' | 'sovereign' | 'topology' | 'helix' | 'ekg' | 'hysteresis' | 'moire' | 'attractor' | 'relief' | 'tensegrity';
+type Mode = 'blueprint' | 'soma' | 'emg' | 'sim' | 'paths' | 'lattice' | 'field' | 'nucleus' | 'signature' | 'flux' | 'dossier' | 'prism' | 'well' | 'shadow' | 'void' | 'sovereign' | 'topology' | 'helix' | 'ekg' | 'hysteresis' | 'moire' | 'attractor' | 'relief' | 'tensegrity';
 
 export const ResultsView = memo<ResultsViewProps>(({ 
   t, result, onShare, onBack, onSetView
@@ -86,15 +87,16 @@ export const ResultsView = memo<ResultsViewProps>(({
   }
 
   const modeLabels: Record<string, string> = {
-      blueprint: 'КАРТА', ekg: 'ЭКГ', tensegrity: 'ТНС', relief: 'РЛФ', moire: 'ВОЛНА',
+      blueprint: 'КАРТА', soma: 'ТЕЛО', ekg: 'ЭКГ', tensegrity: 'ТЕНС', relief: 'РЕЛЬЕФ', moire: 'ВОЛНА',
       attractor: 'ХАОС', hysteresis: 'ГИСТ', helix: 'ДНК', sim: 'СИМ', topology: 'ТОПО',
-      lattice: 'РЕШ', emg: 'ЭМЕРДЖ'
+      lattice: 'РЕШЕТКА', emg: 'ПАТТЕРН'
   };
 
   return (
     <div className="space-y-8 pb-32 animate-in pt-2 text-slate-100 relative">
       <header className={`dark-glass-card p-8 rounded-[3rem] shadow-2xl relative overflow-hidden transition-all duration-1000 
         ${activeMode === 'emg' ? 'bg-indigo-950/30 border-indigo-500/40 shadow-[0_0_60px_rgba(99,102,241,0.15)]' : 
+          activeMode === 'soma' ? 'bg-[#020617] border-emerald-500/20' :
           activeMode === 'sim' ? 'bg-indigo-950/20 border-indigo-500/30' : 
           activeMode === 'void' ? 'bg-black border-white/20' : 
           activeMode === 'helix' ? 'bg-[#020617] border-indigo-500/10' :
@@ -124,6 +126,15 @@ export const ResultsView = memo<ResultsViewProps>(({
               </div>
             </div>
             
+            {activeMode === 'soma' && (
+              <div className="space-y-2 animate-in">
+                <h1 className="text-3xl font-black italic uppercase text-emerald-400 leading-none tracking-tighter">Соматика</h1>
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+                   Карта Телесного Сопротивления (Ст. 4)
+                </p>
+              </div>
+            )}
+
             {activeMode === 'tensegrity' && (
               <div className="space-y-2 animate-in">
                 <h1 className="text-3xl font-black italic uppercase text-indigo-400 leading-none tracking-tighter">Тенсегрити</h1>
@@ -191,7 +202,7 @@ export const ResultsView = memo<ResultsViewProps>(({
               <div className="space-y-2 animate-in">
                 <h1 className="text-3xl font-black italic uppercase text-indigo-300 leading-none tracking-tighter">Матрица Эмерджентности</h1>
                 <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-                   Найдено состояний: {emergentPatterns.length} // Ст. 7.1 Compliance
+                   Найдено состояний: {emergentPatterns.length} // Ст. 7.1
                 </p>
               </div>
             )}
@@ -214,7 +225,7 @@ export const ResultsView = memo<ResultsViewProps>(({
               </div>
             )}
 
-            {activeMode !== 'dossier' && !['emg', 'sim', 'paths', 'lattice', 'field', 'nucleus', 'sovereign', 'void', 'shadow', 'well', 'prism', 'topology', 'helix', 'ekg', 'hysteresis', 'moire', 'attractor', 'relief', 'tensegrity'].includes(activeMode) && (
+            {activeMode !== 'dossier' && !['soma', 'emg', 'sim', 'paths', 'lattice', 'field', 'nucleus', 'sovereign', 'void', 'shadow', 'well', 'prism', 'topology', 'helix', 'ekg', 'hysteresis', 'moire', 'attractor', 'relief', 'tensegrity'].includes(activeMode) && (
               <div className="space-y-2">
                 <h1 className="text-5xl font-black italic uppercase text-white leading-none tracking-tighter">{arch.title}</h1>
                 <p className="text-sm text-slate-400 font-medium leading-relaxed pt-3 border-l-2 border-indigo-500/5 pl-5 italic opacity-80">
@@ -235,10 +246,16 @@ export const ResultsView = memo<ResultsViewProps>(({
             activeMode === 'attractor' ? 'bg-[#020617] border-amber-500/20' :
             activeMode === 'relief' ? 'bg-[#020617] border-emerald-500/20' :
             activeMode === 'tensegrity' ? 'bg-[#020617] border-indigo-500/20' :
+            activeMode === 'soma' ? 'bg-[#020617] border-emerald-500/20' :
             'bg-[#020617] border-slate-800'}`}>
             
             {activeMode === 'blueprint' && (
                 <RadarChart points={result.graphPoints} shadowPoints={result.shadowPoints} showShadow={true} t={t} onLabelClick={() => {}} className="scale-110" />
+            )}
+            {activeMode === 'soma' && (
+                <div className="w-full h-full p-4 flex flex-col justify-center animate-in">
+                    <SomaticTopography result={result} className="w-full h-full" />
+                </div>
             )}
             {activeMode === 'tensegrity' && (
                 <div className="w-full h-full p-4 flex flex-col justify-center animate-in">
@@ -331,7 +348,7 @@ export const ResultsView = memo<ResultsViewProps>(({
             )}
         </div>
 
-        {!['dossier', 'emg', 'sim', 'paths', 'lattice', 'field', 'nucleus', 'sovereign', 'void', 'shadow', 'topology', 'helix', 'ekg', 'hysteresis', 'moire', 'attractor', 'relief', 'tensegrity'].includes(activeMode) && (
+        {!['dossier', 'emg', 'sim', 'paths', 'lattice', 'field', 'nucleus', 'sovereign', 'void', 'shadow', 'topology', 'helix', 'ekg', 'hysteresis', 'moire', 'attractor', 'relief', 'tensegrity', 'soma'].includes(activeMode) && (
           <div className="mt-6 pt-6 border-t border-white/5 flex justify-between items-center px-2">
               <div className="space-y-1">
                   <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Индекс Стабильности (Ст. 5)</span>

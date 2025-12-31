@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { AnalysisResult, Translations, SessionStep } from '../../types';
 import { CompatibilityEngine } from '../../services/compatibilityEngine';
@@ -35,7 +34,7 @@ const SupervisionCard = ({ title, children, type = 'info' }: { title: string, ch
              'border-slate-700/50 text-slate-500'
         }`}>
             <span>{title}</span>
-            <span>{type === 'alert' ? '⚠️' : type === 'secret' ? 'CONFIDENTIAL' : 'INFO'}</span>
+            <span>{type === 'alert' ? '⚠️' : type === 'secret' ? 'СЕКРЕТНО' : 'ИНФО'}</span>
         </div>
         <div className="p-3">
             {children}
@@ -52,7 +51,7 @@ const SessionArc = ({ steps }: { steps: SessionStep[] }) => (
                     <div className="w-0.5 h-6 bg-slate-800 last:hidden"></div>
                 </div>
                 <div>
-                    <span className="text-[8px] font-black uppercase tracking-widest text-slate-500 block mb-0.5">Step {idx + 1}: {step.phase}</span>
+                    <span className="text-[8px] font-black uppercase tracking-widest text-slate-500 block mb-0.5">ШАГ {idx + 1}: {step.phase}</span>
                     <h5 className="text-[10px] font-bold text-slate-200 uppercase">{step.title}</h5>
                     <p className="text-[10px] text-slate-400 leading-tight mt-1 font-mono opacity-80">{step.action}</p>
                 </div>
@@ -82,26 +81,26 @@ const ValidityPanel = ({ result }: { result: AnalysisResult }) => {
     return (
         <div className="bg-red-950/20 border border-red-900/40 p-3 rounded-xl mb-4">
             <div className="flex justify-between items-center mb-2 border-b border-red-900/30 pb-1">
-                <span className="text-[8px] font-black uppercase tracking-widest text-red-400">SIGNAL QUALITY CHECK</span>
+                <span className="text-[8px] font-black uppercase tracking-widest text-red-400">КОНТРОЛЬ КАЧЕСТВА СИГНАЛА</span>
                 <span className="text-[8px] font-mono text-red-500 bg-red-900/20 px-1 rounded">{result.validity}</span>
             </div>
             <div className="space-y-1">
                 {flags.isAlexithymiaDetected && (
                     <div className="flex gap-2 items-center text-[9px] text-slate-300">
                         <span>🧊</span> 
-                        <span><strong>Somatic Blindness:</strong> User reports 'Neutral' &gt; 75%. Sync metric unreliable.</span>
+                        <span><strong>Соматическая Слепота:</strong> Клиент выбирает 'Нейтрально' &gt; 75%. Метрика связи ненадежна.</span>
                     </div>
                 )}
                 {flags.isSocialDesirabilityBiasDetected && (
                     <div className="flex gap-2 items-center text-[9px] text-slate-300">
                         <span>🎭</span> 
-                        <span><strong>Social Bias:</strong> Rapid response pattern detected. Risk of role-playing.</span>
+                        <span><strong>Социальная Желательность:</strong> Слишком быстрые ответы. Риск "отыгрывания" роли.</span>
                     </div>
                 )}
                 {flags.isSlowProcessingDetected && (
                     <div className="flex gap-2 items-center text-[9px] text-slate-300">
                         <span>🐢</span> 
-                        <span><strong>Slow Processing:</strong> High cognitive load baseline. Entropy compensated.</span>
+                        <span><strong>Замедленная Обработка:</strong> Высокая базовая когнитивная нагрузка. Энтропия скорректирована.</span>
                     </div>
                 )}
             </div>
@@ -118,7 +117,7 @@ const SomaticDissonancePanel = ({ result, t }: { result: AnalysisResult, t: Tran
                 <span className="text-[8px] font-black uppercase tracking-widest text-amber-500 flex items-center gap-2">
                     <span className="text-xs">⚡</span> {t.clinical_decoder.somatic_dissonance_title}
                 </span>
-                <span className="text-[8px] bg-amber-900/40 text-amber-400 px-2 py-0.5 rounded font-mono">{result.somaticDissonance.length} CONFLICTS</span>
+                <span className="text-[8px] bg-amber-900/40 text-amber-400 px-2 py-0.5 rounded font-mono">{result.somaticDissonance.length} КОНФЛИКТОВ</span>
             </div>
             <p className="text-[9px] text-slate-400 mb-2 leading-tight">
                 {t.clinical_decoder.somatic_dissonance_desc}
@@ -164,16 +163,16 @@ export const CompatibilityView: React.FC<CompatibilityViewProps> = ({ t, onBack 
       let priorityLevel: 'low' | 'medium' | 'high' = 'low';
       
       if (clientResult.state.foundation < 30) {
-          priority = "🛑 АВАРИЙНЫЙ РЕЖИМ (CRITICAL)";
+          priority = "🛑 АВАРИЙНЫЙ РЕЖИМ (КРИТИЧНО)";
           priorityLevel = 'high';
       } else if (clientResult.state.agency > 80 && clientResult.state.foundation < 40) {
-          priority = "⚠️ РИСК СРЫВА (MANIC DEFENSE)";
+          priority = "⚠️ РИСК СРЫВА (МАНИАКАЛЬНАЯ ЗАЩИТА)";
           priorityLevel = 'high';
       } else if (clientResult.neuroSync < 40) {
-          priority = "🧊 ДИССОЦИАЦИЯ (FREEZE)";
+          priority = "🧊 ДИССОЦИАЦИЯ (ЗАМИРАНИЕ)";
           priorityLevel = 'medium';
       } else {
-          priority = "✅ ШТАТНЫЙ РЕЖИМ (STABLE)";
+          priority = "✅ ШТАТНЫЙ РЕЖИМ (СТАБИЛЬНО)";
           priorityLevel = 'low';
       }
 
@@ -193,8 +192,8 @@ export const CompatibilityView: React.FC<CompatibilityViewProps> = ({ t, onBack 
                 ← {t.global.back}
             </button>
             <div className="flex flex-col items-end">
-                 <span className="text-[10px] font-mono text-indigo-600 font-black tracking-widest">CLINICAL_TERMINAL</span>
-                 <span className="text-[7px] font-mono text-slate-400 uppercase">Supervisor OS v5.2</span>
+                 <span className="text-[10px] font-mono text-indigo-600 font-black tracking-widest">КЛИНИЧЕСКИЙ ТЕРМИНАЛ</span>
+                 <span className="text-[7px] font-mono text-slate-400 uppercase">ОС Супервизора v5.2</span>
             </div>
         </div>
 
@@ -206,9 +205,9 @@ export const CompatibilityView: React.FC<CompatibilityViewProps> = ({ t, onBack 
                         🔐
                     </div>
                     <div>
-                        <h3 className="text-sm font-black uppercase text-slate-900">Access Restricted</h3>
+                        <h3 className="text-sm font-black uppercase text-slate-900">Доступ Ограничен</h3>
                         <p className="text-[10px] text-slate-500 font-medium mt-1 max-w-[200px] mx-auto">
-                            Enter Client ID or Share Code to decrypt the clinical profile.
+                            Введите ID Клиента или Код Доступа для расшифровки клинического профиля.
                         </p>
                     </div>
                 </div>
@@ -216,7 +215,7 @@ export const CompatibilityView: React.FC<CompatibilityViewProps> = ({ t, onBack 
                 <div className="flex gap-2 p-2 bg-slate-50 rounded-2xl border border-slate-100 shadow-inner">
                     <input 
                         type="text" 
-                        placeholder="PASTE CODE (VEHFX...)"
+                        placeholder="ВСТАВИТЬ КОД (VEHFX...)"
                         className="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-3 font-mono text-xs uppercase text-indigo-600 outline-none focus:border-indigo-500 transition-colors placeholder-indigo-900/30 resize-none leading-relaxed"
                         value={partnerCode}
                         onChange={e => setPartnerCode(e.target.value)}
@@ -225,7 +224,7 @@ export const CompatibilityView: React.FC<CompatibilityViewProps> = ({ t, onBack 
                         onClick={handleAnalyze} 
                         className="bg-indigo-600 text-white px-6 rounded-xl font-black text-[10px] uppercase shadow-lg shadow-indigo-200 active:scale-95 transition-all"
                     >
-                        DECRYPT
+                        РАСШИФРОВАТЬ
                     </button>
                 </div>
             </div>
@@ -239,15 +238,15 @@ export const CompatibilityView: React.FC<CompatibilityViewProps> = ({ t, onBack 
                 <div className="border-b border-slate-800 pb-4 space-y-4">
                     <div className="flex justify-between items-center">
                         <div className="space-y-0.5">
-                            <span className="text-[8px] text-emerald-500 font-black uppercase tracking-widest block">CLIENT_ID</span>
+                            <span className="text-[8px] text-emerald-500 font-black uppercase tracking-widest block">ID КЛИЕНТА</span>
                             <span className="text-[10px] text-emerald-500 font-mono font-bold tracking-wider">{clientResult.shareCode.substring(0, 8)}</span>
                         </div>
                         
                         {/* QUICK TAGS */}
                         <div className="flex gap-1">
-                            {interpretation.priorityLevel === 'high' && <span className="bg-red-950/50 text-red-400 border border-red-900/50 px-2 py-0.5 rounded text-[7px] font-black uppercase tracking-wider">RISK_HIGH</span>}
-                            {clientResult.neuroSync < 50 && <span className="bg-indigo-950/50 text-indigo-400 border border-indigo-900/50 px-2 py-0.5 rounded text-[7px] font-black uppercase tracking-wider">DISSOCIATED</span>}
-                            {clientResult.flags?.entropyType === 'CREATIVE' && <span className="bg-emerald-950/50 text-emerald-400 border border-emerald-900/50 px-2 py-0.5 rounded text-[7px] font-black uppercase tracking-wider">CREATIVE_CHAOS</span>}
+                            {interpretation.priorityLevel === 'high' && <span className="bg-red-950/50 text-red-400 border border-red-900/50 px-2 py-0.5 rounded text-[7px] font-black uppercase tracking-wider">ВЫСОКИЙ РИСК</span>}
+                            {clientResult.neuroSync < 50 && <span className="bg-indigo-950/50 text-indigo-400 border border-indigo-900/50 px-2 py-0.5 rounded text-[7px] font-black uppercase tracking-wider">ДИССОЦИАЦИЯ</span>}
+                            {clientResult.flags?.entropyType === 'CREATIVE' && <span className="bg-emerald-950/50 text-emerald-400 border border-emerald-900/50 px-2 py-0.5 rounded text-[7px] font-black uppercase tracking-wider">ТВОРЧЕСКИЙ ХАОС</span>}
                         </div>
                     </div>
 
@@ -262,17 +261,17 @@ export const CompatibilityView: React.FC<CompatibilityViewProps> = ({ t, onBack 
                     }`}>
                         <span className="text-xl">{interpretation.priorityLevel === 'high' ? '🛑' : interpretation.priorityLevel === 'medium' ? '⚠️' : '✅'}</span>
                         <div>
-                            <span className="text-[7px] font-black uppercase tracking-widest opacity-60 block">SESSION PROTOCOL</span>
+                            <span className="text-[7px] font-black uppercase tracking-widest opacity-60 block">ПРОТОКОЛ СЕССИИ</span>
                             <p className="text-[10px] font-bold leading-tight">{interpretation.priority}</p>
                         </div>
                     </div>
 
                     {/* VITAL MONITORS GRID */}
                     <div className="grid grid-cols-4 gap-2">
-                        <VitalMonitor label="FND" value={Math.round(clientResult.state.foundation)} color="text-slate-200" />
-                        <VitalMonitor label="AGC" value={Math.round(clientResult.state.agency)} color="text-blue-400" />
-                        <VitalMonitor label="RES" value={Math.round(clientResult.state.resource)} color="text-amber-400" />
-                        <VitalMonitor label="ENT" value={Math.round(clientResult.state.entropy)} color={clientResult.state.entropy > 40 && clientResult.flags?.entropyType !== 'CREATIVE' ? 'text-red-400' : 'text-emerald-400'} />
+                        <VitalMonitor label="ФНД" value={Math.round(clientResult.state.foundation)} color="text-slate-200" />
+                        <VitalMonitor label="ВЛ" value={Math.round(clientResult.state.agency)} color="text-blue-400" />
+                        <VitalMonitor label="РЕС" value={Math.round(clientResult.state.resource)} color="text-amber-400" />
+                        <VitalMonitor label="ЭНТ" value={Math.round(clientResult.state.entropy)} color={clientResult.state.entropy > 40 && clientResult.flags?.entropyType !== 'CREATIVE' ? 'text-red-400' : 'text-emerald-400'} />
                     </div>
                 </div>
 
@@ -281,24 +280,24 @@ export const CompatibilityView: React.FC<CompatibilityViewProps> = ({ t, onBack 
 
                 {/* 3. SESSION FLOW ARC */}
                 <div>
-                    <h4 className="text-[9px] font-black uppercase text-indigo-400 tracking-[0.2em] pl-1 mb-2">SESSION_FLOW_ARC</h4>
+                    <h4 className="text-[9px] font-black uppercase text-indigo-400 tracking-[0.2em] pl-1 mb-2">ДУГА СЕССИИ (FLOW ARC)</h4>
                     <SessionArc steps={interpretation.narrative.sessionFlow} />
                 </div>
 
                 {/* 4. SUPERVISION DOSSIER */}
                 <div className="space-y-3">
-                    <h4 className="text-[9px] font-black uppercase text-slate-600 tracking-[0.2em] pl-1">SUPERVISION_LAYER</h4>
+                    <h4 className="text-[9px] font-black uppercase text-slate-600 tracking-[0.2em] pl-1">СЛОЙ СУПЕРВИЗИИ</h4>
                     
                     <div className="grid grid-cols-1 gap-3">
-                        <SupervisionCard title="RESISTANCE" type="alert">
+                        <SupervisionCard title="СОПРОТИВЛЕНИЕ" type="alert">
                             <p className="text-[10px] text-slate-300 leading-relaxed">{interpretation.narrative.resistanceProfile}</p>
                         </SupervisionCard>
 
-                        <SupervisionCard title="ALLIANCE" type="info">
+                        <SupervisionCard title="АЛЬЯНС" type="info">
                             <p className="text-[10px] text-indigo-200 leading-relaxed">{interpretation.narrative.therapeuticAlliance}</p>
                         </SupervisionCard>
 
-                        <SupervisionCard title="CONTRACT" type="secret">
+                        <SupervisionCard title="КОНТРАКТ" type="secret">
                             <p className="text-[10px] text-slate-300 italic leading-relaxed">"{interpretation.narrative.shadowContract}"</p>
                         </SupervisionCard>
                     </div>
@@ -306,14 +305,14 @@ export const CompatibilityView: React.FC<CompatibilityViewProps> = ({ t, onBack 
 
                 {/* 5. CLINICAL DATA STREAM */}
                 <div className="space-y-4 pt-4 border-t border-slate-800">
-                    <NarrativeSection title="01. DEEP ANALYSIS" content={interpretation.narrative.deepAnalysis} highlight />
-                    <NarrativeSection title="BEHAVIORAL MARKERS" content={interpretation.narrative.behavioralMarkers} icon="👀" />
-                    <NarrativeSection title="SYSTEMIC ROOT" content={interpretation.narrative.systemicRoot} icon="🌳" />
+                    <NarrativeSection title="01. ГЛУБИННЫЙ АНАЛИЗ" content={interpretation.narrative.deepAnalysis} highlight />
+                    <NarrativeSection title="ПОВЕДЕНЧЕСКИЕ МАРКЕРЫ" content={interpretation.narrative.behavioralMarkers} icon="👀" />
+                    <NarrativeSection title="СИСТЕМНЫЙ КОРЕНЬ" content={interpretation.narrative.systemicRoot} icon="🌳" />
                     
                     {/* Clinical Hypotheses */}
                     <div className="bg-amber-950/10 p-4 rounded-xl border-l-2 border-amber-500/50">
                         <h4 className="text-[9px] font-black uppercase text-amber-500 tracking-widest mb-2 flex items-center gap-2">
-                            <span>⚡</span> CLINICAL HYPOTHESES
+                            <span>⚡</span> КЛИНИЧЕСКИЕ ГИПОТЕЗЫ
                         </h4>
                         <div className="whitespace-pre-wrap text-[10px] text-slate-300 leading-relaxed font-mono opacity-90">
                             {interpretation.narrative.clinicalHypotheses}
@@ -322,7 +321,7 @@ export const CompatibilityView: React.FC<CompatibilityViewProps> = ({ t, onBack 
 
                     {/* Verdict */}
                     <div className="bg-emerald-950/20 p-4 rounded-xl border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.05)]">
-                         <h4 className="text-[9px] font-black uppercase text-emerald-500 tracking-widest mb-2">VERDICT & PROTOCOL</h4>
+                         <h4 className="text-[9px] font-black uppercase text-emerald-500 tracking-widest mb-2">ВЕРДИКТ И ПРОТОКОЛ</h4>
                          <div className="whitespace-pre-wrap text-[10px] text-emerald-100/90 leading-relaxed font-mono">
                             {interpretation.narrative.verdictAndRecommendations}
                         </div>
@@ -338,7 +337,7 @@ export const CompatibilityView: React.FC<CompatibilityViewProps> = ({ t, onBack 
                         onClick={() => setClientResult(null)} 
                         className="text-[9px] font-black text-red-400 uppercase tracking-widest hover:text-red-300 transition-colors bg-red-950/20 px-4 py-3 rounded-lg border border-red-900/30 w-full"
                      >
-                        [ CLOSE SESSION ]
+                        [ ЗАКРЫТЬ СЕССИЮ ]
                      </button>
                 </div>
             </div>

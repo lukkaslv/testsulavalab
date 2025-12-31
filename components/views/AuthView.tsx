@@ -184,6 +184,11 @@ const ClinicalAirlock = ({ onAuth, onBack }: { onAuth: (k: string) => void, onBa
     const [isAdminOverride, setIsAdminOverride] = useState(false);
     const [showSubModal, setShowSubModal] = useState(false);
 
+    useEffect(() => {
+        const cached = localStorage.getItem('genesis_license_cache');
+        if (cached) setKey(cached);
+    }, []);
+
     // Art. 26: Reactive Admin Detection
     useEffect(() => {
         if (key.trim().toLowerCase() === 'genesis_prime') {
@@ -351,6 +356,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
           return;
       }
 
+      localStorage.setItem('genesis_license_cache', pwd);
       onLogin('genesis_lab_entry', false, license.tier as SubscriptionTier);
   };
 

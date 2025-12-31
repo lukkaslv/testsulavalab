@@ -1,4 +1,3 @@
-
 import { STORAGE_KEYS } from '../constants';
 import { calculateRawMetrics } from './psychologyService';
 import { SecurityCore } from '../utils/crypto';
@@ -10,7 +9,8 @@ class NetworkObserver {
         'localhost', '127.0.0.1', '0.0.0.0', 
         'raw.githubusercontent.com', 'cdn.tailwindcss.com', 
         'fonts.googleapis.com', 'fonts.gstatic.com', 'telegram.org',
-        'aistudio.google.com', 'esm.sh'
+        'aistudio.google.com', 'esm.sh',
+        'supabase.co' 
     ];
     public violations: string[] = [];
     public requestCount = 0;
@@ -95,7 +95,7 @@ export const IntegrityService = {
         const scripts = document.head.getElementsByTagName('script');
         for(let i = 0; i < scripts.length; i++) {
             const src = scripts[i].src;
-            if (src && !src.includes('telegram') && !src.includes('tailwindcss') && !src.includes('vite') && !src.includes('react') && !src.includes('esm.sh')) {
+            if (src && !src.includes('telegram') && !src.includes('tailwindcss') && !src.includes('vite') && !src.includes('react') && !src.includes('esm.sh') && !src.includes('supabase')) {
             }
         }
         return true;
@@ -211,6 +211,7 @@ export const IntegrityService = {
                     src.includes('esm.sh') || 
                     src.includes(window.location.origin) || 
                     src.includes('google') ||
+                    src.includes('supabase') ||
                     type === 'importmap' || 
                     type === 'module';
 

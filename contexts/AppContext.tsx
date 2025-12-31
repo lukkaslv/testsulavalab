@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { translations } from '@/translations';
 import { Translations, GameHistoryItem, ScanHistory, SubscriptionTier, DataCorruptionError, AppContextType, NetworkAuditReport, IntegrityReport, LifeContext } from '../types';
@@ -24,6 +23,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const rawTranslations: Translations = useMemo(() => translations[lang], [lang]);
   
   const [view, setView] = useState<string>('auth');
+  const [previousView, setPreviousView] = useState<string | null>(null);
   const [sessionContext, setSessionContextState] = useState<LifeContext>('NORMAL');
   const [isDemo, setIsDemo] = useState(false);
   const [isPro, setIsPro] = useState(false);
@@ -40,6 +40,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [scanHistory, setScanHistory] = useState<ScanHistory>({ scans: [], latestScan: null, evolutionMetrics: { entropyTrend: [], integrityTrend: [], dates: [] } });
 
   const isInitialized = useRef(false);
+  const viewRef = useRef(view);
+
+  useEffect(() => {
+      viewRef.current = view;
+  }, [view]);
 
   // ПРОТОКОЛ УБЕЖИЩА: Семантическая Очистка (Ст. 10.4 Изоляция)
   const t = useMemo(() => {
@@ -111,6 +116,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const setViewAndPersist = useCallback((newView: string) => {
     if (!VALID_VIEWS.includes(newView)) return;
+    setPreviousView(viewRef.current);
     sessionStorage.setItem('genesis_last_view', newView);
     setView(newView);
   }, []);
@@ -174,10 +180,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const handleLogout = useCallback(() => { 
       sanitizeMemory();
-      // Preserve OATH signature to prevent repetition
+      // Preserve persistent convenience keys
       const oath = localStorage.getItem('genesis_oath_signed');
+      const licenseCache = localStorage.getItem('genesis_license_cache');
+      
       localStorage.clear();
+      
       if (oath) localStorage.setItem('genesis_oath_signed', oath);
+      if (licenseCache) localStorage.setItem('genesis_license_cache', licenseCache);
       
       sessionStorage.clear();
       setView('auth'); 
@@ -187,13 +197,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const action = () => {
       const isProSession = isPro;
       const tier = licenseTier;
-      // Preserve OATH signature
+      // Preserve persistent keys
       const oath = localStorage.getItem('genesis_oath_signed');
+      const licenseCache = localStorage.getItem('genesis_license_cache');
       
       localStorage.clear();
       sessionStorage.clear();
       
       if (oath) localStorage.setItem('genesis_oath_signed', oath);
+      if (licenseCache) localStorage.setItem('genesis_license_cache', licenseCache);
       
       if (!force && isProSession) {
           localStorage.setItem(STORAGE_KEYS.SESSION, 'true');
@@ -218,14 +230,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [sanitizeMemory]);
 
   const value = useMemo<AppContextType>(() => ({
-    lang, t, view, setViewAndPersist, 
+    lang, t, view, previousView, setViewAndPersist, 
     sessionContext, setSessionContext,
     isDemo, isPro, isMaster, licenseTier,
     isSafeDevMode, setSafeDevMode,
     completedNodeIds, setCompletedNodeIds, history, setHistory,
     dataStatus, scanHistory, usageStats, networkReport, integrityReport,
     handleLogin, handleLogout, handleReset, handleFullReset
-  }), [view, sessionContext, setSessionContext, isDemo, isPro, isMaster, licenseTier, isSafeDevMode, setSafeDevMode, completedNodeIds, history, dataStatus, scanHistory, usageStats, networkReport, integrityReport, handleLogin, handleLogout, handleReset, handleFullReset, t]);
+  }), [view, previousView, sessionContext, setSessionContext, isDemo, isPro, isMaster, licenseTier, isSafeDevMode, setSafeDevMode, completedNodeIds, history, dataStatus, scanHistory, usageStats, networkReport, integrityReport, handleLogin, handleLogout, handleReset, handleFullReset, t]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };

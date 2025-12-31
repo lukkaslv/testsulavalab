@@ -596,6 +596,7 @@ export interface AppContextType {
     lang: string;
     t: Translations;
     view: string;
+    previousView: string | null;
     setViewAndPersist: (view: string) => void;
     sessionContext: LifeContext;
     setSessionContext: (ctx: LifeContext) => void;

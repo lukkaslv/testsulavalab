@@ -1,3 +1,4 @@
+
 import React, { memo, useMemo, useState, useEffect, useRef } from 'react';
 import { Translations, ScanHistory, SubscriptionTier, AnalysisResult } from '../../types';
 import { PlatformBridge } from '../../utils/helpers';
@@ -246,7 +247,7 @@ export const ProHubView: React.FC<ProHubViewProps> = memo(({ t, onSetView, onLog
                 <div>
                     <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                        <h2 className="text-xl font-black uppercase tracking-tighter text-white italic leading-none">CORTEX</h2>
+                        <h2 className="text-xl font-black uppercase tracking-tighter text-white italic leading-none">КОРТЕКС</h2>
                     </div>
                     <span className="text-[7px] text-slate-500 font-mono mt-1 block uppercase tracking-widest">
                         Клинический Узел Управления // {licenseTier}
@@ -267,11 +268,17 @@ export const ProHubView: React.FC<ProHubViewProps> = memo(({ t, onSetView, onLog
                         <div className="flex gap-2">
                             <input 
                                 type="text" 
-                                placeholder="ПОИСК ID..." 
+                                placeholder="ПОИСК..." 
                                 value={searchQuery}
                                 onChange={e => setSearchQuery(e.target.value)}
                                 className="flex-1 bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-[10px] font-mono text-white outline-none focus:border-indigo-500 transition-all uppercase placeholder-slate-600"
                             />
+                            <button 
+                                onClick={() => onSetView('pro_terminal')} 
+                                className="bg-indigo-600 text-white px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-lg flex items-center justify-center border border-indigo-500"
+                            >
+                                ТЕРМИНАЛ
+                            </button>
                         </div>
                         <div className="flex gap-2 overflow-x-auto no-scrollbar">
                             {(['ALL', 'CRITICAL', 'TODAY'] as const).map(f => (

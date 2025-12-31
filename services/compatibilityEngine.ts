@@ -129,6 +129,20 @@ export const CompatibilityEngine = {
         if (cleanInput === 'SOVEREIGN_TRACE_BETA') return this.createSafeSkeleton(40, 95, 30, 45, 2);
         if (cleanInput === 'SOVEREIGN_TRACE_GAMMA') return this.createSafeSkeleton(25, 30, 15, 85, 4);
 
+        // --- SPECIAL DEMO FOR PSYCHOLOGISTS ---
+        if (cleanInput === 'DEMO_CLINICAL_CASE') {
+            // F:32 (Low), A:88 (High), R:45, E:55 (High Entropy)
+            // Archetype 2: THE_BURNED_HERO (Герой)
+            const result = this.createSafeSkeleton(32, 88, 45, 55, 2); 
+            result.history = this.generateStressHistory(); // Populate fake history for graphs
+            result.neuroSync = 38; // Low NeuroSync to show dissociation warning
+            result.verdictKey = 'BRILLIANT_SABOTAGE';
+            result.validity = 'VALID';
+            result.shareCode = 'DEMO_CLIENT_#001';
+            result.flags.isAlexithymiaDetected = true; // Add flag for richness
+            return result;
+        }
+
         // --- STRESS TEST 20K PROTOCOL ---
         if (cleanInput === 'FORENSIC_MAX_LOAD_STRESS_2026') {
             const result = this.createSafeSkeleton(28, 88, 35, 72, 2); // Срыв в манию
@@ -152,7 +166,8 @@ export const CompatibilityEngine = {
         const codeToDecode = match[0];
         let decoded = '';
         try {
-            decoded = atob(codeToDecode);
+            // FIX: Use Unicode-safe decoding
+            decoded = SecurityCore.fromBase64(codeToDecode);
         } catch(e) { return null; }
 
         const partsRaw = decoded.split('#');

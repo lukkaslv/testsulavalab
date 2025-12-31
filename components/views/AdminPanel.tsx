@@ -1,4 +1,3 @@
-
 import { useState, memo, useMemo, useEffect } from 'react';
 import { Translations, GameHistoryItem, LicenseRecord, IntegrityReport, BeliefKey } from '../../types';
 import { PlatformBridge } from '../../utils/helpers';
@@ -8,6 +7,7 @@ import { IntegrityService } from '../../services/integrityService';
 import { WEIGHTS, recalibrateWeights } from '../../services/psychologyService';
 import { ALL_BELIEFS, SYSTEM_METADATA } from '../../constants';
 import { useAppContext } from '../../hooks/useAppContext';
+import { RemoteAccess } from '../../services/remoteAccess';
 
 interface AdminPanelProps {
   t: Translations;
@@ -159,6 +159,8 @@ export const AdminPanel = memo<AdminPanelProps>(({ t, onExit, history, onSetView
   const [genTier] = useState('CLINICAL');
   const [registry, setRegistry] = useState<LicenseRecord[]>([]);
   const [lastKey, setLastKey] = useState('');
+  const [syncStatus, setSyncStatus] = useState('');
+  const [isLoadingRegistry, setIsLoadingRegistry] = useState(false);
 
   useEffect(() => {
       const beat = () => setIntegrityReport(IntegrityService.runAudit(t));
@@ -167,24 +169,69 @@ export const AdminPanel = memo<AdminPanelProps>(({ t, onExit, history, onSetView
       return () => clearInterval(interval);
   }, [t]);
 
+  // Load registry when tab is active
   useEffect(() => {
-      setRegistry(StorageService.getLicenseRegistry());
+      if (activeTab === 'registry') {
+          loadRegistry();
+      }
   }, [activeTab]);
+
+  const loadRegistry = async () => {
+      setIsLoadingRegistry(true);
+      try {
+          // Fetch from Supabase
+          const remoteData = await RemoteAccess.getAllLicenses();
+          if (remoteData.length > 0) {
+              setRegistry(remoteData);
+              setSyncStatus('CLOUD_CONNECTED');
+          } else {
+              // Fallback to local
+              setRegistry(StorageService.getLicenseRegistry());
+              setSyncStatus('LOCAL_STORAGE');
+          }
+      } catch (e) {
+          setSyncStatus('ERROR_SYNC');
+      } finally {
+          setIsLoadingRegistry(false);
+      }
+  };
 
   const telemetry = useMemo(() => StorageService.getTelemetry(), []);
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
       if (!clientName.trim()) { PlatformBridge.haptic.notification('error'); return; }
       const key = SecurityCore.generateLicense(genTier, 30);
       const record: LicenseRecord = {
-          id: Date.now().toString(36), clientName: clientName.trim(), key, tier: genTier,
+          id: key, clientName: clientName.trim(), key, tier: genTier,
           issuedAt: Date.now(), expiresAt: Date.now() + 2592000000, status: 'ACTIVE'
       };
+      
+      // 1. Sync to Supabase
+      setSyncStatus('SYNCING...');
+      const synced = await RemoteAccess.registerLicense(record);
+      setSyncStatus(synced ? 'CLOUD_SYNCED' : 'LOCAL_ONLY');
+      
+      // 2. Save Local
       StorageService.saveLicenseRecord(record);
-      setRegistry((prev: LicenseRecord[]) => [record, ...prev]);
+      
       setLastKey(key);
       setClientName('');
+      loadRegistry(); // Refresh list
+      
       PlatformBridge.haptic.notification('success');
+  };
+
+  const handleRevoke = async (key: string) => {
+      if (confirm('ОТОЗВАТЬ ЛИЦЕНЗИЮ? Доступ будет заблокирован немедленно.')) {
+          PlatformBridge.haptic.impact('heavy');
+          const success = await RemoteAccess.revokeLicense(key);
+          if (success) {
+              loadRegistry(); // Refresh list
+              PlatformBridge.haptic.notification('success');
+          } else {
+              PlatformBridge.haptic.notification('error');
+          }
+      }
   };
 
   const TAB_LABELS: Record<string, string> = {
@@ -293,26 +340,49 @@ export const AdminPanel = memo<AdminPanelProps>(({ t, onExit, history, onSetView
                     {lastKey && (
                         <div 
                             onClick={() => navigator.clipboard.writeText(lastKey)}
-                            className="bg-black/60 p-3 rounded-xl border border-emerald-500/30 text-[9px] font-mono text-emerald-400 break-all cursor-copy active:opacity-50"
+                            className="bg-black/60 p-3 rounded-xl border border-emerald-500/30 space-y-1 active:opacity-50"
                         >
-                            {lastKey}
+                            <div className="text-[9px] font-mono text-emerald-400 break-all cursor-copy">{lastKey}</div>
+                            {syncStatus && <div className="text-[7px] font-black uppercase text-indigo-400 text-right">{syncStatus}</div>}
                         </div>
                     )}
                 </div>
 
                 <div className="space-y-2">
-                    <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest pl-2">Локальный Реестр</span>
-                    {registry.map((rec) => (
-                        <div key={rec.id} className="bg-slate-900/40 border border-white/5 p-3 rounded-xl flex justify-between items-center">
-                            <div className="flex flex-col">
-                                <span className="text-[9px] font-bold text-slate-200">{rec.clientName}</span>
-                                <span className="text-[7px] font-mono text-slate-500">{new Date(rec.issuedAt).toLocaleDateString()}</span>
-                            </div>
-                            <span className={`text-[7px] font-black px-2 py-1 rounded ${rec.status === 'ACTIVE' ? 'bg-emerald-900/30 text-emerald-400' : 'bg-red-900/30 text-red-400'}`}>
-                                {rec.status}
-                            </span>
+                    <div className="flex justify-between items-center px-2">
+                        <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Глобальный Реестр</span>
+                        <div className="flex items-center gap-2">
+                            <span className="text-[7px] font-bold text-slate-500">{syncStatus}</span>
+                            <button onClick={loadRegistry} className="text-[10px]">🔄</button>
                         </div>
-                    ))}
+                    </div>
+                    
+                    {isLoadingRegistry ? (
+                        <div className="text-center py-10 text-[9px] text-slate-500 animate-pulse">ЗГРУЗКА ДАННЫХ SUPABASE...</div>
+                    ) : (
+                        registry.map((rec) => (
+                            <div key={rec.key} className="bg-slate-900/40 border border-white/5 p-3 rounded-xl flex justify-between items-center group hover:bg-slate-900/60 transition-colors">
+                                <div className="flex flex-col gap-1 overflow-hidden max-w-[60%]">
+                                    <span className="text-[9px] font-bold text-slate-200 truncate">{rec.clientName}</span>
+                                    <span className="text-[7px] font-mono text-slate-500 truncate">{rec.key}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className={`text-[7px] font-black px-2 py-1 rounded ${rec.status === 'ACTIVE' ? 'bg-emerald-900/30 text-emerald-400' : 'bg-red-900/30 text-red-400'}`}>
+                                        {rec.status}
+                                    </span>
+                                    {rec.status === 'ACTIVE' && (
+                                        <button 
+                                            onClick={() => handleRevoke(rec.key)}
+                                            className="w-6 h-6 rounded bg-red-950/30 border border-red-500/30 flex items-center justify-center text-[10px] text-red-500 hover:bg-red-900/50 hover:text-white transition-all"
+                                            title="ОТОЗВАТЬ"
+                                        >
+                                            ✕
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        ))
+                    )}
                 </div>
             </div>
         )}

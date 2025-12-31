@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useCallback } from 'react';
 import { Layout } from './components/Layout';
 import { MODULE_REGISTRY, DOMAIN_SETTINGS } from './constants';
@@ -53,7 +52,7 @@ const App: React.FC = () => {
     t, view, setViewAndPersist, licenseTier, isDemo, isPro,
     completedNodeIds, setCompletedNodeIds, history, setHistory,
     dataStatus, scanHistory, usageStats, networkReport,
-    handleLogout, handleReset, handleLogin
+    handleLogout, handleReset, handleLogin, previousView
   } = useAppContext();
 
   const [activeTest, setActiveTest] = useState<{ id: string; domain: DomainType | null }>({ id: '0', domain: 'foundation' });
@@ -131,14 +130,14 @@ const App: React.FC = () => {
         return <CrisisView t={t} onExit={() => handleReset(true)} />;
     }
 
-    const backTo = isPro ? 'pro_hub' : 'dashboard';
+    const backTo = previousView === 'admin' ? 'admin' : (isPro ? 'pro_hub' : 'dashboard');
 
     switch (view) {
       case 'auth': return <AuthView onLogin={handleLogin} t={t} />;
       case 'boot': return <BootView onComplete={() => setViewAndPersist(backTo)} t={t} />;
       case 'dashboard': return <DashboardView nodes={nodes} result={result} onStartNode={engineInstance.startNode} onResume={() => handleContinue()} globalProgress={Math.round(adaptiveState.clarity)} t={t} isDemo={isDemo} completedNodeIds={completedNodeIds} onSetView={setViewAndPersist} scanHistory={scanHistory} onSetCurrentDomain={() => {}} currentDomain={null} />;
       case 'pro_hub': return <ProHubView t={t} usageStats={usageStats} onSetView={setViewAndPersist} onLogout={handleLogout} licenseTier={licenseTier} scanHistory={scanHistory} onStartNode={engineInstance.startNode} onSelectScan={(s) => { setSelectedScan(s); setViewAndPersist('scan_detail'); }} onCompareScans={(a,b) => { setCompareSelection([a,b]); setViewAndPersist('compare'); }} />;
-      case 'pro_terminal': return <ProTerminalView t={t} onBack={() => setViewAndPersist('pro_hub')} />;
+      case 'pro_terminal': return <ProTerminalView t={t} onBack={() => setViewAndPersist(backTo)} />;
       case 'test': return <TestView t={t} activeModule={activeTest.domain!} currentId={activeTest.id} scene={MODULE_REGISTRY[activeTest.domain!]![activeTest.id]} onChoice={engineInstance.handleChoice} onExit={() => setViewAndPersist(backTo)} getSceneText={(path) => resolvePath(t, path)} adaptiveState={adaptiveState} />;
       case 'body_sync': return <BodySyncView t={t} onSync={engineInstance.syncBodySensation} />;
       case 'stabilization': return <StabilizationView t={t} onComplete={() => handleContinue()} />;
