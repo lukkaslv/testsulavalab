@@ -2,7 +2,7 @@
 import { ALL_BELIEFS, MODULE_REGISTRY, TOTAL_NODES } from '../constants';
 import { translations } from '@/translations';
 import { WEIGHTS } from './psychologyService';
-import { BeliefKey, SimulationReport, JourneyAnomaly, PersonaResult } from '../types';
+import { BeliefKey, SimulationReport, DomainType } from '../types';
 
 // Deterministic Pseudo-Random for Simulation (Same input = Same report)
 const pseudoRandom = (seed: number) => {
@@ -40,7 +40,10 @@ export const SimulationService = {
     const rnd = pseudoRandom(12345);
 
     // 1. Pathfinder Coverage
-    const allNodeIds = Object.keys(MODULE_REGISTRY).flatMap(domain => Object.keys(MODULE_REGISTRY[domain as any]));
+    const allNodeIds = Object.keys(MODULE_REGISTRY).flatMap(domain => {
+        const modules = MODULE_REGISTRY[domain as DomainType];
+        return modules ? Object.keys(modules) : [];
+    });
     report.pathfinder.pathsChecked = allNodeIds.length;
     report.pathfinder.coverage = Math.round((allNodeIds.length / TOTAL_NODES) * 100);
 

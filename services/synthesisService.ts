@@ -9,7 +9,7 @@ import { AnalysisResult, ClinicalSynthesis, SynthesisInsight, Translations } fro
 export const SynthesisService = {
   generateSynthesis(result: AnalysisResult, t: Translations): ClinicalSynthesis {
     const s = t.synthesis;
-    const { state, neuroSync, archetypeKey } = result;
+    const { state, neuroSync } = result;
     const { foundation: f, agency: a, resource: r, entropy: e } = state;
 
     // Определение ключевого паттерна сопротивления (Art. 3.1)

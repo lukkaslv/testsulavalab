@@ -6,33 +6,6 @@ import { AnalysisResult, Translations, SubscriptionTier, DomainType } from '../t
  * Соответствие: Ст. 11.3 (Нулевая сетевая зависимость при экспорте)
  */
 
-const wrapText = (
-  ctx: CanvasRenderingContext2D, 
-  text: string, 
-  x: number, 
-  y: number, 
-  maxWidth: number, 
-  lineHeight: number
-): number => {
-  const words = text.split(' ');
-  let line = '';
-  let currentY = y;
-  
-  for (let n = 0; n < words.length; n++) {
-    const testLine = line + words[n] + ' ';
-    const metrics = ctx.measureText(testLine);
-    if (metrics.width > maxWidth && n > 0) {
-      ctx.fillText(line, x, currentY);
-      line = words[n] + ' ';
-      currentY += lineHeight;
-    } else {
-      line = testLine;
-    }
-  }
-  ctx.fillText(line, x, currentY);
-  return currentY + lineHeight;
-};
-
 const drawPentagonChart = (
     ctx: CanvasRenderingContext2D,
     centerX: number,
@@ -115,8 +88,6 @@ export const generateShareImage = async (
   canvas.width = 1080;
   canvas.height = 1920;
 
-  const defaultArchetype = { title: "НЕИЗВЕСТНО", desc: "Анализ Ожидается", quote: "" };
-  const archetype = t.archetypes?.[result.archetypeKey] || t.archetypes?.THE_ARCHITECT || defaultArchetype;
   const verdict = t.verdicts?.[result.verdictKey] || t.verdicts?.HEALTHY_SCALE || { label: "ОЖИДАНИЕ" };
   const ex = t.export_image || { header: "GENESIS OS", blueprint_title: "СЛЕПОК", footer: "КЛИНИЧЕСКИЙ", metrics: { integrity: "INT", entropy: "ENT" } };
 

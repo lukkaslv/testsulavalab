@@ -1,5 +1,5 @@
 
-import { AnalysisResult, ArchetypeKey, Translations } from '../types';
+import { AnalysisResult, ArchetypeKey } from '../types';
 
 export interface ShadowContract {
     archetype: ArchetypeKey;
@@ -13,7 +13,7 @@ export interface ShadowContract {
  * Детерминированный анализ теневых структур (Art. 1.1)
  */
 export const ShadowEngine = {
-    decode(result: AnalysisResult, t: Translations): ShadowContract {
+    decode(result: AnalysisResult): ShadowContract {
         const shadowArch = result.shadowArchetype?.key || 'THE_DRIFTER';
         const { foundation: f, agency: a, resource: r, entropy: e } = result.state;
         

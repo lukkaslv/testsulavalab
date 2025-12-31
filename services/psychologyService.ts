@@ -1,19 +1,6 @@
 
-import { BeliefKey, GameHistoryItem, RawAnalysisResult, NeuralCorrelation, SessionPulseNode, DomainType, ChronosMetrics, LatticeMetrics, NeuralBond, AutopoiesisMetrics, AntifragilityMetrics, ForecastMetrics, LifeContext, MetricTrace, MetricTracePoint, ResonanceState, EntropyVector } from '../types';
+import { BeliefKey, GameHistoryItem, RawAnalysisResult, SessionPulseNode, DomainType, AutopoiesisMetrics, ForecastMetrics, LifeContext } from '../types';
 import { StorageService, STORAGE_KEYS } from './storageService';
-
-/**
- * Deep Freeze helper for immutable constants.
- */
-function deepFreeze(obj: any) {
-    Object.freeze(obj);
-    Object.getOwnPropertyNames(obj).forEach((prop) => {
-        if (obj.hasOwnProperty(prop) && obj[prop] !== null && (typeof obj[prop] === "object" || typeof obj[prop] === "function") && !Object.isFrozen(obj[prop])) {
-            deepFreeze(obj[prop]);
-        }
-    });
-    return obj;
-}
 
 // Genesis OS Core Weights (Constitutional Monolith)
 // FIX: Changed from const to let to support Admin Sandbox recalibration (Art. 22.2)
@@ -62,8 +49,8 @@ const CONTEXT_PHYSICS: Record<LifeContext, { inertia: number; f_sensitivity: num
  * Вычисляет показатели Автопоэза: рычаги самоисцеления системы (Ст. 7.3)
  */
 export const calculateAutopoiesis = (raw: RawAnalysisResult): AutopoiesisMetrics => {
-    const { foundation: f, agency: a, resource: r, entropy: e } = raw.state;
-    const { money: m, social: s, legacy: l } = raw.domainProfile;
+    const { foundation: f, agency: a, entropy: e } = raw.state;
+    // Удалены неиспользуемые переменные resource, money, social, legacy
     const sync = raw.neuroSync;
 
     const selfHealingIndex = Math.round(((f * 0.4) + (sync * 0.6)) * (1 - (e / 250)));
@@ -119,7 +106,8 @@ export const calculateForecast = (f: number, a: number, r: number, e: number): F
     };
 };
 
-const applyResonance = (delta: number, f: number, r: number, l: number, domain: DomainType): number => {
+// Удалены неиспользуемые аргументы r и l
+const applyResonance = (delta: number, f: number, domain: DomainType): number => {
     if (domain === 'agency' && delta > 0 && f < 40) return delta * (f / 50);
     if (domain === 'money' && delta > 0 && f < 30) return delta * 0.4;
     return delta;
@@ -142,7 +130,8 @@ const sigmoidUpdate = (
     resilience: number,
     physics: typeof CONTEXT_PHYSICS['NORMAL']
 ): number => {
-    const resonatedDelta = applyResonance(delta, f, r, l, domain);
+    // Исправлен вызов applyResonance без лишних аргументов
+    const resonatedDelta = applyResonance(delta, f, domain);
     let gravityFactor = entropyCurrent > 60 ? 1.0 - ((entropyCurrent - 60) / 40) * 0.4 : 1.0;
     
     // Apply Context Sensitivity
@@ -156,7 +145,7 @@ const sigmoidUpdate = (
     return applyHysteresis(current, target, entropyCurrent, resilience, physics.inertia);
 };
 
-export function calculateRawMetrics(history: GameHistoryItem[]): RawAnalysisResult {
+export function calculateRawMetrics(history: GameHistoryItem[]): RawAnalysisResult & { isCrisis: boolean } {
   const context = StorageService.load<LifeContext>(STORAGE_KEYS.SESSION_CONTEXT, 'NORMAL');
   const physics = CONTEXT_PHYSICS[context] || CONTEXT_PHYSICS.NORMAL;
 
@@ -166,7 +155,7 @@ export function calculateRawMetrics(history: GameHistoryItem[]): RawAnalysisResu
   const sessionPulse: SessionPulseNode[] = [];
   const somaticDissonance: BeliefKey[] = [];
   
-  if (!history || history.length === 0) return createEmptyResult();
+  if (!history || history.length === 0) return { ...createEmptyResult(), isCrisis: false };
   
   const latencies = history.map(h => h.latency).filter(val => val > 300);
   const mean = latencies.length > 0 ? latencies.reduce((sum, v) => sum + v, 0) / latencies.length : 2000;
@@ -206,15 +195,17 @@ export function calculateRawMetrics(history: GameHistoryItem[]): RawAnalysisResu
   const isCrisis = isCollapse || isChaos || isManicBreak;
 
   const integrity = Math.round(((f + a + r + s + l) / 5) * (1 - e / 220));
-  return {
+  
+  const finalResult: RawAnalysisResult & { isCrisis: boolean } = {
     context, 
     state: { foundation: Math.round(f), agency: Math.round(a), resource: Math.round(r), entropy: Math.round(e) },
     domainProfile: { foundation: Math.round(f), agency: Math.round(a), money: Math.round(r), social: Math.round(s), legacy: Math.round(l) },
     integrity, capacity: Math.round((f + r) / 2), entropyScore: Math.round(e), neuroSync: Math.round(syncScore), systemHealth: Math.round(integrity * 0.6 + syncScore * 0.4),
     phase: f < 35 ? 'SANITATION' : 'STABILIZATION', status: isCrisis ? 'CRITICAL' : 'OPTIMAL', validity: 'VALID', activePatterns: history.map(h => h.beliefKey as BeliefKey), somaticDissonance, history, correlations: [], conflicts: [], somaticProfile: { blocks: 0, resources: 0, dominantSensation: 's0' }, integrityBreakdown: { coherence: 0, sync: 0, stability: 0, label: '', status: '' }, clarity: 0, confidenceScore: 0, warnings: [], flags: {}, skippedCount: 0, sessionPulse,
-    // CRITICAL: Explicitly return the fuse state
-    // Note: We extend the return type implicitly here, handled by DiagnosticEngine
-  } as RawAnalysisResult & { isCrisis: boolean };
+    isCrisis // Explicitly added
+  };
+
+  return finalResult;
 }
 
 const createEmptyResult = (): RawAnalysisResult => ({

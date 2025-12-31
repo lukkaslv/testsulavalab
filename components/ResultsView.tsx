@@ -1,4 +1,3 @@
-
 import React, { useState, memo, useMemo } from 'react';
 import { AnalysisResult, Translations } from '../../types';
 import { PlatformBridge } from '../../utils/helpers';
@@ -62,7 +61,7 @@ export const ResultsView = memo<ResultsViewProps>(({
   const synthesis = useMemo(() => SynthesisService.generateSynthesis(result, t), [result, t]);
   const refractionVectors = useMemo(() => RefractionEngine.calculateVectors(result), [result]);
   const stability = useMemo(() => StabilityEngine.calculate(result), [result]);
-  const shadowContract = useMemo(() => ShadowEngine.decode(result, t), [result, t]);
+  const shadowContract = useMemo(() => ShadowEngine.decode(result), [result]);
   const teleology = useMemo(() => TeleologyEngine.calculate(result), [result]);
   const sovereignty = useMemo(() => SovereigntyEngine.calculate(result), [result]);
   const lattice = useMemo(() => LatticeEngine.calculate(result), [result]);

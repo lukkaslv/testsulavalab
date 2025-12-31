@@ -1,4 +1,3 @@
-
 import React, { useState, memo, useMemo } from 'react';
 import { AnalysisResult, Translations } from '../../types';
 import { PlatformBridge } from '../../utils/helpers';
@@ -62,7 +61,7 @@ export const ResultsView = memo<ResultsViewProps>(({
   const synthesis = useMemo(() => SynthesisService.generateSynthesis(result, t), [result, t]);
   const refractionVectors = useMemo(() => RefractionEngine.calculateVectors(result), [result]);
   const stability = useMemo(() => StabilityEngine.calculate(result), [result]);
-  const shadowContract = useMemo(() => ShadowEngine.decode(result, t), [result, t]);
+  const shadowContract = useMemo(() => ShadowEngine.decode(result), [result]);
   const teleology = useMemo(() => TeleologyEngine.calculate(result), [result]);
   const sovereignty = useMemo(() => SovereigntyEngine.calculate(result), [result]);
   const lattice = useMemo(() => LatticeEngine.calculate(result), [result]);
@@ -86,6 +85,12 @@ export const ResultsView = memo<ResultsViewProps>(({
     );
   }
 
+  const modeLabels: Record<string, string> = {
+      blueprint: 'КАРТА', ekg: 'ЭКГ', tensegrity: 'ТНС', relief: 'РЛФ', moire: 'ВОЛНА',
+      attractor: 'ХАОС', hysteresis: 'ГИСТ', helix: 'ДНК', sim: 'СИМ', topology: 'ТОПО',
+      lattice: 'РЕШ', emg: 'ЭМЕРДЖ'
+  };
+
   return (
     <div className="space-y-8 pb-32 animate-in pt-2 text-slate-100 relative">
       <header className={`dark-glass-card p-8 rounded-[3rem] shadow-2xl relative overflow-hidden transition-all duration-1000 
@@ -107,21 +112,15 @@ export const ResultsView = memo<ResultsViewProps>(({
               <span className={`text-[10px] font-black uppercase tracking-[0.4em] px-4 py-2 rounded-full border transition-colors 
                 ${activeMode === 'emg' ? 'text-indigo-300 border-indigo-500/40 bg-indigo-950/50' : 
                   'text-indigo-400 border-indigo-500/30 bg-indigo-950/40'}`}>
-                {activeMode === 'emg' ? 'EMERGENCE' : activeMode.toUpperCase()}
+                {modeLabels[activeMode] || activeMode.toUpperCase()}
               </span>
               
               <div className="flex bg-black/40 p-1 rounded-xl border border-white/5 overflow-x-auto no-scrollbar max-w-[280px]">
-                <button onClick={() => { setActiveMode('blueprint'); PlatformBridge.haptic.selection(); }} className={`px-2 py-1.5 rounded-lg text-[7px] font-black uppercase tracking-widest transition-all shrink-0 ${activeMode === 'blueprint' ? 'bg-indigo-600 text-white' : 'text-slate-500'}`}>MAP</button>
-                <button onClick={() => { setActiveMode('ekg'); PlatformBridge.haptic.selection(); }} className={`px-2 py-1.5 rounded-lg text-[7px] font-black uppercase tracking-widest transition-all shrink-0 ${activeMode === 'ekg' ? 'bg-red-600 text-white shadow-lg' : 'text-slate-500'}`}>EKG</button>
-                <button onClick={() => { setActiveMode('tensegrity'); PlatformBridge.haptic.selection(); }} className={`px-2 py-1.5 rounded-lg text-[7px] font-black uppercase tracking-widest transition-all shrink-0 ${activeMode === 'tensegrity' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500'}`}>TNS</button>
-                <button onClick={() => { setActiveMode('relief'); PlatformBridge.haptic.selection(); }} className={`px-2 py-1.5 rounded-lg text-[7px] font-black uppercase tracking-widest transition-all shrink-0 ${activeMode === 'relief' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-500'}`}>RLF</button>
-                <button onClick={() => { setActiveMode('moire'); PlatformBridge.haptic.selection(); }} className={`px-2 py-1.5 rounded-lg text-[7px] font-black uppercase tracking-widest transition-all shrink-0 ${activeMode === 'moire' ? 'bg-cyan-600 text-white shadow-lg' : 'text-slate-500'}`}>WAVE</button>
-                <button onClick={() => { setActiveMode('attractor'); PlatformBridge.haptic.selection(); }} className={`px-2 py-1.5 rounded-lg text-[7px] font-black uppercase tracking-widest transition-all shrink-0 ${activeMode === 'attractor' ? 'bg-amber-600 text-white shadow-lg' : 'text-slate-500'}`}>CHS</button>
-                <button onClick={() => { setActiveMode('hysteresis'); PlatformBridge.haptic.selection(); }} className={`px-2 py-1.5 rounded-lg text-[7px] font-black uppercase tracking-widest transition-all shrink-0 ${activeMode === 'hysteresis' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500'}`}>HYS</button>
-                <button onClick={() => { setActiveMode('helix'); PlatformBridge.haptic.selection(); }} className={`px-2 py-1.5 rounded-lg text-[7px] font-black uppercase tracking-widest transition-all shrink-0 ${activeMode === 'helix' ? 'bg-indigo-500 text-white shadow-lg' : 'text-slate-500'}`}>DNA</button>
-                <button onClick={() => { setActiveMode('sim'); PlatformBridge.haptic.selection(); }} className={`px-2 py-1.5 rounded-lg text-[7px] font-black uppercase tracking-widest transition-all shrink-0 ${activeMode === 'sim' ? 'bg-indigo-500 text-white' : 'text-slate-500'}`}>SIM</button>
-                <button onClick={() => { setActiveMode('topology'); PlatformBridge.haptic.selection(); }} className={`px-2 py-1.5 rounded-lg text-[7px] font-black uppercase tracking-widest transition-all shrink-0 ${activeMode === 'topology' ? 'bg-emerald-600 text-white' : 'text-slate-500'}`}>TPL</button>
-                <button onClick={() => { setActiveMode('lattice'); PlatformBridge.haptic.selection(); }} className={`px-2 py-1.5 rounded-lg text-[7px] font-black uppercase tracking-widest transition-all shrink-0 ${activeMode === 'lattice' ? 'bg-indigo-500 text-white' : 'text-slate-500'}`}>LTC</button>
+                {Object.keys(modeLabels).map(key => (
+                    <button key={key} onClick={() => { setActiveMode(key as Mode); PlatformBridge.haptic.selection(); }} className={`px-2 py-1.5 rounded-lg text-[7px] font-black uppercase tracking-widest transition-all shrink-0 ${activeMode === key ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500'}`}>
+                        {modeLabels[key]}
+                    </button>
+                ))}
               </div>
             </div>
             
@@ -129,7 +128,7 @@ export const ResultsView = memo<ResultsViewProps>(({
               <div className="space-y-2 animate-in">
                 <h1 className="text-3xl font-black italic uppercase text-indigo-400 leading-none tracking-tighter">Тенсегрити</h1>
                 <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-                   Structural_Stress_Matrix // Art. 4
+                   Матрица Структурного Напряжения (Ст. 4)
                 </p>
               </div>
             )}
@@ -138,7 +137,7 @@ export const ResultsView = memo<ResultsViewProps>(({
               <div className="space-y-2 animate-in">
                 <h1 className="text-3xl font-black italic uppercase text-emerald-400 leading-none tracking-tighter">Топография Воли</h1>
                 <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-                   Potential_Energy_Surface // Art. 4
+                   Поверхность Потенциальной Энергии (Ст. 4)
                 </p>
               </div>
             )}
@@ -147,7 +146,7 @@ export const ResultsView = memo<ResultsViewProps>(({
               <div className="space-y-2 animate-in">
                 <h1 className="text-3xl font-black italic uppercase text-amber-400 leading-none tracking-tighter">Аттрактор Хаоса</h1>
                 <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-                   Lorenz_System_Projection // Art. 5
+                   Проекция Системы Лоренца (Ст. 5)
                 </p>
               </div>
             )}
@@ -156,7 +155,7 @@ export const ResultsView = memo<ResultsViewProps>(({
               <div className="space-y-2 animate-in">
                 <h1 className="text-3xl font-black italic uppercase text-cyan-400 leading-none tracking-tighter">Интерференция</h1>
                 <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-                   Intent_vs_Shadow_Pattern // Art. 3
+                   Намерение vs Теневой Паттерн (Ст. 3)
                 </p>
               </div>
             )}
@@ -165,7 +164,7 @@ export const ResultsView = memo<ResultsViewProps>(({
               <div className="space-y-2 animate-in">
                 <h1 className="text-3xl font-black italic uppercase text-indigo-400 leading-none tracking-tighter">Петля Гистерезиса</h1>
                 <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-                   Energy_Dissipation_Analysis // Art. 5
+                   Анализ Диссипации Энергии (Ст. 5)
                 </p>
               </div>
             )}
@@ -174,7 +173,7 @@ export const ResultsView = memo<ResultsViewProps>(({
               <div className="space-y-2 animate-in">
                 <h1 className="text-3xl font-black italic uppercase text-red-400 leading-none tracking-tighter">ЭКГ Сессии</h1>
                 <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-                   Stress_Response_Analysis // Art. 6
+                   Анализ Стресс-Отклика (Ст. 6)
                 </p>
               </div>
             )}
@@ -183,7 +182,7 @@ export const ResultsView = memo<ResultsViewProps>(({
               <div className="space-y-2 animate-in">
                 <h1 className="text-3xl font-black italic uppercase text-indigo-300 leading-none tracking-tighter">Спираль Когерентности</h1>
                 <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-                   Conscious vs Unconscious // Art. 7
+                   Сознательное vs Бессознательное (Ст. 7)
                 </p>
               </div>
             )}
@@ -192,7 +191,7 @@ export const ResultsView = memo<ResultsViewProps>(({
               <div className="space-y-2 animate-in">
                 <h1 className="text-3xl font-black italic uppercase text-indigo-300 leading-none tracking-tighter">Матрица Эмерджентности</h1>
                 <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-                   Systemic_States: {emergentPatterns.length} FOUND // Ст. 7.1 Compliance
+                   Найдено состояний: {emergentPatterns.length} // Ст. 7.1 Compliance
                 </p>
               </div>
             )}
@@ -201,7 +200,7 @@ export const ResultsView = memo<ResultsViewProps>(({
               <div className="space-y-2 animate-in">
                 <h1 className="text-3xl font-black italic uppercase text-indigo-300 leading-none tracking-tighter">Сценарная Симуляция</h1>
                 <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-                   Intervention_Model: DETERMINISTIC // Ст. 19.2
+                   Модель Интервенции: ДЕТЕРМИНИРОВАННАЯ // Ст. 19.2
                 </p>
               </div>
             )}
@@ -210,7 +209,7 @@ export const ResultsView = memo<ResultsViewProps>(({
               <div className="space-y-2 animate-in">
                 <h1 className="text-3xl font-black italic uppercase text-emerald-400 leading-none tracking-tighter">{t.topology.title}</h1>
                 <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-                   Spatial_Distribution_Analysis // Art. 18.1
+                   Анализ Пространственного Распределения // Ст. 18.1
                 </p>
               </div>
             )}
@@ -327,7 +326,7 @@ export const ResultsView = memo<ResultsViewProps>(({
             {activeMode === 'signature' && (
                 <div className="animate-in flex flex-col items-center space-y-4">
                     <BioSignature f={result.state.foundation} a={result.state.agency} r={result.state.resource} e={result.state.entropy} width={300} height={300} />
-                    <span className="text-[8px] font-black text-emerald-500 uppercase tracking-[0.5em] opacity-50">Soul_Signature_Deterministic</span>
+                    <span className="text-[8px] font-black text-emerald-500 uppercase tracking-[0.5em] opacity-50">Детерминированная Подпись Души</span>
                 </div>
             )}
         </div>
@@ -335,7 +334,7 @@ export const ResultsView = memo<ResultsViewProps>(({
         {!['dossier', 'emg', 'sim', 'paths', 'lattice', 'field', 'nucleus', 'sovereign', 'void', 'shadow', 'topology', 'helix', 'ekg', 'hysteresis', 'moire', 'attractor', 'relief', 'tensegrity'].includes(activeMode) && (
           <div className="mt-6 pt-6 border-t border-white/5 flex justify-between items-center px-2">
               <div className="space-y-1">
-                  <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Stability_Index (Art. 5)</span>
+                  <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Индекс Стабильности (Ст. 5)</span>
                   <div className="flex items-center gap-2">
                       <div className="h-1 w-24 bg-slate-800 rounded-full overflow-hidden">
                           <div className={`h-full transition-all duration-1000 ${result.butterflySensitivity > 60 ? 'bg-red-500' : 'bg-emerald-500'}`} style={{ width: `${100 - result.butterflySensitivity}%` }}></div>
@@ -344,9 +343,9 @@ export const ResultsView = memo<ResultsViewProps>(({
                   </div>
               </div>
               <div className="text-right">
-                  <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Butterfly_Risk</span>
+                  <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Риск Бабочки</span>
                   <p className={`text-[10px] font-mono font-bold ${result.butterflySensitivity > 60 ? 'text-red-400 animate-pulse' : 'text-slate-400'}`}>
-                      {result.butterflySensitivity > 60 ? 'HIGH_SENSITIVITY' : 'STABLE_SYSTEM'}
+                      {result.butterflySensitivity > 60 ? 'ВЫСОКАЯ ЧУВСТВИТЕЛЬНОСТЬ' : 'СТАБИЛЬНАЯ СИСТЕМА'}
                   </p>
               </div>
           </div>
@@ -354,7 +353,7 @@ export const ResultsView = memo<ResultsViewProps>(({
       </header>
 
       <div onClick={() => { navigator.clipboard.writeText(result.shareCode); PlatformBridge.haptic.notification('success'); }} className="bg-[#0a0a0a] border-2 border-indigo-500/30 p-6 rounded-[2.5rem] flex flex-col items-center space-y-3 cursor-copy active:scale-95 transition-all shadow-2xl">
-          <span className="text-[9px] font-black uppercase tracking-[0.3em] text-indigo-400">CLINICAL ACCESS TOKEN</span>
+          <span className="text-[9px] font-black uppercase tracking-[0.3em] text-indigo-400">КЛИНИЧЕСКИЙ ТОКЕН ДОСТУПА</span>
           <div className="w-full bg-black/50 p-4 rounded-xl border border-white/5">
               <p className="text-xs font-mono text-white break-all text-center font-bold tracking-wider leading-relaxed">{result.shareCode}</p>
           </div>
@@ -367,7 +366,7 @@ export const ResultsView = memo<ResultsViewProps>(({
                   <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-3xl">🗺️</div>
                   <div className="text-left">
                       <h3 className="text-[12px] font-black uppercase tracking-[0.2em] text-emerald-400">{t.roadmap.title}</h3>
-                      <p className="text-[8px] font-mono text-emerald-200/60 uppercase tracking-widest mt-1">7-DAY INTEGRATION SEQUENCE</p>
+                      <p className="text-[8px] font-mono text-emerald-200/60 uppercase tracking-widest mt-1">7-ДНЕВНАЯ ИНТЕГРАЦИЯ</p>
                   </div>
               </div>
               <span className="text-2xl text-emerald-500 group-hover:translate-x-2 transition-transform">➜</span>
@@ -380,7 +379,7 @@ export const ResultsView = memo<ResultsViewProps>(({
       </div>
 
       <footer className="pt-16 pb-12 text-center opacity-30">
-          <p className="text-[7px] font-black uppercase tracking-[0.4em] text-slate-500">Genesis OS v6.0 // Emergence Architecture</p>
+          <p className="text-[7px] font-black uppercase tracking-[0.4em] text-slate-500">Genesis OS v6.0 // Архитектура Эмерджентности</p>
       </footer>
     </div>
   );
