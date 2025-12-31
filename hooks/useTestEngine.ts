@@ -1,21 +1,28 @@
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { DomainType, GameHistoryItem, Choice, ChoiceWithLatency } from '../types';
 import { StorageService, STORAGE_KEYS } from '../services/storageService';
+// FIX: Added TOTAL_NODES to support force completion logic
 import { MODULE_REGISTRY, ONBOARDING_NODES_COUNT, TOTAL_NODES } from '../constants';
+import { IntegrityService } from '../services/integrityService';
+import { PlatformBridge } from '../utils/helpers';
 
 interface UseTestEngineProps {
   setCompletedNodeIds: (fn: (prev: number[]) => number[]) => void;
   setHistory: (fn: (prev: GameHistoryItem[]) => GameHistoryItem[]) => void;
-  setView: (view: any) => void;
+  setView: (view: string) => void;
   activeId: string;
   activeModule: DomainType | null;
   setActiveNode: (id: string, d: DomainType | null) => void;
   isDemo: boolean;
   canStart: boolean;
-  onNextNodeRequest: () => void; // App.tsx will provide adaptive logic
+  onNextNodeRequest: (updatedHistory?: GameHistoryItem[]) => void; 
 }
 
+/**
+ * Ядро Тестирования Genesis OS v12.0
+ * Соответствие: Ст. 1.1 (Детерминизм), Ст. 21 (Простота)
+ */
 export const useTestEngine = ({
   setCompletedNodeIds,
   setHistory,
@@ -28,17 +35,20 @@ export const useTestEngine = ({
   onNextNodeRequest
 }: UseTestEngineProps) => {
   
-  const lastChoiceRef = useRef<ChoiceWithLatency | null>(StorageService.load<ChoiceWithLatency | null>('genesis_recovery_choice', null));
+  const lastChoiceRef = useRef<ChoiceWithLatency | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-
   const nodeStartTime = useRef<number>(0);
-  const pauseStart = useRef<number>(0);
-  const totalPausedTime = useRef<number>(0);
-  const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const commitUpdate = useCallback((newItem: GameHistoryItem, lastNodeId: number, onComplete: () => void) => {
-    const userId = localStorage.getItem(STORAGE_KEYS.SESSION) || 'anonymous';
-    const variantId = (userId.charCodeAt(0) % 2 === 0) ? 'A' : 'B';
+  useEffect(() => {
+      nodeStartTime.current = performance.now();
+      setIsProcessing(false);
+  }, [activeId]);
+
+  const commitUpdate = useCallback((newItem: GameHistoryItem, lastNodeId: number) => {
+    // Ст. 5.1: Критическая Проверка Временной Целостности
+    if (!IntegrityService.checkTemporalStability()) {
+        newItem.latency = 99999; // Маркировка как ненадежные данные
+    }
 
     StorageService.logTelemetry({
         nodeId: newItem.nodeId,
@@ -46,102 +56,87 @@ export const useTestEngine = ({
         latency: newItem.latency,
         sensation: newItem.sensation,
         beliefKey: newItem.beliefKey,
-        variantId
+        variantId: 'GEN_V12'
     });
 
-    setHistory(prevHistory => {
-        const nextHistory = [...prevHistory, newItem];
+    let freshHistory: GameHistoryItem[] = [];
+
+    setHistory(prev => {
+        freshHistory = [...prev, newItem];
+        
+        // Синхронизация Атомарного Состояния
         setCompletedNodeIds(prevNodes => {
             const nextNodes = prevNodes.includes(lastNodeId) ? prevNodes : [...prevNodes, lastNodeId];
-            StorageService.save(STORAGE_KEYS.SESSION_STATE, { nodes: nextNodes, history: nextHistory });
+            StorageService.save(STORAGE_KEYS.SESSION_STATE, { nodes: nextNodes, history: freshHistory });
             return nextNodes;
         });
-        return nextHistory;
+        
+        return freshHistory;
     });
 
     StorageService.save('genesis_recovery_choice', null);
     lastChoiceRef.current = null;
     
-    // Defer completion to ensure state batching finishes
-    setTimeout(onComplete, 0);
-  }, [setHistory, setCompletedNodeIds]);
+    // Отложенный шаг для завершения цикла React
+    setTimeout(() => onNextNodeRequest(freshHistory), 0);
+  }, [setHistory, setCompletedNodeIds, onNextNodeRequest]);
 
   const startNode = useCallback((nodeId: number, domain: DomainType) => {
-    // CRITICAL: Always reset processing lock when starting a new node
-    setIsProcessing(false);
-    
     if (!canStart && !isDemo) {
-        // FIX: Cast window to any for Telegram access
-        (window as any).Telegram?.WebApp?.HapticFeedback?.notificationOccurred?.('error');
+        PlatformBridge.haptic.notification('error');
         return;
     }
-
     setActiveNode(nodeId.toString(), domain);
     setView('test');
-    
-    totalPausedTime.current = 0;
-    pauseStart.current = 0;
-    requestAnimationFrame(() => {
-      nodeStartTime.current = performance.now();
-    });
   }, [isDemo, canStart, setActiveNode, setView]);
 
   const syncBodySensation = useCallback((sensation: string) => {
     if (isProcessing || !lastChoiceRef.current || !activeModule) return;
     setIsProcessing(true);
 
-    const numericActiveId = parseInt(activeId, 10);
     const newItem: GameHistoryItem = { 
       beliefKey: lastChoiceRef.current.beliefKey, 
       sensation, 
       latency: lastChoiceRef.current.latency,
       nodeId: activeId,
-      domain: activeModule as DomainType,
+      domain: activeModule,
       choicePosition: lastChoiceRef.current.position
     };
     
-    commitUpdate(newItem, numericActiveId, () => {
-      if (sensation === 's0') {
-        onNextNodeRequest();
-      } else {
-        setView('reflection');
-        if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
-        syncTimerRef.current = setTimeout(() => {
-           onNextNodeRequest();
-        }, 1200);
-      }
-    });
-  }, [isProcessing, activeId, activeModule, setView, commitUpdate, onNextNodeRequest]);
+    commitUpdate(newItem, parseInt(activeId, 10));
+  }, [isProcessing, activeId, activeModule, commitUpdate]);
 
   const handleChoice = useCallback((choice: Choice) => {
     if (isProcessing || !activeModule) return; 
     
-    const now = performance.now();
-    const cleanLatency = Math.max(0, now - nodeStartTime.current - totalPausedTime.current);
+    const cleanLatency = performance.now() - nodeStartTime.current;
     const numericActiveId = parseInt(activeId, 10);
     const currentScene = MODULE_REGISTRY[activeModule]?.[activeId];
     
     lastChoiceRef.current = { ...choice, latency: cleanLatency };
-    StorageService.save('genesis_recovery_choice', lastChoiceRef.current);
 
+    // Forensic Entry Check: Онбординг или Высокая Интенсивность запускает соматический скан
     if (numericActiveId < ONBOARDING_NODES_COUNT || (currentScene && currentScene.intensity >= 4)) {
         setView('body_sync');
     } else {
          setIsProcessing(true);
          const newItem: GameHistoryItem = { 
              beliefKey: choice.beliefKey, sensation: 's0', latency: cleanLatency,
-             nodeId: activeId, domain: activeModule as DomainType,
+             nodeId: activeId, domain: activeModule,
              choicePosition: choice.position
          };
-         commitUpdate(newItem, numericActiveId, onNextNodeRequest);
+         commitUpdate(newItem, numericActiveId);
     }
-  }, [isProcessing, activeId, activeModule, setView, commitUpdate, onNextNodeRequest]);
+  }, [isProcessing, activeId, activeModule, setView, commitUpdate]);
 
+  // FIX: Добавлена функция принудительного завершения для Админ-панели (Unlock All)
   const forceCompleteAll = useCallback(() => {
     const allIds = Array.from({ length: TOTAL_NODES }, (_, i) => i);
     setCompletedNodeIds(() => allIds);
-    // ... history generation logic ...
-  }, [setCompletedNodeIds]);
+    setHistory(() => []);
+    StorageService.save(STORAGE_KEYS.SESSION_STATE, { nodes: allIds, history: [] });
+    PlatformBridge.haptic.notification('success');
+  }, [setCompletedNodeIds, setHistory]);
 
-  return { startNode, handleChoice, forceCompleteAll, syncBodySensation };
+  return { startNode, handleChoice, syncBodySensation, forceCompleteAll };
 };

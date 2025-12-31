@@ -10,18 +10,14 @@ interface LayoutProps {
 }
 
 export const Layout = memo<LayoutProps>(({ children }) => {
-  const { lang, setLang, handleReset, t } = useAppContext();
+  const { handleReset, t, history } = useAppContext();
   const mainRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (mainRef.current) { mainRef.current.scrollTop = 0; }
   }, [children]);
   
-  const toggleLang = () => {
-    const nextLang = lang === 'ru' ? 'ka' : 'ru';
-    setLang(nextLang);
-    PlatformBridge.haptic.impact('light');
-  };
+  const canReset = history && history.length > 0;
 
   return (
     <div className="flex-1 flex flex-col max-w-md mx-auto w-full relative h-full bg-white overflow-hidden">
@@ -38,12 +34,9 @@ export const Layout = memo<LayoutProps>(({ children }) => {
           </div>
         </div>
         <div className="flex gap-2">
-          <button 
-            onClick={toggleLang}
-            className="px-3 h-9 flex items-center justify-center rounded-xl bg-slate-50 border border-slate-100 font-black text-[10px] text-slate-800"
-          >
-            {lang === 'ru' ? 'RU' : 'KA'}
-          </button>
+          <div className="px-3 h-9 flex items-center justify-center rounded-xl bg-slate-50 border border-slate-100 font-black text-[10px] text-slate-800">
+            RU
+          </div>
         </div>
       </header>
       
@@ -60,7 +53,8 @@ export const Layout = memo<LayoutProps>(({ children }) => {
         </div>
         <button 
           onClick={() => handleReset(false)} 
-          className="text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100 hover:bg-slate-100 transition-colors"
+          disabled={!canReset}
+          className="text-[9px] font-black uppercase tracking-widest bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-slate-400 hover:bg-slate-100 enabled:hover:text-slate-600"
         >
           {t.ui.reset_session_btn}
         </button>

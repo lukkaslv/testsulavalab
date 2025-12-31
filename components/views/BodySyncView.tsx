@@ -1,5 +1,54 @@
-import { memo } from 'react';
+
+import { memo, useState, useEffect } from 'react';
 import { Translations } from '../../types';
+import { PlatformBridge } from '../../utils/helpers';
+
+const EtherBody = ({ highlightZone }: { highlightZone: string | null }) => {
+    // Abstracted Nerve Paths
+    const nerves = {
+        s0: "M100,30 C110,30 120,38 120,50 C120,62 110,70 100,70 C90,70 80,62 80,50 C80,38 90,30 100,30 Z", // Head Core
+        s1: "M90,75 Q100,85 110,75 L110,85 Q100,95 90,85 Z", // Throat
+        s2: "M70,100 C60,110 50,130 50,150 C50,170 150,170 150,150 C150,130 140,110 130,100 Q100,120 70,100 Z", // Chest
+        s3: "M80,180 C70,190 70,210 80,220 L120,220 C130,210 130,190 120,180 Z", // Plexus
+        s4: "M70,240 C60,260 60,300 70,320 L130,320 C140,300 140,260 130,240 Z" // Belly
+    };
+
+    const glowColor = highlightZone === 's1' || highlightZone === 's4' ? '#f59e0b' : '#6366f1'; // Amber for tension, Indigo for flow
+
+    return (
+        <svg viewBox="0 0 200 400" className="w-full h-full pointer-events-none drop-shadow-2xl" preserveAspectRatio="xMidYMid meet">
+            <defs>
+                <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="15" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+            </defs>
+
+            {/* Base Nervous System Trace */}
+            <path d="M100,30 L100,350 M100,70 L70,90 M100,70 L130,90 M100,120 L50,140 M100,120 L150,140 M100,240 L60,320 M100,240 L140,320" 
+                  stroke="rgba(255,255,255,0.05)" strokeWidth="1" fill="none" />
+            
+            {/* Active Highlight */}
+            {highlightZone && nerves[highlightZone as keyof typeof nerves] && (
+                <g filter="url(#glow)">
+                    <path 
+                        d={nerves[highlightZone as keyof typeof nerves]} 
+                        fill={glowColor} 
+                        fillOpacity="0.4"
+                        stroke={glowColor} 
+                        strokeWidth="2"
+                        className="animate-pulse" 
+                    />
+                    {/* Connecting Line to Core */}
+                    <path d={`M100,${highlightZone === 's0' ? 50 : 200} L100,200`} stroke={glowColor} strokeWidth="1" strokeDasharray="4 4" className="opacity-50" />
+                </g>
+            )}
+
+            {/* Core Center Anchor */}
+            <circle cx="100" cy="200" r="2" fill="white" opacity="0.5" />
+        </svg>
+    );
+};
 
 interface BodySyncViewProps {
   t: Translations;
@@ -7,49 +56,104 @@ interface BodySyncViewProps {
 }
 
 export const BodySyncView = memo<BodySyncViewProps>(({ t, onSync }) => {
+  const [selectedZone, setSelectedZone] = useState<string | null>(null);
+  const [isSealing, setIsSealing] = useState(false);
+
+  useEffect(() => {
+    if (selectedZone) {
+      setIsSealing(true);
+      const timer = setTimeout(() => {
+          onSync(selectedZone);
+      }, 1200); // Allow animation to play
+      return () => clearTimeout(timer);
+    }
+  }, [selectedZone, onSync]);
+
+  const handleZoneSelect = (zone: string) => {
+      if (isSealing) return;
+      setSelectedZone(zone);
+      
+      // Semantic Haptics
+      if (zone === 's0') PlatformBridge.haptic.impact('light'); // Head -> Light
+      else if (zone === 's1') PlatformBridge.haptic.impact('rigid'); // Throat -> Rigid
+      else if (zone === 's2') PlatformBridge.haptic.notification('success'); // Chest -> Open
+      else if (zone === 's3') PlatformBridge.haptic.impact('medium'); // Plexus -> Power
+      else if (zone === 's4') PlatformBridge.haptic.notification('warning'); // Belly -> Fear
+  };
+
+  const zones = [
+      { key: 's0', label: 'ГОЛОВА', sub: 'Мысли / Тишина', activeColor: 'bg-slate-700' },
+      { key: 's1', label: 'ГОРЛО', sub: 'Ком / Слова', activeColor: 'bg-amber-600' },
+      { key: 's2', label: 'ГРУДЬ', sub: 'Чувство / Сжатие', activeColor: 'bg-emerald-600' },
+      { key: 's3', label: 'СПЛЕТЕНИЕ', sub: 'Тревога / Воля', activeColor: 'bg-indigo-600' },
+      { key: 's4', label: 'ЖИВОТ', sub: 'Страх / Холод', activeColor: 'bg-red-600' },
+  ];
+
   return (
-     <div className="py-10 text-center px-4 space-y-8 animate-in h-full flex flex-col justify-center bg-gradient-to-b from-white to-slate-50 relative overflow-hidden">
-        <div className="absolute inset-0 z-0 pointer-events-none opacity-20">
-           <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-              <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-indigo-500 animate-pulse-slow" />
-              <circle cx="50" cy="50" r="30" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-indigo-500 animate-pulse-slow" style={{ animationDelay: '1s' }} />
-              <circle cx="50" cy="50" r="20" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-indigo-500 animate-pulse-slow" style={{ animationDelay: '2s' }} />
-           </svg>
-        </div>
+     <div className="h-full flex flex-col bg-[#020617] text-white overflow-hidden relative">
+        {/* Background Atmosphere */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#020617] via-[#0f172a] to-[#020617] z-0"></div>
+        <div className="absolute inset-0 opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')] pointer-events-none mix-blend-overlay z-0"></div>
 
-        <div className="relative w-40 h-40 mx-auto flex items-center justify-center z-10">
-           <div className="absolute inset-0 bg-indigo-500/5 rounded-full animate-pulse-slow"></div>
-           <div className="absolute inset-8 bg-indigo-500/10 rounded-full animate-pulse" style={{ animationDelay: '0.5s' }}></div>
-           
-           <div className="w-28 h-28 rounded-full bg-slate-950 flex flex-col items-center justify-center text-indigo-400 border-4 border-slate-100 shadow-2xl z-10 relative overflow-hidden">
-             <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4xKSIvPjwvc3ZnPg==')] opacity-20"></div>
-             <span className="text-3xl mb-1 animate-pulse">📡</span>
-             <span className="text-[8px] font-mono uppercase tracking-widest text-indigo-400/70">{t.sync.connection_label}</span>
-             
-             <svg className="absolute inset-0 w-full h-full animate-spin-slow opacity-30" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="1" strokeDasharray="5,5" />
-             </svg>
+        {/* TOP: Question & Status */}
+        <div className="relative z-10 pt-8 px-6 text-center space-y-2 shrink-0">
+           <div className="flex items-center justify-center gap-2 mb-2">
+               <span className={`w-2 h-2 rounded-full ${isSealing ? 'bg-emerald-500 animate-ping' : 'bg-indigo-500 animate-pulse'}`}></span>
+               <span className="text-[9px] font-black uppercase tracking-[0.3em] text-indigo-400">SOMATIC_LINK</span>
            </div>
+           <h3 className="text-xl font-black uppercase text-slate-100 tracking-tight leading-none">
+               {isSealing ? t.sync.scan_complete : t.sync.title}
+           </h3>
+           <p className="text-[10px] font-medium text-slate-400 max-w-[200px] mx-auto leading-relaxed">
+               {t.sync.desc}
+           </p>
         </div>
 
-        <div className="space-y-2 z-10">
-           <h3 className="text-xl font-black uppercase text-slate-900 tracking-tight">{t.sync.title}</h3>
-           <p className="text-sm text-slate-500 font-medium leading-relaxed italic">{t.sync.desc}</p>
+        {/* CENTER: Visualizer */}
+        <div className="flex-1 relative z-10 min-h-0 flex items-center justify-center -mt-4">
+            <div className={`w-full max-w-[280px] h-[350px] transition-all duration-700 ${isSealing ? 'scale-110 opacity-50 blur-sm' : 'scale-100 opacity-100'}`}>
+                <EtherBody highlightZone={selectedZone} />
+            </div>
+            
+            {/* Success Overlay */}
+            {isSealing && (
+                <div className="absolute inset-0 flex items-center justify-center z-20 animate-in">
+                    <div className="w-20 h-20 rounded-full border-2 border-white/20 flex items-center justify-center bg-white/5 backdrop-blur-md">
+                        <span className="text-2xl animate-pulse">📡</span>
+                    </div>
+                </div>
+            )}
         </div>
 
-        <div className="grid grid-cols-2 gap-3 z-10 px-2">
-           {['s0', 's1', 's2', 's3', 's4'].map((s) => (
-              <button 
-                key={s} 
-                onClick={() => onSync(s)}
-                className="p-4 bg-white border border-slate-200 rounded-2xl shadow-sm font-bold text-[10px] uppercase hover:border-indigo-500 transition-all active:scale-95 text-slate-700"
-              >
-                 {t.sync[s as keyof typeof t.sync]}
-              </button>
-           ))}
+        {/* BOTTOM: Haptic Control Deck */}
+        <div className="relative z-20 bg-slate-950/80 backdrop-blur-xl border-t border-white/5 px-4 py-6 pb-8 space-y-2 shrink-0">
+            <div className="grid grid-cols-2 gap-2 max-w-md mx-auto">
+                {/* HEAD (Full Width) */}
+                <button 
+                    onClick={() => handleZoneSelect(zones[0].key)}
+                    disabled={isSealing}
+                    className={`col-span-2 p-4 rounded-xl border border-white/5 transition-all active:scale-[0.98] flex justify-between items-center group
+                        ${selectedZone === zones[0].key ? 'bg-slate-700 border-slate-500 shadow-[0_0_15px_rgba(51,65,85,0.5)]' : 'bg-slate-900/50 hover:bg-slate-800'}`}
+                >
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-300">{zones[0].label}</span>
+                    <span className="text-[8px] font-mono text-slate-500 uppercase">{zones[0].sub}</span>
+                </button>
+
+                {/* OTHER ZONES (Grid) */}
+                {zones.slice(1).map((zone) => (
+                    <button 
+                        key={zone.key}
+                        onClick={() => handleZoneSelect(zone.key)}
+                        disabled={isSealing}
+                        className={`p-4 rounded-xl border border-white/5 transition-all active:scale-[0.98] flex flex-col items-start gap-1 group
+                            ${selectedZone === zone.key ? `${zone.activeColor} border-white/20 shadow-lg text-white` : 'bg-slate-900/50 hover:bg-slate-800 text-slate-400'}`}
+                    >
+                        <span className={`text-[10px] font-black uppercase tracking-widest ${selectedZone === zone.key ? 'text-white' : 'text-slate-300'}`}>{zone.label}</span>
+                        <span className={`text-[7px] font-mono uppercase ${selectedZone === zone.key ? 'text-white/80' : 'text-slate-600'}`}>{zone.sub}</span>
+                    </button>
+                ))}
+            </div>
         </div>
-        
-        <p className="text-[10px] text-slate-400 font-medium italic z-10">{t.sync.guidance_tip}</p>
      </div>
   );
 });

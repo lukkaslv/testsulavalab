@@ -1,11 +1,9 @@
 
 import { AnalysisResult, ClinicalNarrative, SystemicVector, Intervention } from '../types';
-import { translations } from '../translations';
+import { translations } from '@/translations';
 
-type Lang = 'ru' | 'ka';
-
-export function generateClinicalNarrative(result: AnalysisResult, lang: Lang): ClinicalNarrative {
-    const t = translations[lang];
+export function generateClinicalNarrative(result: AnalysisResult): ClinicalNarrative {
+    const t = translations.ru;
     const { state, neuroSync, activePatterns, archetypeKey, verdictKey, entropyScore } = result;
     const cn = t.clinical_narratives;
 
@@ -30,7 +28,7 @@ export function generateClinicalNarrative(result: AnalysisResult, lang: Lang): C
     const systemicVectors: SystemicVector[] = [];
     if (activePatterns.includes('family_loyalty') || f < 45) {
         systemicVectors.push({ 
-            origin: 'SYSTEMIC_LOYALTY', 
+            origin: 'СИСТЕМНАЯ ЛОЯЛЬНОСТЬ', 
             strength: activePatterns.includes('family_loyalty') ? 92 : 65, 
             description: cn.systemic.loyalty_desc,
             proNote: cn.systemic.supervisor_note
@@ -39,9 +37,9 @@ export function generateClinicalNarrative(result: AnalysisResult, lang: Lang): C
 
     // --- INTERVENTIONS ---
     const interventions: Intervention[] = [];
-    if (isCompensatory) interventions.push({ type: 'CONFRONTATION', text: cn.interventions.confrontation_1, purpose: 'Break armor' });
-    else if (isBorderline) interventions.push({ type: 'SUPPORT', text: cn.interventions.support_1, purpose: 'Stabilize' });
-    else interventions.push({ type: 'SYSTEMIC', text: cn.systemic.systemic_order_1, purpose: 'Boundary' });
+    if (isCompensatory) interventions.push({ type: 'КОНФРОНТАЦИЯ', text: cn.interventions.confrontation_1, purpose: 'Прорыв панциря' });
+    else if (isBorderline) interventions.push({ type: 'ПОДДЕРЖКА', text: cn.interventions.support_1, purpose: 'Стабилизация' });
+    else interventions.push({ type: 'СИСТЕМНОЕ', text: cn.systemic.systemic_order_1, purpose: 'Границы' });
 
     // --- DIFFERENTIAL DIAGNOSIS ---
     const diffMap = [
@@ -61,7 +59,7 @@ export function generateClinicalNarrative(result: AnalysisResult, lang: Lang): C
 
     return {
         level1: {
-            title: "CLINICAL SUMMARY",
+            title: "КЛИНИЧЕСКОЕ РЕЗЮМЕ",
             statusTag: cn.labels[profileKey === 'compensatory' ? 'armored' : profileKey === 'borderline' ? 'critical' : 'stable'],
             summary: cn.labels.stable,
             focusQuestion: p.hypo,
@@ -69,8 +67,8 @@ export function generateClinicalNarrative(result: AnalysisResult, lang: Lang): C
             recommendation: cn.labels.focus_somatic,
         },
         level2: {
-            introduction: `🧬 GENESIS OS // SUPERVISOR DOSSIER v5.0 [${lang.toUpperCase()}]`,
-            generalConfig: `System Profile: ${cn.labels[profileKey === 'compensatory' ? 'armored' : profileKey === 'borderline' ? 'critical' : 'stable']}`,
+            introduction: `🧬 GENESIS OS // ДОСЬЕ СУПЕРВИЗОРА v5.0 [RU]`,
+            generalConfig: `Профиль Системы: ${cn.labels[profileKey === 'compensatory' ? 'armored' : profileKey === 'borderline' ? 'critical' : 'stable']}`,
             psychodynamicProfile: p.p_profile,
             deepAnalysis: p.deep_expl,
             deepExpl: p.deep_expl,
@@ -79,7 +77,7 @@ export function generateClinicalNarrative(result: AnalysisResult, lang: Lang): C
             interExpl: cn.interventions.confrontation_1,
             diffExpl: cn.diff_expl,
             validityExpl: cn.validity_expl, 
-            archetypeAnalysis: `Dominant: ${archetypeKey}`,
+            archetypeAnalysis: `Доминанта: ${archetypeKey}`,
             clinicalHypotheses: p.hypo,
             activePatterns: activePatterns.join(', '),
             verdictAndRecommendations: `${t.verdicts[verdictKey]?.label || verdictKey}`,
@@ -99,8 +97,8 @@ export function generateClinicalNarrative(result: AnalysisResult, lang: Lang): C
             triggers: [], 
             blindSpots: [],
             sessionFlow: [
-                { phase: 'ENTRY', title: cn.steps.confrontation_func, action: cn.steps.confrontation_func_action },
-                { phase: 'EXPLORATION', title: cn.steps.search_crack, action: cn.steps.search_crack_action }
+                { phase: 'ВХОД', title: cn.steps.confrontation_func, action: cn.steps.confrontation_func_action },
+                { phase: 'ИССЛЕДОВАНИЕ', title: cn.steps.search_crack, action: cn.steps.search_crack_action }
             ],
             clinicalProfile: `F:${Math.round(f)} A:${Math.round(a)} R:${Math.round(r)} E:${Math.round(e)}`,
             systemicVectors, interventions, differentialHypotheses: diffMap.map(h => ({ label: h.label, probability: h.prob }))

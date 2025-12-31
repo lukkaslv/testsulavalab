@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Translations, PatternFlags } from '../../types';
 import { PlatformBridge } from '../../utils/helpers';
@@ -29,21 +28,21 @@ export const InvalidResultsView: React.FC<InvalidResultsViewProps> = ({ t, onRes
 
 
   return (
-    <div className="flex flex-col items-center justify-center h-full space-y-8 animate-in px-4 text-center bg-amber-50">
-      <div className="w-24 h-24 bg-amber-100 rounded-3xl flex items-center justify-center text-5xl shadow-inner border border-amber-200/50 animate-pulse">
+    <div className="flex flex-col items-center justify-center h-full space-y-8 animate-in px-4 text-center bg-slate-950 text-amber-200">
+      <div className="w-24 h-24 bg-amber-950/30 rounded-3xl flex items-center justify-center text-5xl shadow-inner border border-amber-500/30 animate-pulse">
         <span className="animate-shake">⚠️</span>
       </div>
       <div className="space-y-4 max-w-sm">
-        <h2 className="text-2xl font-black uppercase tracking-tight text-amber-900 leading-tight italic">
+        <h2 className="text-2xl font-black uppercase tracking-tight text-amber-400 leading-tight italic">
           {content.title}
         </h2>
-        <p className="text-sm font-medium text-amber-800 leading-relaxed">
+        <p className="text-sm font-medium text-amber-300 leading-relaxed">
           {content.message}
         </p>
         
         {reason && (
-            <div className="bg-white p-4 rounded-xl border border-amber-200 mt-4">
-                <p className="text-xs font-bold text-amber-700">
+            <div className="bg-slate-900/50 p-4 rounded-xl border border-amber-500/20 mt-4">
+                <p className="text-xs font-bold text-amber-300">
                     {reason}
                 </p>
             </div>

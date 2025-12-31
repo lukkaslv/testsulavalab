@@ -3,30 +3,54 @@ export type DomainType = 'foundation' | 'agency' | 'money' | 'social' | 'legacy'
 
 export type BeliefKey = 
   | 'family_loyalty' | 'scarcity_mindset' | 'fear_of_punishment' | 'imposter_syndrome' 
-  | 'poverty_is_virtue' | 'hard_work_only' | 'self_permission' | 'fear_of_conflict' 
-  | 'betrayal_trauma' | 'unconscious_fear' | 'money_is_danger' | 'impulse_spend' 
-  | 'resource_toxicity' | 'short_term_bias' | 'capacity_expansion' | 'boundary_collapse' 
-  | 'shame_of_success' | 'hero_martyr' | 'latency_resistance' | 'body_mind_conflict' 
-  | 'ambivalence_loop' | 'autopilot_mode' | 'golden_cage' | 'money_is_tool' | 'default';
+  | 'poverty_is_virtue' | 'hard_work_only' | 'self_permission' | 'capacity_expansion' 
+  | 'boundary_collapse' | 'shame_of_success' | 'hero_martyr' | 'latency_resistance' 
+  | 'body_mind_conflict' | 'ambivalence_loop' | 'autopilot_mode' | 'golden_cage' 
+  | 'money_is_tool' | 'fear_of_conflict' | 'betrayal_trauma' | 'unconscious_fear' 
+  | 'money_is_danger' | 'impulse_spend' | 'resource_toxicity' | 'short_term_bias' | 'default';
 
-export type SubscriptionTier = 'FREE' | 'SOLO' | 'CLINICAL' | 'LAB';
+export type ArchetypeKey = 'THE_ARCHITECT' | 'THE_DRIFTER' | 'THE_BURNED_HERO' | 'THE_GOLDEN_PRISONER' | 'THE_CHAOS_SURFER' | 'THE_GUARDIAN';
+
+export type VerdictKey = 'HEALTHY_SCALE' | 'BRILLIANT_SABOTAGE' | 'INVISIBILE_CEILING' | 'LEAKY_BUCKET' | 'PARALYZED_GIANT' | 'FROZEN_POTENTIAL' | 'CRITICAL_DEFICIT';
 
 export type PhaseType = 'SANITATION' | 'STABILIZATION' | 'EXPANSION';
 
+export type TaskKey = string;
+
+export type SubscriptionTier = 'FREE' | 'SOLO' | 'CLINICAL' | 'LAB';
+
 export type LifeContext = 'NORMAL' | 'HIGH_LOAD' | 'CRISIS' | 'TRANSITION';
 
-export type ArchetypeKey = 
-  | 'THE_ARCHITECT' | 'THE_DRIFTER' | 'THE_BURNED_HERO' 
-  | 'THE_GOLDEN_PRISONER' | 'THE_CHAOS_SURFER' | 'THE_GUARDIAN';
+export type ResonanceState = 'COHERENT' | 'DISSONANT' | 'NEUTRAL' | 'INITIALIZING';
 
-export type VerdictKey = 
-  | 'HEALTHY_SCALE' | 'BRILLIANT_SABOTAGE' | 'INVISIBILE_CEILING' 
-  | 'LEAKY_BUCKET' | 'PARALYZED_GIANT' | 'FROZEN_POTENTIAL' | 'CRITICAL_DEFICIT';
+export type InterventionMode = 'HOLDING' | 'STABILIZING' | 'CONFRONTING';
+
+export enum LogLevel {
+    DEBUG = 'DEBUG',
+    INFO = 'INFO',
+    WARN = 'WARN',
+    ERROR = 'ERROR'
+}
+
+export interface StructuralFracture {
+    nodeId: string;
+    domain: DomainType;
+    intensity: number;
+    description: string;
+    beliefKey: string;
+}
+
+export class DataCorruptionError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'DataCorruptionError';
+  }
+}
 
 export interface Choice {
   id: string;
   textKey: string;
-  beliefKey: BeliefKey;
+  beliefKey: string;
   position: number;
 }
 
@@ -68,25 +92,21 @@ export interface SessionPulseNode {
   zScore: number;
 }
 
-export interface NeuralCorrelation {
-  key1: string;
-  key2: string;
-  coefficient: number;
-  type: string;
-}
-
-export interface MetricBreakdown {
-  label: string;
-  formula: string;
-  baseValue: number;
-  entropyImpact: number;
-  syncImpact: number;
-  finalValue: number;
+export interface EntropyFluxVector {
+  from: DomainType;
+  to: DomainType;
+  intensity: number;
+  velocity: number;
 }
 
 export interface RawAnalysisResult {
   context: LifeContext;
-  state: { foundation: number; agency: number; resource: number; entropy: number };
+  state: {
+    foundation: number;
+    agency: number;
+    resource: number;
+    entropy: number;
+  };
   domainProfile: Record<DomainType, number>;
   integrity: number;
   capacity: number;
@@ -95,23 +115,35 @@ export interface RawAnalysisResult {
   systemHealth: number;
   phase: PhaseType;
   status: string;
-  validity: 'VALID' | 'SUSPICIOUS' | 'INVALID' | 'BREACH' | 'INITIALIZING' | 'PROTECTIVE' | 'STABLE' | 'UNSTABLE';
+  validity: 'VALID' | 'INVALID' | 'INITIALIZING' | 'BREACH';
   activePatterns: BeliefKey[];
-  correlations: NeuralCorrelation[];
-  conflicts: any[];
   somaticDissonance: BeliefKey[];
-  somaticProfile: { blocks: number; resources: number; dominantSensation: string };
-  integrityBreakdown: { coherence: number; sync: number; stability: number; label: string; status: string; description?: string };
+  history: GameHistoryItem[];
+  correlations: any[];
+  conflicts: any[];
+  somaticProfile: {
+    blocks: number;
+    resources: number;
+    dominantSensation: string;
+  };
+  integrityBreakdown: {
+    coherence: number;
+    sync: number;
+    stability: number;
+    label: string;
+    description?: string;
+    status: string;
+  };
   clarity: number;
   confidenceScore: number;
   warnings: string[];
-  flags: { 
-    isAlexithymiaDetected?: boolean; 
-    isSocialDesirabilityBiasDetected?: boolean; 
-    isSlowProcessingDetected?: boolean; 
+  flags: {
+    isAlexithymiaDetected?: boolean;
+    isSlowProcessingDetected?: boolean;
     isNeuroSyncReliable?: boolean;
+    isSocialDesirabilityBiasDetected?: boolean;
     processingSpeedCompensation?: number;
-    entropyType?: 'NEUTRAL' | 'CREATIVE' | 'STRUCTURAL';
+    entropyType?: 'CREATIVE' | 'NEUTRAL';
     isL10nRiskDetected?: boolean;
   };
   skippedCount: number;
@@ -129,6 +161,23 @@ export interface PatternFlags {
   isInconsistentRhythm?: boolean;
 }
 
+export interface ForecastMetrics {
+  horizonMonths: number;
+  momentum: number;
+  friction: number;
+  inertialPath: number[];
+  decayPath: number[];
+  growthPath: number[];
+  tippingPointMonth: number | null;
+  targetIntegrity?: number;
+}
+
+export interface AuditMetrics {
+  timestamp: number;
+  integrityScore: number;
+  entropyLevels: number[];
+}
+
 export interface AnalysisResult extends RawAnalysisResult {
   timestamp: number;
   createdAt: number;
@@ -137,15 +186,25 @@ export interface AnalysisResult extends RawAnalysisResult {
   secondaryArchetypeKey?: ArchetypeKey;
   archetypeMatch: number;
   archetypeSpectrum: { key: ArchetypeKey; score: number }[];
+  refraction: { key: ArchetypeKey; match: number; description: string }[];
+  shadowArchetype?: { key: ArchetypeKey; tension: number; description: string };
   verdictKey: VerdictKey;
   lifeScriptKey: string;
   roadmap: any[];
   graphPoints: { x: number; y: number; label?: string }[];
-  patternFlags: PatternFlags;
+  shadowPoints?: { x: number; y: number; label?: string }[];
   interventionStrategy: string;
   coreConflict: string;
   shadowDirective: string;
-  formulaBreakdown?: MetricBreakdown[];
+  confidenceScore: number;
+  patternFlags: PatternFlags;
+  audit?: AuditMetrics; 
+  butterflySensitivity: number;
+  isCrisis?: boolean;
+  forecast?: ForecastMetrics;
+  bifurcationHistory?: any[];
+  entropyFlux: EntropyFluxVector[];
+  fractures: StructuralFracture[];
 }
 
 export interface ScanHistory {
@@ -167,21 +226,21 @@ export interface SystemLogEntry {
 }
 
 export interface TelemetryEvent {
+  timestamp: number;
   nodeId: string;
   domain: DomainType;
   latency: number;
   sensation: string;
   beliefKey: string;
-  variantId: string;
-  timestamp: number;
   isOutlier: boolean;
+  variantId: string;
 }
 
 export interface FeedbackEntry {
   timestamp: number;
   clientId: string;
-  feedback: string;
   rating: number;
+  comment: string;
 }
 
 export interface LicenseRecord {
@@ -191,220 +250,7 @@ export interface LicenseRecord {
   tier: string;
   issuedAt: number;
   expiresAt: number;
-  status: 'ACTIVE' | 'EXPIRED' | 'REVOKED' | 'INVALID';
-}
-
-export class DataCorruptionError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'DataCorruptionError';
-  }
-}
-
-export type TaskKey = string;
-
-export interface TestMetrics {
-  insight_resolution: string;
-  confidence: string;
-  adaptive_active: string;
-  dissonance_points: string;
-  signal_clean: string;
-  structural_contradictions: string;
-  persona_conflict_hint: string;
-}
-
-export interface EvolutionInsights {
-  growth_detected: string;
-  chaos_reduction: string;
-  stable_dynamics: string;
-  loading: string;
-  status_ok: string;
-  status_tracking: string;
-}
-
-export interface SynthesisInsight {
-    title: string;
-    icon: string;
-    analysis: string;
-    recommendation: string;
-}
-
-export interface ClinicalSynthesis {
-    coreTension: SynthesisInsight;
-    behavioralPrediction: SynthesisInsight;
-    therapeuticFocus: SynthesisInsight;
-    keyQuestion: string;
-}
-
-export interface Translations {
-  subtitle: string;
-  informed_consent: any;
-  onboarding: any;
-  pro_hub: any;
-  invalid_results: any;
-  data_corruption: any;
-  boot_sequence: {
-    kernel_init: string;
-    load_constitution: string;
-    mount_volumes: string;
-    load_psychometrics: string;
-    calibrate_neuro_sync: string;
-    secure_link: string;
-    system_ready: string;
-    copyright: string;
-  };
-  ui: any;
-  auth_ui: any;
-  context_check: any;
-  admin: any;
-  guide: any;
-  pro_guide: any;
-  brief_explainer: any;
-  clinical_decoder: any;
-  clinical_narratives: any;
-  global: any;
-  sync: any;
-  sensation_feedback: any;
-  domains: Record<string, string>;
-  dashboard: any;
-  results: any;
-  ekg: any;
-  pro_terminal: any;
-  pro_headers: any;
-  phases: any;
-  tasks: any;
-  scenes: Record<string, { title: string; desc: string; c1: string; c2: string; c3: string }>;
-  beliefs: Record<string, string>;
-  explanations: any;
-  pattern_library: Record<string, { protection: string; cost: string; antidote: string }>;
-  archetypes: Record<string, { title: string; desc: string; superpower: string; shadow: string; quote: string }>;
-  verdicts: Record<string, { label: string; impact: string }>;
-  metric_definitions: any;
-  conflicts: any;
-  system_commentary: string[];
-  auth_hint: string;
-  legal_disclaimer: string;
-  safety: any;
-  crisis_view: any;
-  session_prep_templates: any;
-  synthesis_categories: any;
-  synthesis: any;
-  interventions: Record<string, string>;
-  directives: Record<string, string>;
-  interferences: Record<string, string>;
-  correlation_types: any;
-  integrity_audit: any;
-  methodology_faq: { q: string; a: string }[];
-  soft_mode: { archetype_prefix: string; verdict_softened: Record<string, string> };
-  test_metrics: TestMetrics;
-  evolution_insights: EvolutionInsights;
-  legal: any;
-  oracle: any;
-  export_image: any;
-  transparency: {
-    title: string;
-    desc: string;
-    formula_label: string;
-    impact_label: string;
-    final_label: string;
-    foundation: string;
-    agency: string;
-    resource: string;
-    entropy: string;
-  };
-}
-
-export interface ConfigError {
-  severity: 'high' | 'medium' | 'low';
-  type: string;
-  details: string;
-  fix: string;
-  file?: string;
-  impact?: string;
-}
-
-export interface IntegrityCategory {
-  name: 'NERVOUS_SYSTEM' | 'METABOLISM' | 'VOICE' | 'IMMUNITY' | 'STRUCTURE';
-  score: number; 
-  errors: ConfigError[];
-  warnings: ConfigError[];
-  totalChecks: number;
-}
-
-export interface ComplexityMetrics {
-    emergenceIndex: number;
-    synergyFactor: number;
-    phaseTransitionRisk: number;
-    autopoiesisScore: number;
-    tippingPointNode: string | null;
-}
-
-export interface StructuralAnomalies {
-    deadCode: string[]; 
-    spof: string[]; 
-    butterflyEffect: string[]; 
-    dominoEffect: string[]; 
-    hysteresis: string[]; 
-    technicalDebt: string[]; 
-    coupling: string[]; 
-    conwayViolations: string[]; 
-    determinismRisk: string[]; 
-    circuitBreakers: string[]; 
-    bifurcationPoints: string[]; 
-    strangeAttractors: string[]; 
-    stableAttractors: string[]; 
-    resonanceZones: string[]; 
-}
-
-export interface IntegrityReport {
-  overallScore: number;
-  status: 'healthy' | 'warning' | 'error';
-  categories: IntegrityCategory[];
-  timestamp: number;
-  inflammationIndex: number;
-  fragilityIndex: number;
-  avalancheIndex: number;
-  structuralAnomalies: StructuralAnomalies;
-  complexity: ComplexityMetrics;
-  narrative: string; 
-}
-
-export interface AppContextType {
-  lang: 'ru' | 'ka';
-  setLang: (lang: 'ru' | 'ka') => void;
-  t: Translations;
-  view: string;
-  setViewAndPersist: (view: string) => void;
-  isDemo: boolean;
-  isPro: boolean;
-  isMaster: boolean;
-  licenseTier: SubscriptionTier;
-  completedNodeIds: number[];
-  setCompletedNodeIds: (fn: (prev: number[]) => number[]) => void;
-  history: GameHistoryItem[];
-  setHistory: (fn: (prev: GameHistoryItem[]) => GameHistoryItem[]) => void;
-  dataStatus: string;
-  scanHistory: ScanHistory;
-  usageStats: { used: number; limit: number; isUnlimited: boolean; canStart: boolean };
-  handleLogin: (password: string, demo?: boolean, tier?: SubscriptionTier) => boolean;
-  handleLogout: () => void;
-  handleReset: (force?: boolean) => void;
-  onLangChange: (lang: 'ru' | 'ka') => void;
-}
-
-export interface ClinicalProfile {
-  p_profile: string;
-  deep_expl: string;
-  behavior: string;
-  hypo: string;
-  contract: string;
-  goal: string;
-  process: string;
-  strategies: string[];
-  transference: string;
-  counter_transference: string;
-  trap: string;
-  fragility: string;
+  status: 'ACTIVE' | 'EXPIRED' | 'REVOKED';
 }
 
 export interface Contradiction {
@@ -421,56 +267,134 @@ export interface AdaptiveState {
   isComplete: boolean;
   suggestedNextNodeId: string | null;
   confidenceScore: number;
+  intervention: InterventionType | null;
+}
+
+export interface InterventionType {
+  code: 'MANIC_BREAK' | 'SOMATIC_WAKEUP';
+  trigger: string;
+  requiredAction: string;
+}
+
+export interface ConfigError {
+  type: string;
+  details: string;
+  severity: 'low' | 'medium' | 'high';
+}
+
+export interface IntegrityCategory {
+  name: string;
+  score: number;
+  errors: ConfigError[];
+  warnings: ConfigError[];
+}
+
+export interface StructuralAnomalies {
+  deadCode: string[];
+  spof: string[];
+  butterflyEffect: string[];
+  dominoEffect: string[];
+  hysteresis: string[];
+  technicalDebt: string[];
+  coupling: string[];
+  conwayViolations: string[];
+  determinismRisk: string[];
+  circuitBreakers: string[];
+  bifurcationPoints: string[];
+  strangeAttractors: string[];
+  stableAttractors: string[];
+  resonanceZones: string[];
+}
+
+export interface ComplexityMetrics {
+  emergenceIndex: number;
+  synergyFactor: number;
+  phaseTransitionRisk: number;
+  autopoiesisScore: number;
+  tippingPointNode: string | null;
+}
+
+export interface NetworkAuditReport {
+  totalRequests: number;
+  authorizedDomains: string[];
+  violations: string[];
+  isSovereign: boolean;
+}
+
+export interface IntegrityReport {
+  overallScore: number;
+  status: 'healthy' | 'warning' | 'error' | 'lockdown';
+  categories: IntegrityCategory[];
+  timestamp: number;
+  inflammationIndex: number;
+  fragilityIndex: number;
+  avalancheIndex: number;
+  structuralAnomalies: StructuralAnomalies;
+  complexity: ComplexityMetrics;
+  narrative: string;
+  networkAudit: NetworkAuditReport;
+  isEnvironmentSafe: boolean;
+}
+
+export interface JourneyAnomaly {
+    type: string;
+    details: string;
+    source?: string;
+    key?: string;
+    key1?: string;
+    key2?: string;
+    similarity?: number;
+}
+
+export interface PersonaResult {
+    persona: string;
+    finalState: {
+        foundation: number;
+        agency: number;
+        resource: number;
+        entropy: number;
+    };
+    dominantArchetype: string;
+    stabilityIndex: number;
+}
+
+export interface SimulationReport {
+    pathfinder: {
+        anomalies: JourneyAnomaly[];
+        pathsChecked: number;
+        coverage: number;
+    };
+    calibrator: {
+        results: PersonaResult[];
+        chaosStressTest: {
+            successRate: number;
+            failureModes: string[];
+        };
+    };
+    semanticGhost: {
+        duplicates: JourneyAnomaly[];
+        averageSimilarity: number;
+        vocabularySize: number;
+    };
+    assetGuardian: {
+        orphans: JourneyAnomaly[];
+    };
+    timestamp: number;
+}
+
+export interface LogEntry {
+    timestamp: number;
+    level: LogLevel;
+    module: string;
+    message: string;
+    stack?: string;
+    context?: Record<string, any>;
 }
 
 export interface SessionStep {
-  phase: string;
-  title: string;
-  action: string;
-}
-
-export interface TherapyHypothesis {
-    id: string;
-    hypothesis: string;
-    basedOn: string;
-    focusForSession: string;
-}
-
-export interface ClinicalInterpretation {
-    systemConfiguration: {
-        title: string;
-        description: string;
-        limitingFactor: string;
-    };
-    deepMechanism: {
-        title: string;
-        analysis: string[];
-    };
-    metricInteractions: {
-        farDescription: string;
-        syncDescription: string;
-    };
-    archetypeClinical: {
-        strategy: string;
-        functionality: string;
-        limit: string;
-    };
-    beliefImpact: string;
-    hypotheses: TherapyHypothesis[];
-    risks: string[];
-    sessionEntry: string;
-    priority: string;
-    priorityLevel: 'low' | 'medium' | 'high';
-    riskProfile: {
-        label: string;
-        level: 'critical' | 'high' | 'nominal';
-    };
-    extra: {
-        diffProb: Record<string, number>;
-        criticalNodes: number[];
-        trapType: string;
-        provocation: string;
-    };
+    phase: string;
+    title: string;
+    action: string;
 }
 
 export interface SystemicVector {
@@ -522,79 +446,244 @@ export interface ClinicalNarrative {
         primaryDefense: string;
         therapeuticTrap: string;
         fragilityPoint: string;
-        clinicalStrategy: string[];
+        clinicalStrategy: string;
         triggers: string[];
         blindSpots: string[];
         sessionFlow: SessionStep[];
         clinicalProfile: string;
         systemicVectors: SystemicVector[];
         interventions: Intervention[];
-        differentialHypotheses: { label: string; probability: number }[];
+        differentialHypotheses: Array<{ label: string; probability: number }>;
     };
 }
 
-export enum LogLevel {
-  INFO = 'INFO',
-  WARN = 'WARN',
-  ERROR = 'ERROR',
-  DEBUG = 'DEBUG'
+export interface AutopoiesisMetrics {
+    selfHealingIndex: number;
+    integrationPotential: number;
+    phaseTransitionReadiness: number;
+    levers: Array<{ domain: DomainType; impact: number; label: string }>;
 }
 
-export interface LogEntry {
-  timestamp: number;
-  level: LogLevel;
-  module: string;
-  message: string;
-  stack?: string;
-  context?: Record<string, any>;
+export interface StatisticalMarkers {
+    variance: number;
+    standardDeviation: number;
+    skewness: number;
+    kurtosis: number;
+    zScoreDistribution: number[];
 }
 
-export interface JourneyAnomaly {
-    type: string;
-    details: string;
-    key?: string;
-    key1?: string;
-    key2?: string;
-    similarity?: number;
-    source?: string;
+export interface NeuropsychMarkers {
+    alexithymiaIndex: number;
+    cognitiveFriction: number;
+    prefrontalExhaustion: boolean;
+    amygdalaTriggerNodes: string[];
 }
 
-export interface PersonaResult {
-    persona: string;
-    finalState: { foundation: number; agency: number; resource: number; entropy: number };
-    dominantArchetype: string;
-    stabilityIndex: number;
+export interface SystemicMetrics {
+    loyaltyIndex: number;
+    differentiationLevel: number;
+    ancestralPressure: number;
+    fieldTension: number;
+    excludedPatternKey?: string;
 }
 
-export interface SimulationReport {
-    pathfinder: {
-        anomalies: JourneyAnomaly[];
-        pathsChecked: number;
-        coverage: number;
+export interface ClinicalInterpretation {
+    systemConfiguration: {
+        title: string;
+        description: string;
+        limitingFactor: string;
     };
-    calibrator: {
-        results: PersonaResult[];
-        chaosStressTest: {
-            successRate: number;
-            failureModes: string[];
+    deepMechanism: { title: string; analysis: any[] };
+    metricInteractions: {
+        farDescription: string;
+        syncDescription: string;
+    };
+    archetypeClinical: {
+        strategy: string;
+        functionality: string;
+        limit: string;
+    };
+    beliefImpact: string;
+    hypotheses: any[];
+    risks: string[];
+    sessionEntry: string;
+    priority: string;
+    priorityLevel: 'low' | 'medium' | 'high';
+    riskProfile: { label: string; level: 'critical' | 'nominal' };
+    stats: StatisticalMarkers;
+    neuro: NeuropsychMarkers;
+    extra: {
+        diffProb: Record<string, number>;
+        criticalNodes: string[];
+        trapType: string;
+        provocation: string;
+        bifurcations: any[];
+        evidence: any[];
+        homeostasisCost: number;
+        systemicPressure: number;
+        systemicMetrics: SystemicMetrics;
+        directives: string[];
+        clusters: any[];
+        shadowContract: string;
+        antidote: string;
+        contraindications: string[];
+        interventionMode: InterventionMode;
+        somaticMap: any[];
+        trajectory: any[];
+        transference: string;
+        prognosis: {
+            integrationDifficulty: number;
+            allianceRisk: number;
+            stabilizationPath: 'LONG' | 'FAST';
+            primaryObstacle: string;
         };
+        entropyFlux: any[];
+        autopoiesis: AutopoiesisMetrics;
     };
-    semanticGhost: {
-        duplicates: JourneyAnomaly[];
-        averageSimilarity: number;
-        vocabularySize: number;
-    };
-    assetGuardian: {
-        orphans: JourneyAnomaly[];
-    };
-    timestamp: number;
 }
 
-export interface SupervisorPattern {
-    obs: string;
-    risk: string;
-    trap: string;
-    provocation: string;
-    transfer?: string;
-    tactics?: string;
+export interface SynthesisInsight {
+    title: string;
+    icon: string;
+    analysis: string;
+    recommendation: string;
 }
+
+export interface ClinicalSynthesis {
+    coreTension: SynthesisInsight;
+    behavioralPrediction: SynthesisInsight;
+    therapeuticFocus: SynthesisInsight;
+    keyQuestion: string;
+}
+
+export interface NeuralBond {
+    from: DomainType;
+    to: DomainType;
+    strength: number;
+    tension: number;
+    status: 'STABLE' | 'STRAINED' | 'RUPTURED' | 'SYNERGETIC';
+}
+
+export interface LatticeMetrics {
+    bonds: NeuralBond[];
+    coherence: number;
+}
+
+export interface ResonanceVector {
+    from: DomainType;
+    to: DomainType;
+    strength: number;
+}
+
+export interface EntropyVector {
+    from: DomainType;
+    to: DomainType;
+    volume: number;
+    velocity: number;
+}
+
+export interface AppContextType {
+    lang: string;
+    t: Translations;
+    view: string;
+    setViewAndPersist: (view: string) => void;
+    sessionContext: LifeContext;
+    setSessionContext: (ctx: LifeContext) => void;
+    isDemo: boolean;
+    isPro: boolean;
+    isMaster: boolean;
+    licenseTier: SubscriptionTier;
+    isSafeDevMode: boolean;
+    setSafeDevMode: (active: boolean) => void;
+    completedNodeIds: number[];
+    setCompletedNodeIds: React.Dispatch<React.SetStateAction<number[]>>;
+    history: GameHistoryItem[];
+    setHistory: React.Dispatch<React.SetStateAction<GameHistoryItem[]>>;
+    dataStatus: string;
+    scanHistory: ScanHistory;
+    usageStats: { used: number; limit: number; isUnlimited: boolean; canStart: boolean };
+    networkReport: NetworkAuditReport;
+    integrityReport: IntegrityReport | null;
+    handleLogin: (password: string, demo?: boolean, tier?: SubscriptionTier) => boolean;
+    handleLogout: () => void;
+    handleReset: (force?: boolean) => void;
+    handleFullReset: () => void;
+}
+
+export interface Translations {
+    subtitle: string;
+    global: { back: string; complete: string; calibrating: string; calib_desc: string };
+    sync: any;
+    sensation_feedback: any;
+    dashboard: any;
+    onboarding: any;
+    informed_consent: any;
+    ui: any;
+    boot_sequence: any;
+    auth_ui: any;
+    test_metrics: any;
+    results: any;
+    invalid_results: any;
+    data_corruption: any;
+    roadmap: any;
+    somatic_analysis: any;
+    metric_trace: any;
+    pro_hub: any;
+    pro_terminal: any;
+    pro_guide: any;
+    academy: any;
+    comparison: any;
+    specialist_oath: any;
+    clinical_narratives: any;
+    domains: any;
+    verdicts: any;
+    archetypes: any;
+    beliefs: any;
+    pattern_library: any;
+    academy_extra: any;
+    safety: any;
+    crisis_view: any;
+    integrity_audit: any;
+    security_monitor: any;
+    constitution: any;
+    tech_standard: any;
+    changelog: any;
+    scientific_foundations: any;
+    privacy: any;
+    legal: any;
+    guide: any;
+    brief_explainer: any;
+    archetype_gallery: any;
+    oracle: any;
+    export_image: any;
+    evolution_insights: any;
+    transparency: any;
+    tomography: any;
+    tomography_controls: any;
+    systemic_field: any;
+    horizon_scanner: any;
+    mirror_protocol: any;
+    forensic: any;
+    emergence_library: any;
+    topology: any;
+    resonance: any;
+    ekg: any;
+    integration: any;
+    antifragility: any;
+    stabilization: any;
+    transition_protocol: any;
+    scenes: Record<string, { title: string; desc: string; c1: string; c2: string; c3: string }>;
+    session_prep_templates: any;
+    shadow_logic?: any;
+    synthesis: any;
+    clinical_decoder: any;
+    admin: any;
+}
+
+export type NeuralCorrelation = any;
+export type ChronosMetrics = any;
+export type AntifragilityMetrics = any;
+export type MetricTrace = any;
+export type MetricTracePoint = any;
+export type ShadowPattern = any;
+export type TherapyStep = any;

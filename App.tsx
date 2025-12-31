@@ -1,11 +1,11 @@
 
-import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Layout } from './components/Layout';
-import { MODULE_REGISTRY, ONBOARDING_NODES_COUNT, DOMAIN_SETTINGS } from './constants';
+import { MODULE_REGISTRY, DOMAIN_SETTINGS } from './constants';
 import { calculateRawMetrics } from './services/psychologyService';
 import { DiagnosticEngine } from './services/diagnosticEngine';
-import { DomainType, AnalysisResult } from './types';
-import { resolvePath, PlatformBridge } from './utils/helpers';
+import { DomainType, AnalysisResult, GameHistoryItem } from './types';
+import { resolvePath } from './utils/helpers';
 import { useTestEngine } from './hooks/useTestEngine';
 import { AdaptiveQuestionEngine, getDomainForNodeId } from './services/adaptiveQuestionEngine';
 import { PatternDetector } from './services/PatternDetector';
@@ -16,34 +16,49 @@ import { generateShareImage } from './utils/shareGenerator';
 import { AuthView } from './components/views/AuthView';
 import { BootView } from './components/views/BootView';
 import { DashboardView, NodeUI } from './components/views/DashboardView';
-import { TestView, ReflectionView } from './components/views/TestModule';
+import { TestView } from './components/views/TestModule';
 import { BodySyncView } from './components/views/BodySyncView';
 import { ResultsView } from './components/views/ResultsView';
 import { AdminPanel } from './components/views/AdminPanel';
-import { CompatibilityView } from './components/views/CompatibilityView';
+import { ProTerminalView } from './components/views/ProTerminalView';
 import { GuideView } from './components/views/GuideView';
 import { DataCorruptionView } from './components/views/DataCorruptionView';
 import { InvalidResultsView } from './components/views/InvalidResultsView';
 import { SystemIntegrityView } from './components/views/SystemIntegrityView';
 import { SystemSimulationView } from './components/views/SystemSimulationView';
+import { ProHubView } from './components/views/ProHubView';
+import { ScanDetailView } from './components/views/ScanDetailView';
+import { PrivacyView } from './components/views/PrivacyView';
+import { ExpertAcademyView } from './components/views/ExpertAcademyView';
+import { TransparencyView } from './components/views/TransparencyView';
+import { CompareView } from './components/views/CompareView';
+import { SecurityMonitorView } from './components/views/SecurityMonitorView';
+import { SpecialistAtlasView } from './components/views/SpecialistAtlasView';
+import { SystemChangelogView } from './components/views/SystemChangelogView';
+import { ScientificFoundationsView } from './components/views/ScientificFoundationsView';
+import { SpecialistOathView } from './components/views/SpecialistOathView';
+import { StabilizationView } from './components/views/StabilizationView';
+import { IntegrationProtocolView } from './components/views/IntegrationProtocolView';
+import { ProcessingView } from './components/views/ProcessingView';
+import { ConstitutionView } from './components/views/ConstitutionView';
 import { CrisisView } from './components/views/CrisisView';
+import { DevSanctuaryView } from './components/views/DevSanctuaryView';
+import { BriefExplainerView } from './components/views/BriefExplainerView';
+import { PatternLibraryView } from './components/views/PatternLibraryView';
+import { ArchetypeGalleryView } from './components/views/ArchetypeGalleryView';
+import { TechnicalStandardView } from './components/views/TechnicalStandardView';
 
 const App: React.FC = () => {
   const {
-    lang, t, view, setViewAndPersist,
-    licenseTier, isDemo, isPro, isMaster,
-    completedNodeIds, setCompletedNodeIds,
-    history, setHistory,
-    dataStatus, scanHistory, usageStats,
-    handleLogout, handleReset,
-    handleLogin, onLangChange
+    t, view, setViewAndPersist, licenseTier, isDemo, isPro,
+    completedNodeIds, setCompletedNodeIds, history, setHistory,
+    dataStatus, scanHistory, usageStats, networkReport,
+    handleLogout, handleReset, handleLogin
   } = useAppContext();
 
   const [activeTest, setActiveTest] = useState<{ id: string; domain: DomainType | null }>({ id: '0', domain: 'foundation' });
-  const [currentDomain, setCurrentDomain] = useState<DomainType | null>(null);
-  const [forceGlitch, setForceGlitch] = useState(false);
-
-  const engineRef = useRef<any>(null);
+  const [selectedScan, setSelectedScan] = useState<AnalysisResult | null>(null);
+  const [compareSelection, setCompareSelection] = useState<[AnalysisResult, AnalysisResult] | null>(null);
 
   const baseline = useMemo(() => {
     if (history.length === 0) return 2000;
@@ -55,136 +70,122 @@ const App: React.FC = () => {
     AdaptiveQuestionEngine.getAdaptiveState(history, baseline, parseInt(activeTest.id, 10))
   , [history, baseline, activeTest.id]);
 
-  const handleStartNode = useCallback((nodeId: number, domain: DomainType) => {
-      if (!usageStats.canStart && !isDemo) {
-          PlatformBridge.haptic.notification('error');
-          return;
-      }
-      if (engineRef.current) {
-          engineRef.current.startNode(nodeId, domain);
-      }
-  }, [isDemo, usageStats.canStart]);
-
-  const handleContinue = useCallback(() => {
-    if (adaptiveState.isComplete) {
-      setViewAndPersist('results');
-      return;
-    }
-
-    const nextIdStr = adaptiveState.suggestedNextNodeId;
-
-    if (nextIdStr) {
-      const numericId = parseInt(nextIdStr, 10);
-      const nextDomain = getDomainForNodeId(numericId);
-      
-      if (nextDomain) {
-        handleStartNode(numericId, nextDomain);
-      } else {
-        // Fallback if domain is not found, which indicates completion or error
-        setViewAndPersist('dashboard');
-      }
-    } else {
-      // No next ID suggests completion
-      setViewAndPersist('results');
-    }
-  }, [adaptiveState, handleStartNode, setViewAndPersist]);
-
-  const engineInstance = useTestEngine({
-    setCompletedNodeIds,
-    setHistory,
-    setView: setViewAndPersist,
-    activeId: activeTest.id,
-    activeModule: activeTest.domain,
-    setActiveNode: (id, domain) => setActiveTest({ id, domain }),
-    isDemo,
-    canStart: usageStats.canStart,
-    onNextNodeRequest: handleContinue
-  });
-
-  useEffect(() => {
-    engineRef.current = engineInstance;
-  }, [engineInstance]);
-
-  const result = useMemo<AnalysisResult | null>(() => {
-    if (history.length < ONBOARDING_NODES_COUNT) return null;
+  const result = useMemo(() => {
+    if (history.length < 5) return null;
     const rawResult = calculateRawMetrics(history);
     const patternFlags = PatternDetector.analyze(history);
     return DiagnosticEngine.interpret(rawResult, patternFlags);
   }, [history]);
 
-  const globalProgress = useMemo(() => Math.min(100, Math.round(adaptiveState.clarity)), [adaptiveState.clarity]);
-  
-  const isGlitchMode = forceGlitch || (result && (result.entropyScore > 55 || result.state.foundation < 25));
-  
-  const getSceneText = useCallback((textKey: string) => resolvePath(t, textKey), [t]);
+  const handleContinue = useCallback((historyOverride?: GameHistoryItem[]) => {
+    const currentHistory = historyOverride || history;
+    const currentAdaptiveState = AdaptiveQuestionEngine.getAdaptiveState(
+        currentHistory, 
+        baseline, 
+        parseInt(activeTest.id, 10)
+    );
+
+    if (currentAdaptiveState.isComplete) {
+      setViewAndPersist('processing');
+      return;
+    }
+    
+    const nextIdStr = currentAdaptiveState.suggestedNextNodeId;
+    if (nextIdStr) {
+      const numericId = parseInt(nextIdStr, 10);
+      const nextDomain = getDomainForNodeId(numericId);
+      if (nextDomain) {
+          setActiveTest({ id: nextIdStr, domain: nextDomain });
+          setViewAndPersist('test');
+      }
+    }
+  }, [history, baseline, activeTest.id, setViewAndPersist]);
+
+  const engineInstance = useTestEngine({
+    setCompletedNodeIds, setHistory, setView: setViewAndPersist,
+    activeId: activeTest.id, activeModule: activeTest.domain,
+    setActiveNode: (id, domain) => setActiveTest({ id, domain }),
+    isDemo, canStart: usageStats.canStart, 
+    onNextNodeRequest: handleContinue
+  });
 
   const nodes = useMemo(() => {
     const allNodes: NodeUI[] = [];
-    DOMAIN_SETTINGS.forEach((config: any) => {
+    DOMAIN_SETTINGS.forEach((config) => {
       for (let i = 0; i < config.count; i++) {
-        const absoluteId = config.startId + i;
-        const isCompleted = completedNodeIds.includes(absoluteId);
-        let isActive = absoluteId < ONBOARDING_NODES_COUNT || completedNodeIds.includes(absoluteId - 1);
-        if (isCompleted) isActive = true;
-        if (isDemo && absoluteId >= 3) isActive = false;
-        allNodes.push({ id: absoluteId, domain: config.key, active: isActive, done: isCompleted });
+        const absId = config.startId + i;
+        allNodes.push({ 
+            id: absId, domain: config.key, 
+            active: absId === 0 || completedNodeIds.includes(absId - 1) || completedNodeIds.includes(absId), 
+            done: completedNodeIds.includes(absId) 
+        });
       }
     });
     return allNodes;
-  }, [completedNodeIds, isDemo]);
+  }, [completedNodeIds]);
 
-  const handleShare = async () => {
-    if (!result) return;
-    PlatformBridge.haptic.impact('light');
-    try {
-        const blob = await generateShareImage(result, t, licenseTier);
-        if (blob) {
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'genesis-blueprint.png';
-            a.click();
-            URL.revokeObjectURL(url);
-        }
-    } catch (error) { console.error('Share failed', error); }
-  };
-
-  const renderCurrentView = () => {
+  const renderView = () => {
     if (dataStatus === 'corrupted') return <DataCorruptionView t={t} onReset={() => handleReset(true)} />;
-    const scene = activeTest.domain ? MODULE_REGISTRY[activeTest.domain]?.[activeTest.id] : undefined;
+    
+    if (view === 'results' && result?.isCrisis) {
+        return <CrisisView t={t} onExit={() => handleReset(true)} />;
+    }
+
+    const backTo = isPro ? 'pro_hub' : 'dashboard';
 
     switch (view) {
-      case 'auth': return <AuthView onLogin={handleLogin} t={t} lang={lang} onLangChange={onLangChange} />;
-      case 'boot': return <BootView onComplete={() => setViewAndPersist('dashboard')} t={t} />;
-      case 'dashboard': return <DashboardView nodes={nodes} result={result} onStartNode={handleStartNode} onResume={handleContinue} globalProgress={globalProgress} lang={lang} t={t} isDemo={isDemo} isPro={isPro} completedNodeIds={completedNodeIds} onSetView={setViewAndPersist} onLogout={handleLogout} scanHistory={scanHistory} licenseTier={licenseTier} usageStats={usageStats} onSetCurrentDomain={setCurrentDomain} currentDomain={currentDomain} />;
-      case 'test': return <TestView key={activeTest.id} t={t} activeModule={activeTest.domain!} currentId={activeTest.id} scene={scene!} onChoice={engineInstance.handleChoice} onExit={() => setViewAndPersist('dashboard')} getSceneText={getSceneText} adaptiveState={adaptiveState} />;
+      case 'auth': return <AuthView onLogin={handleLogin} t={t} />;
+      case 'boot': return <BootView onComplete={() => setViewAndPersist(backTo)} t={t} />;
+      case 'dashboard': return <DashboardView nodes={nodes} result={result} onStartNode={engineInstance.startNode} onResume={() => handleContinue()} globalProgress={Math.round(adaptiveState.clarity)} t={t} isDemo={isDemo} completedNodeIds={completedNodeIds} onSetView={setViewAndPersist} scanHistory={scanHistory} onSetCurrentDomain={() => {}} currentDomain={null} />;
+      case 'pro_hub': return <ProHubView t={t} usageStats={usageStats} onSetView={setViewAndPersist} onLogout={handleLogout} licenseTier={licenseTier} scanHistory={scanHistory} onStartNode={engineInstance.startNode} onSelectScan={(s) => { setSelectedScan(s); setViewAndPersist('scan_detail'); }} onCompareScans={(a,b) => { setCompareSelection([a,b]); setViewAndPersist('compare'); }} />;
+      case 'pro_terminal': return <ProTerminalView t={t} onBack={() => setViewAndPersist('pro_hub')} />;
+      case 'test': return <TestView t={t} activeModule={activeTest.domain!} currentId={activeTest.id} scene={MODULE_REGISTRY[activeTest.domain!]![activeTest.id]} onChoice={engineInstance.handleChoice} onExit={() => setViewAndPersist(backTo)} getSceneText={(path) => resolvePath(t, path)} adaptiveState={adaptiveState} />;
       case 'body_sync': return <BodySyncView t={t} onSync={engineInstance.syncBodySensation} />;
-      case 'reflection': return <ReflectionView t={t} sensation={history[history.length - 1]?.sensation} />;
+      case 'stabilization': return <StabilizationView t={t} onComplete={() => handleContinue()} />;
+      case 'processing': return <ProcessingView onComplete={() => setViewAndPersist('results')} />;
       case 'results':
         if (!result) return <div/>;
-        // CONSTITUTIONAL FUSE: Crisis Protocol (Article 17.3)
-        if (result.state.foundation < 25) {
-            return <CrisisView t={t} onExit={() => setViewAndPersist('dashboard')} />;
-        }
         return result.validity === 'INVALID' 
             ? <InvalidResultsView t={t} onReset={() => handleReset(true)} patternFlags={result.patternFlags} /> 
-            : <ResultsView t={t} result={result} isGlitchMode={!!isGlitchMode} onContinue={handleContinue} onShare={handleShare} onBack={() => setViewAndPersist('dashboard')} onNewCycle={() => handleReset(false)} isPro={isPro} />;
-      case 'admin': return <AdminPanel t={t} onExit={() => setViewAndPersist('dashboard')} history={history} onUnlockAll={engineInstance.forceCompleteAll} glitchEnabled={forceGlitch} onToggleGlitch={() => setForceGlitch(!forceGlitch)} onSetView={setViewAndPersist} />;
-      case 'compatibility': return <CompatibilityView lang={lang} t={t} onBack={() => setViewAndPersist('dashboard')} />;
-      case 'guide': return <GuideView t={t} onBack={() => setViewAndPersist('dashboard')} />;
+            : <ResultsView t={t} result={result} isGlitchMode={false} onContinue={() => handleContinue()} onShare={async () => {
+                const blob = await generateShareImage(result, t, licenseTier);
+                if (blob) {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a'); a.href = url; a.download = 'slepok.png'; a.click();
+                }
+            }} onBack={() => setViewAndPersist(backTo)} isPro={isPro} onSetView={setViewAndPersist} />;
+      case 'protocol':
+        if (!result) return <div/>;
+        return <IntegrationProtocolView t={t} result={result} onBack={() => setViewAndPersist('results')} />;
+      case 'admin': return <AdminPanel t={t} onExit={handleLogout} history={history} onUnlockAll={engineInstance.forceCompleteAll} glitchEnabled={false} onToggleGlitch={() => {}} onSetView={setViewAndPersist} />;
+      case 'academy': return <ExpertAcademyView t={t} onBack={() => setViewAndPersist(backTo)} />;
+      case 'scan_detail': return <ScanDetailView scan={selectedScan!} t={t} onBack={() => setViewAndPersist('pro_hub')} />;
+      case 'compare': return <CompareView scanA={compareSelection![0]} scanB={compareSelection![1]} t={t} onBack={() => setViewAndPersist('pro_hub')} />;
+      case 'guide': return <GuideView t={t} onBack={() => setViewAndPersist(backTo)} />;
+      case 'codex': return <PatternLibraryView t={t} onBack={() => setViewAndPersist(backTo)} />;
+      case 'brief_explainer': return <BriefExplainerView t={t} onBack={() => setViewAndPersist(backTo)} />;
+      case 'archetypes': return <ArchetypeGalleryView t={t} onBack={() => setViewAndPersist(backTo)} />;
+      case 'privacy': return <PrivacyView t={t} onBack={() => setViewAndPersist(backTo)} />;
+      case 'security_monitor': return <SecurityMonitorView report={networkReport} t={t} onBack={() => setViewAndPersist(backTo)} />;
+      case 'constitution': return <ConstitutionView onBack={() => setViewAndPersist(backTo)} t={t} />;
+      case 'specialist_atlas': return <SpecialistAtlasView t={t} onBack={() => setViewAndPersist(backTo)} />;
+      case 'changelog': return <SystemChangelogView t={t} onBack={() => setViewAndPersist(backTo)} />;
+      case 'scientific_foundations': return <ScientificFoundationsView t={t} onBack={() => setViewAndPersist(backTo)} />;
+      case 'tech_standard': return <TechnicalStandardView t={t} onBack={() => setViewAndPersist(backTo)} />;
+      case 'specialist_oath': return <SpecialistOathView t={t} onComplete={() => setViewAndPersist('pro_hub')} />;
+      case 'transparency': return result ? <TransparencyView t={t} result={result} onBack={() => setViewAndPersist('results')} /> : <div/>;
       case 'system_integrity': return <SystemIntegrityView t={t} onBack={() => setViewAndPersist('admin')} />;
       case 'system_simulation': return <SystemSimulationView t={t} onBack={() => setViewAndPersist('admin')} />;
-      default: return <AuthView onLogin={handleLogin} t={t} lang={lang} onLangChange={onLangChange} />;
+      case 'dev_sanctuary': return <DevSanctuaryView onBack={() => setViewAndPersist('admin')} />;
+      default: return <AuthView onLogin={handleLogin} t={t} />;
     }
   };
 
-  // Axis 9.4: Strict View Isolation for Professionals
-  const isProMode = licenseTier === 'CLINICAL' || licenseTier === 'LAB';
-  const isTerminalView = (isMaster && ['admin', 'system_integrity', 'system_simulation'].includes(view)) || (isProMode && ['compatibility', 'guide'].includes(view));
+  const isFullScreen = ['auth', 'boot', 'test', 'body_sync', 'processing', 'security_monitor', 'constitution', 'stabilization', 'pro_terminal', 'protocol', 'dev_sanctuary', 'tech_standard', 'changelog'].includes(view);
 
   return (
-    <div className={`w-full h-full ${isGlitchMode ? 'glitch' : ''}`}>
-      {isTerminalView ? renderCurrentView() : <Layout>{renderCurrentView()}</Layout>}
+    <div className="w-full h-full">
+      {isFullScreen ? renderView() : <Layout>{renderView()}</Layout>}
     </div>
   );
 };

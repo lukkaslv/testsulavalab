@@ -1,109 +1,90 @@
 
 import React, { memo } from 'react';
 import { Translations } from '../types';
+import { PlatformBridge } from '../utils/helpers';
 
 interface RadarChartProps {
   points: { x: number; y: number; label?: string }[];
+  secondaryPoints?: { x: number; y: number; label?: string }[];
+  shadowPoints?: { x: number; y: number; label?: string }[];
+  showShadow?: boolean;
   onLabelClick: (metric: string) => void;
   className?: string;
   t: Translations;
 }
 
-export const RadarChart: React.FC<RadarChartProps> = memo(({ points, onLabelClick, className = "", t }) => {
+export const RadarChart: React.FC<RadarChartProps> = memo(({ points, secondaryPoints, shadowPoints, showShadow = true, onLabelClick, className = "", t }) => {
   
   const handleInteraction = (metric: string) => {
-    // FIX: Cast window to any to access Telegram property
-    (window as any).Telegram?.WebApp?.HapticFeedback?.impactOccurred?.('light');
+    PlatformBridge.haptic.selection();
     onLabelClick(metric);
   };
 
   const polyPoints = points.map(p => `${p.x},${p.y}`).join(' ');
+  const ghostPoints = secondaryPoints ? secondaryPoints.map(p => `${p.x},${p.y}`).join(' ') : null;
+  const shadowPolyPoints = shadowPoints ? shadowPoints.map(p => `${p.x},${p.y}`).join(' ') : null;
 
-  // Pentagon Grid Generation
   const center = 50;
-  const levels = [20, 30, 45]; // radius levels
-  const pentagonGrid = levels.map((r, idx) => {
-      const pts = points.map((_, i) => {
-          const angle = (Math.PI * 2 * i) / points.length - Math.PI / 2;
-          const x = center + Math.cos(angle) * r;
-          const y = center + Math.sin(angle) * r;
-          return `${x},${y}`;
-      }).join(' ');
-      return (
-          <polygon 
-            key={idx} 
-            points={pts} 
-            fill="none" 
-            stroke="#94a3b8" 
-            strokeWidth="0.5" 
-            strokeDasharray={idx === 1 ? "2 2" : "none"} 
-            opacity={0.3 + (idx * 0.1)}
-          />
-      );
-  });
-
-  const axisLines = points.map((_, i) => {
-      const angle = (Math.PI * 2 * i) / points.length - Math.PI / 2;
-      const x2 = center + Math.cos(angle) * 48;
-      const y2 = center + Math.sin(angle) * 48;
-      return <line key={i} x1={center} y1={center} x2={x2} y2={y2} stroke="#94a3b8" strokeWidth="0.5" opacity="0.3" />;
-  });
+  const levels = [20, 35, 48]; 
 
   return (
     <div className={`relative w-72 h-72 mx-auto ${className}`}>
       <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible select-none">
-        {/* Grid and Axes */}
-        {pentagonGrid}
-        {axisLines}
-        
-        {/* Data Shape */}
+        <style>{`
+            @keyframes shadow-breath {
+                0% { opacity: 0.1; transform: scale(1); transform-origin: center; }
+                50% { opacity: 0.25; transform: scale(1.05); transform-origin: center; }
+                100% { opacity: 0.1; transform: scale(1); transform-origin: center; }
+            }
+            .animate-shadow { animation: shadow-breath 6s infinite ease-in-out; }
+        `}</style>
+
+        {/* Grid System */}
+        {levels.map((r, idx) => (
+            <polygon 
+                key={idx} 
+                points={points.map((_, i) => {
+                    const angle = (Math.PI * 2 * i) / points.length - Math.PI / 2;
+                    return `${center + Math.cos(angle) * r},${center + Math.sin(angle) * r}`;
+                }).join(' ')} 
+                fill="none" stroke="rgba(148, 163, 184, 0.1)" strokeWidth="0.5" 
+            />
+        ))}
+
+        {/* Shadow Area (SRP Art 7.3) */}
+        {shadowPolyPoints && showShadow && (
+            <polygon 
+                points={shadowPolyPoints} 
+                fill="rgba(168, 85, 247, 0.2)" 
+                stroke="#a855f7" 
+                strokeWidth="1" 
+                strokeDasharray="1 2" 
+                className="animate-shadow" 
+            />
+        )}
+
+        {/* Active Core Shape */}
         <polygon 
           points={polyPoints}
-          fill="rgba(99, 102, 241, 0.2)"
+          fill="rgba(99, 102, 241, 0.15)"
           stroke="#6366f1"
           strokeWidth="2"
           strokeLinejoin="round"
-          className="animate-in drop-shadow-xl"
+          className="transition-all duration-700"
         />
         
-        {/* Points and Labels */}
         {points.map((p, i) => {
-            // Label Positioning logic
             const angle = (Math.PI * 2 * i) / points.length - Math.PI / 2;
-            const labelRadius = 58; 
-            const lx = center + Math.cos(angle) * labelRadius;
-            const ly = center + Math.sin(angle) * labelRadius;
-            
-            // Icon Mapping (Visual Sugar)
-            const icons: Record<string, string> = {
-                foundation: '⚓',
-                agency: '⚡',
-                social: '👥',
-                legacy: '🌳',
-                money: '💎'
-            };
-            
+            const lx = center + Math.cos(angle) * 58;
+            const ly = center + Math.sin(angle) * 58;
             const key = p.label || 'unknown';
             
             return (
-                <g key={i} className="group cursor-pointer" onClick={(e) => { e.stopPropagation(); handleInteraction(key); }}>
-                    <circle 
-                        cx={p.x} cy={p.y} r="2" 
-                        fill="#6366f1" 
-                        className="animate-pulse" 
-                        style={{ animationDelay: `${i * 0.1}s` }} 
-                    />
-                    
-                    <g transform={`translate(${lx}, ${ly})`}>
-                        <text 
-                            textAnchor="middle" 
-                            dy="0.3em" 
-                            className="text-[5px] fill-slate-400 font-bold uppercase tracking-widest pointer-events-none"
-                            style={{ fontSize: '4px' }}
-                        >
-                            {icons[key]} {t.domains[key]?.substring(0, 3)}
-                        </text>
-                    </g>
+                <g key={i} className="cursor-pointer" onClick={() => handleInteraction(key)}>
+                    <circle cx={p.x} cy={p.y} r="1.5" fill="#6366f1" />
+                    <text textAnchor="middle" dy="0.3em" className="text-[4px] fill-slate-500 font-black uppercase tracking-widest" x={lx} y={ly}>
+                        {t.domains[key]?.substring(0, 3)}
+                    </text>
                 </g>
             );
         })}

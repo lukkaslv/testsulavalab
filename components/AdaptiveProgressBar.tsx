@@ -9,39 +9,32 @@ interface AdaptiveProgressBarProps {
   confidenceScore?: number;
 }
 
-export const AdaptiveProgressBar: React.FC<AdaptiveProgressBarProps> = memo(({ clarity, isAdaptive, contradictionsCount, confidenceScore }) => {
+export const AdaptiveProgressBar: React.FC<AdaptiveProgressBarProps> = memo(({ clarity, isAdaptive, contradictionsCount }) => {
   const { t } = useAppContext();
-  // Safe access to test_metrics to prevent runtime errors if translation is missing
   const tm = t?.test_metrics;
 
   if (!tm) return null;
 
+  const isStable = clarity > 85;
+
   return (
-    <div className="space-y-2 shrink-0 animate-in">
+    <div className="space-y-2 shrink-0 animate-in opacity-80">
       <div className="flex justify-between items-end">
-         <div className="flex flex-col">
-            <span className="text-[8px] font-mono font-black text-slate-500 uppercase tracking-widest">{tm.insight_resolution}</span>
-            <span className={`text-[12px] font-black italic ${clarity > 80 ? 'text-emerald-600' : 'text-indigo-600'}`}>{Math.round(clarity)}%</span>
-         </div>
-         <div className="flex flex-col items-end">
-            <span className="text-[8px] font-mono font-black text-slate-500 uppercase tracking-widest">{tm.confidence}</span>
-            <span className="text-[10px] font-black text-slate-700">{confidenceScore ?? 100}%</span>
-         </div>
+         <span className="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em]">{tm.insight_resolution}</span>
+         <span className={`text-[10px] font-mono font-bold ${isStable ? 'text-emerald-500' : 'text-indigo-400'}`}>{Math.round(clarity)}%</span>
       </div>
-      <div className="w-full bg-slate-200/50 h-2 rounded-full overflow-hidden relative border border-slate-100 shadow-inner">
+      
+      <div className="w-full bg-slate-800/50 h-1 rounded-full overflow-hidden relative">
          <div 
-            className={`h-full transition-all duration-700 ease-out shadow-[0_0_10px_rgba(99,102,241,0.2)] ${clarity > 80 ? 'bg-emerald-500' : 'bg-indigo-500'}`} 
+            className={`h-full transition-all duration-1000 ease-out ${isStable ? 'bg-emerald-500 shadow-[0_0_10px_#10b981]' : 'bg-indigo-500 shadow-[0_0_10px_#6366f1]'}`} 
             style={{ width: `${clarity}%` }}
          ></div>
       </div>
-      {isAdaptive && (
-        <div className="flex justify-between">
-           <span className="text-[7px] font-black text-amber-600 uppercase tracking-widest animate-pulse flex items-center gap-1">
-                {tm.adaptive_active}
-           </span>
-           <span className="text-[7px] font-black text-slate-500 uppercase">
-             {contradictionsCount > 0 ? `${contradictionsCount} ${tm.dissonance_points}` : tm.signal_clean}
-           </span>
+
+      {isAdaptive && contradictionsCount > 0 && (
+        <div className="flex items-center gap-2 justify-end">
+           <div className="w-1 h-1 rounded-full bg-amber-500 animate-pulse"></div>
+           <span className="text-[7px] font-black text-amber-500 uppercase tracking-widest">{contradictionsCount} {tm.dissonance_points}</span>
         </div>
       )}
     </div>

@@ -1,263 +1,85 @@
 
 import React, { useState, memo, useMemo } from 'react';
-import { AnalysisResult, Translations, BeliefKey, SessionPulseNode, MetricBreakdown } from '../../types';
+import { AnalysisResult, Translations } from '../../types';
 import { PlatformBridge } from '../../utils/helpers';
-import { SessionPrepService } from '../../services/SessionPrepService';
-import { RadarChart } from '../RadarChart';
 import { BioSignature } from '../BioSignature';
-import { SignalDecoder } from '../SignalDecoder';
-import { useAppContext } from '../../hooks/useAppContext';
-import { SynthesisService } from '../../services/synthesisService';
+import { RadarChart } from '../RadarChart';
+import { PsychoTomography } from '../PsychoTomography';
+import { KineticFluxMap } from '../KineticFluxMap';
 import { ClinicalSynthesisView } from './ClinicalSynthesisView';
+import { RefractionPrism } from '../RefractionPrism';
+import { StabilityWell } from '../StabilityWell';
+import { ShadowReveal } from '../ShadowReveal';
+import { TeleologicalAttractor } from '../TeleologicalAttractor';
+import { SovereigntyVector } from '../SovereigntyVector';
+import { ResonanceLattice } from '../ResonanceLattice';
+import { SystemicField } from '../SystemicField';
+import { AutopoiesisNucleus } from '../AutopoiesisNucleus';
+import { BifurcationTree } from '../BifurcationTree';
+import { SystemicSimulator } from '../SystemicSimulator';
+import { EmergenceMatrix } from '../EmergenceMatrix';
+import { PatternTopology } from '../PatternTopology';
+import { CoherenceHelix } from '../CoherenceHelix';
+import { SessionEKG } from '../SessionEKG';
+import { HysteresisLoop } from '../HysteresisLoop';
+import { InterferenceMoire } from '../InterferenceMoire';
+import { StrangeAttractor } from '../StrangeAttractor';
+import { ReliefMap } from '../ReliefMap';
+import { TensegrityStructure } from '../TensegrityStructure';
+import { SynthesisService } from '../../services/synthesisService';
+import { RefractionEngine } from '../../services/refractionEngine';
+import { StabilityEngine } from '../../services/stabilityEngine';
+import { ShadowEngine } from '../../services/shadowEngine';
+import { TeleologyEngine } from '../../services/teleologyEngine';
+import { SovereigntyEngine } from '../../services/sovereigntyEngine';
+import { LatticeEngine } from '../../services/latticeEngine';
+import { ButterflyEngine } from '../../services/butterflyEngine';
+import { EmergenceEngine } from '../../services/emergenceEngine';
+import { ClinicalDecoder } from '../../services/clinicalDecoder';
+import { calculateAutopoiesis } from '../../services/psychologyService';
 
 interface ResultsViewProps {
   t: Translations;
   result: AnalysisResult;
   isGlitchMode: boolean;
   onContinue: () => void;
-  onShare: () => void;
+  onShare: () => void | Promise<void>;
   onBack: () => void;
-  onNewCycle?: () => void; 
-  isPro?: boolean; 
+  onSetView: (view: string) => void;
+  isPro: boolean;
 }
 
-const DeltaMarker = ({ current, previous }: { current: number, previous?: number }) => {
-    if (previous === undefined) return null;
-    const diff = current - previous;
-    if (Math.abs(diff) < 2) return <span className="text-[7px] text-slate-400 opacity-50 ml-1 font-mono">≈</span>;
-    return (
-        <span className={`text-[7px] ml-1 font-black ${diff > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-            {diff > 0 ? '↑' : '↓'}{Math.abs(Math.round(diff))}%
-        </span>
-    );
-};
-
-const AlgorithmTransparency: React.FC<{ breakdown: MetricBreakdown[], t: Translations }> = ({ breakdown, t }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const tr = t.transparency;
-
-  return (
-    <section className="space-y-4">
-      <button 
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full bg-slate-900 border border-slate-800 p-6 rounded-[2rem] text-left group transition-all"
-      >
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <span className="text-xl">🧮</span>
-            <h4 className="text-[10px] font-black uppercase tracking-widest text-indigo-400">{tr.title}</h4>
-          </div>
-          <span className={`text-slate-500 transition-transform ${isOpen ? 'rotate-180' : ''}`}>▼</span>
-        </div>
-        <p className="text-[10px] text-slate-400 mt-2 italic">{tr.desc}</p>
-      </button>
-
-      {isOpen && (
-        <div className="space-y-3 animate-in">
-          {breakdown.map((item, idx) => (
-            <div key={idx} className="bg-slate-900/50 border border-slate-800/60 p-5 rounded-2xl space-y-3">
-              <div className="flex justify-between items-center border-b border-white/5 pb-2">
-                <span className="text-[9px] font-black uppercase text-white tracking-widest">{tr[item.label as keyof typeof tr] || item.label.toUpperCase()}</span>
-                <span className="text-[8px] font-mono text-indigo-400">DET_KRNL_v5</span>
-              </div>
-              <div className="space-y-2">
-                <div className="flex flex-col gap-1">
-                  <span className="text-[7px] font-black text-slate-500 uppercase">{tr.formula_label}</span>
-                  <code className="text-[10px] text-emerald-400 font-mono bg-black/40 p-2 rounded-lg">{item.formula}</code>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <span className="text-[7px] font-black text-slate-500 uppercase">{tr.impact_label}</span>
-                    <span className="text-[11px] font-bold text-red-400">-{item.entropyImpact}%</span>
-                  </div>
-                  <div className="space-y-1 text-right">
-                    <span className="text-[7px] font-black text-slate-500 uppercase">{tr.final_label}</span>
-                    <span className="text-[11px] font-black text-white">{item.finalValue}%</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </section>
-  );
-};
-
-const SessionPulseGraph: React.FC<{ pulse: SessionPulseNode[], t: Translations, locked?: boolean }> = memo(({ pulse, t, locked }) => {
-    if (!pulse || pulse.length < 5) return null;
-    const [focusedNode, setFocusedNode] = useState<SessionPulseNode | null>(null);
-    const maxTension = 100;
-    const breakdownNode = useMemo(() => pulse.reduce((max, node) => node.tension > max.tension ? node : max, pulse[0]), [pulse]);
-    const activeNode = focusedNode || breakdownNode;
-
-    return (
-        <div className="bg-slate-50 border border-slate-100 p-5 rounded-[2rem] space-y-4 shadow-sm relative overflow-hidden group">
-            {locked && (
-                <div className="absolute inset-0 z-50 backdrop-blur-md bg-white/60 flex flex-col items-center justify-center text-center p-6 transition-all">
-                    <div className="w-12 h-12 bg-slate-900 rounded-full flex items-center justify-center text-xl mb-3 shadow-xl animate-pulse">🔒</div>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-900">{t.results.encrypted_overlay}</span>
-                </div>
-            )}
-            <div className={`flex justify-between items-start relative z-10 min-h-[2rem] ${locked ? 'blur-sm opacity-50' : ''}`}>
-                <div className="flex flex-col">
-                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                        <span className="text-red-500 animate-pulse">❤</span> {t.ekg.title}
-                    </span>
-                    <span className="text-[8px] font-mono text-slate-300">N={pulse.length}</span>
-                </div>
-                <div className="text-right">
-                    <span className="text-[10px] font-black uppercase text-slate-800 tracking-tight">
-                        NODE {activeNode.id + 1}
-                    </span>
-                    <br/>
-                    <span className={`text-[9px] font-mono font-bold ${activeNode.tension > 70 ? 'text-red-500' : 'text-slate-400'}`}>
-                        {activeNode.tension}%
-                    </span>
-                </div>
-            </div>
-            <div className={`relative h-24 w-full z-10 mt-2 ${locked ? 'blur-sm opacity-50 pointer-events-none' : ''}`}>
-                <div className="flex items-end gap-1 h-full w-full">
-                    {pulse.map((node, i) => (
-                        <div key={i} className="flex-1 flex flex-col justify-end h-full">
-                            <div 
-                                className={`w-full rounded-t-sm transition-all duration-300 ${node.domain === 'foundation' ? 'bg-emerald-400' : 'bg-indigo-400'} 
-                                    ${focusedNode?.id === node.id ? 'opacity-100 scale-y-105' : 'opacity-60'}`} 
-                                style={{ height: `${(node.tension / maxTension) * 100}%` }}
-                                onMouseEnter={() => setFocusedNode(node)}
-                            ></div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
-});
-
-const PatternCard: React.FC<{ beliefKey: BeliefKey, t: Translations }> = ({ beliefKey, t }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const data = t.pattern_library[beliefKey] || t.pattern_library.default;
-    const label = t.beliefs[beliefKey];
-
-    return (
-        <div onClick={() => { PlatformBridge.haptic.selection(); setIsOpen(!isOpen); }} className={`border rounded-2xl transition-all duration-300 overflow-hidden cursor-pointer ${isOpen ? 'bg-slate-900 border-slate-800 shadow-2xl' : 'bg-white border-slate-200 shadow-sm'}`}>
-            <div className="p-4 flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-black ${isOpen ? 'bg-indigo-500 text-white' : 'bg-slate-100 text-slate-500'}`}>
-                        {isOpen ? '🔓' : '🔒'}
-                    </div>
-                    <span className={`text-[11px] font-black uppercase tracking-tight ${isOpen ? 'text-white' : 'text-slate-800'}`}>
-                        {label}
-                    </span>
-                </div>
-                <span className={`text-xl transition-transform ${isOpen ? 'rotate-180 text-indigo-400' : 'text-slate-300'}`}>▼</span>
-            </div>
-            {isOpen && (
-                <div className="px-5 pb-5 pt-1 space-y-4 animate-in">
-                    <div className="space-y-1">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400 block">{t.results.protection_label}</span>
-                        <p className="text-[11px] text-slate-300 leading-relaxed">{data.protection}</p>
-                    </div>
-                    <div className="space-y-1">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-amber-500 block">{t.results.cost_label}</span>
-                        <p className="text-[11px] text-slate-300 leading-relaxed">{data.cost}</p>
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-};
-
-const ConflictBlock: React.FC<{ conflictKey: string, t: Translations }> = ({ conflictKey, t }) => {
-    const conflict = t.conflicts?.[conflictKey];
-    if (!conflict) return null;
-
-    return (
-        <div className="mx-2 bg-amber-950/5 border border-amber-900/10 p-5 rounded-[2rem] space-y-2 animate-in relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-4 opacity-10 text-4xl grayscale">⚡</div>
-            <span className="text-[8px] font-black uppercase tracking-widest text-amber-600 block">CORE_CONFLICT_DETECTED</span>
-            <h4 className="text-[11px] font-black uppercase text-amber-900 leading-tight">{conflict.title}</h4>
-            <p className="text-[10px] text-amber-800/80 font-medium leading-relaxed italic">{conflict.desc}</p>
-        </div>
-    );
-};
+type Mode = 'blueprint' | 'emg' | 'sim' | 'paths' | 'lattice' | 'field' | 'nucleus' | 'signature' | 'flux' | 'dossier' | 'prism' | 'well' | 'shadow' | 'void' | 'sovereign' | 'topology' | 'helix' | 'ekg' | 'hysteresis' | 'moire' | 'attractor' | 'relief' | 'tensegrity';
 
 export const ResultsView = memo<ResultsViewProps>(({ 
-  t, result, isGlitchMode, onShare, onBack, onNewCycle, isPro
+  t, result, onShare, onBack, onSetView, isPro
 }) => {
-  const { history, scanHistory } = useAppContext();
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
-  const [copySuccess, setCopySuccess] = useState(false);
-  const [showMethodology, setShowMethodology] = useState(false);
-  const [showSynthesis, setShowSynthesis] = useState(false);
-
-  const prevScan = useMemo(() => {
-      if (!scanHistory || scanHistory.scans.length < 2) return undefined;
-      return scanHistory.scans[scanHistory.scans.length - 2];
-  }, [scanHistory]);
-
-  const baseline = useMemo(() => {
-    if (history.length === 0) return 2000;
-    const samples = history.slice(0, 5);
-    return samples.reduce((acc, h) => acc + h.latency, 0) / samples.length;
-  }, [history]);
-
-  const sessionPrepQuestions = useMemo(() => SessionPrepService.generate(result, t), [result, t]);
+  const [activeMode, setActiveMode] = useState<Mode>('blueprint');
   
-  const synthesis = useMemo(() => {
-    if (!isPro) return null;
-    return SynthesisService.generateSynthesis(result, t);
-  }, [result, t, isPro]);
+  const arch = t.archetypes[result.archetypeKey] || t.archetypes.THE_ARCHITECT;
 
-  const handleCopyCode = () => {
-      navigator.clipboard.writeText(result.shareCode);
-      setCopySuccess(true);
-      PlatformBridge.haptic.notification('success');
-      setTimeout(() => setCopySuccess(false), 2000);
-  };
-
-  const isFragile = result.state.foundation < 40 || result.entropyScore > 55;
-
-  const displayArchetype = useMemo(() => {
-    // Defensive check: Ensure t.archetypes exists and handle undefined lookup
-    const arch = t.archetypes?.[result.archetypeKey] || t.archetypes?.THE_ARCHITECT;
-    
-    // Fallback if translations are missing entirely
-    if (!arch) {
-      return { 
-        title: 'ARCHETYPE_ERROR', 
-        desc: 'Translation missing for archetype', 
-        superpower: 'N/A', 
-        shadow: 'N/A', 
-        quote: 'System error' 
-      };
-    }
-
-    if (isFragile && t.soft_mode) {
-      return { ...arch, title: `${t.soft_mode.archetype_prefix}${arch.title}` };
-    }
-    return arch;
-  }, [result.archetypeKey, t, isFragile]);
-
-  const displayVerdict = useMemo(() => {
-    const v = t.verdicts[result.verdictKey] || t.verdicts.HEALTHY_SCALE;
-    if (isFragile && t.soft_mode?.verdict_softened[result.verdictKey]) {
-      return { ...v, label: t.soft_mode.verdict_softened[result.verdictKey] };
-    }
-    return v;
-  }, [result.verdictKey, t, isFragile]);
-
-  const coreConflictKey = result.coreConflict !== 'none' ? result.coreConflict : result.verdictKey.toLowerCase();
+  const synthesis = useMemo(() => SynthesisService.generateSynthesis(result, t), [result, t]);
+  const refractionVectors = useMemo(() => RefractionEngine.calculateVectors(result), [result]);
+  const stability = useMemo(() => StabilityEngine.calculate(result), [result]);
+  const shadowContract = useMemo(() => ShadowEngine.decode(result, t), [result, t]);
+  const teleology = useMemo(() => TeleologyEngine.calculate(result), [result]);
+  const sovereignty = useMemo(() => SovereigntyEngine.calculate(result), [result]);
+  const lattice = useMemo(() => LatticeEngine.calculate(result), [result]);
+  const bifurcations = useMemo(() => ButterflyEngine.calculateBifurcations(result), [result]);
+  const emergentPatterns = useMemo(() => EmergenceEngine.detectPatterns(result), [result]);
+  const clinical = useMemo(() => ClinicalDecoder.decode(result, t), [result, t]);
+  const autopoiesis = useMemo(() => calculateAutopoiesis(result), [result]);
 
   if (!disclaimerAccepted) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-8 animate-in px-4 text-center">
-         <div className="w-16 h-16 bg-indigo-50 rounded-3xl flex items-center justify-center text-3xl border border-indigo-100/50 animate-pulse">⚖️</div>
+      <div className="flex flex-col items-center justify-center min-h-[70vh] space-y-8 animate-in px-6 text-center">
+         <div className="w-20 h-20 bg-indigo-950/30 rounded-[2rem] flex items-center justify-center text-4xl border border-indigo-500/30 animate-pulse-slow">⚖️</div>
          <div className="space-y-4 max-w-sm">
-            <h2 className="text-xl font-black uppercase text-slate-900 leading-tight italic">{t.results.disclaimer_title}</h2>
-            <p className="text-sm font-medium text-slate-500 leading-relaxed italic">{t.results.disclaimer_body}</p>
+            <h2 className="text-2xl font-black uppercase italic text-slate-200 tracking-tighter">{t.results.disclaimer_title}</h2>
+            <p className="text-sm font-medium text-slate-400 leading-relaxed italic">{t.results.disclaimer_body}</p>
          </div>
-         <button onClick={() => { setDisclaimerAccepted(true); PlatformBridge.haptic.notification('success'); }} className="w-full max-w-xs py-5 bg-indigo-600 text-white rounded-[1.5rem] font-black uppercase text-xs tracking-widest shadow-xl active:scale-95 transition-all">
+         <button onClick={() => { PlatformBridge.haptic.notification('success'); setDisclaimerAccepted(true); }} className="w-full max-w-xs py-5 bg-indigo-600 text-white rounded-[1.5rem] font-black uppercase text-xs tracking-widest shadow-xl active:scale-[0.98] transition-all">
             {t.ui.agree_terms_btn}
          </button>
       </div>
@@ -265,180 +87,300 @@ export const ResultsView = memo<ResultsViewProps>(({
   }
 
   return (
-    <div className={`space-y-10 pb-32 animate-in px-1 pt-2 font-sans ${isGlitchMode ? 'glitch' : ''}`}>
-      {showSynthesis && synthesis && (
-          <ClinicalSynthesisView synthesis={synthesis} t={t} onClose={() => setShowSynthesis(false)} />
-      )}
-      
-      <header className="dark-glass-card p-8 rounded-[2.5rem] shadow-2xl space-y-6 relative overflow-hidden border-b-4 border-indigo-500/30">
-        <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
-        <div className="relative z-10 space-y-4">
+    <div className="space-y-8 pb-32 animate-in pt-2 text-slate-100 relative">
+      <header className={`dark-glass-card p-8 rounded-[3rem] shadow-2xl relative overflow-hidden transition-all duration-1000 
+        ${activeMode === 'emg' ? 'bg-indigo-950/30 border-indigo-500/40 shadow-[0_0_60px_rgba(99,102,241,0.15)]' : 
+          activeMode === 'sim' ? 'bg-indigo-950/20 border-indigo-500/30' : 
+          activeMode === 'void' ? 'bg-black border-white/20' : 
+          activeMode === 'helix' ? 'bg-[#020617] border-indigo-500/10' :
+          activeMode === 'ekg' ? 'bg-slate-950 border-red-500/10' :
+          activeMode === 'hysteresis' ? 'bg-slate-950 border-indigo-500/10' :
+          activeMode === 'moire' ? 'bg-black border-cyan-500/20 shadow-[0_0_40px_rgba(6,182,212,0.1)]' :
+          activeMode === 'attractor' ? 'bg-[#020617] border-amber-500/10 shadow-[0_0_40px_rgba(245,158,11,0.1)]' :
+          activeMode === 'relief' ? 'bg-[#020617] border-emerald-500/20 shadow-[0_0_40px_rgba(16,185,129,0.1)]' :
+          activeMode === 'tensegrity' ? 'bg-[#020617] border-indigo-500/20 shadow-[0_0_40px_rgba(99,102,241,0.1)]' :
+          activeMode === 'topology' ? 'bg-[#020617] border-emerald-500/10' :
+          'bg-slate-950 border-white/5'}`}>
+        
+        <div className="relative z-10 space-y-6">
             <div className="flex justify-between items-center">
-              <span className="text-[10px] font-black text-indigo-400 border-indigo-500/20 uppercase tracking-[0.4em] bg-white/5 px-3 py-1.5 rounded-full border">{t.results.blueprint}</span>
-              <span className={`text-[10px] font-mono font-bold ${result.confidenceScore > 80 ? 'text-emerald-400' : 'text-amber-400'}`}>{result.confidenceScore}% {t.results.confidence}</span>
+              <span className={`text-[10px] font-black uppercase tracking-[0.4em] px-4 py-2 rounded-full border transition-colors 
+                ${activeMode === 'emg' ? 'text-indigo-300 border-indigo-500/40 bg-indigo-950/50' : 
+                  'text-indigo-400 border-indigo-500/30 bg-indigo-950/40'}`}>
+                {activeMode === 'emg' ? 'EMERGENCE' : activeMode.toUpperCase()}
+              </span>
+              
+              <div className="flex bg-black/40 p-1 rounded-xl border border-white/5 overflow-x-auto no-scrollbar max-w-[280px]">
+                <button onClick={() => { setActiveMode('blueprint'); PlatformBridge.haptic.selection(); }} className={`px-2 py-1.5 rounded-lg text-[7px] font-black uppercase tracking-widest transition-all shrink-0 ${activeMode === 'blueprint' ? 'bg-indigo-600 text-white' : 'text-slate-500'}`}>MAP</button>
+                <button onClick={() => { setActiveMode('ekg'); PlatformBridge.haptic.selection(); }} className={`px-2 py-1.5 rounded-lg text-[7px] font-black uppercase tracking-widest transition-all shrink-0 ${activeMode === 'ekg' ? 'bg-red-600 text-white shadow-lg' : 'text-slate-500'}`}>EKG</button>
+                <button onClick={() => { setActiveMode('tensegrity'); PlatformBridge.haptic.selection(); }} className={`px-2 py-1.5 rounded-lg text-[7px] font-black uppercase tracking-widest transition-all shrink-0 ${activeMode === 'tensegrity' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500'}`}>TNS</button>
+                <button onClick={() => { setActiveMode('relief'); PlatformBridge.haptic.selection(); }} className={`px-2 py-1.5 rounded-lg text-[7px] font-black uppercase tracking-widest transition-all shrink-0 ${activeMode === 'relief' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-500'}`}>RLF</button>
+                <button onClick={() => { setActiveMode('moire'); PlatformBridge.haptic.selection(); }} className={`px-2 py-1.5 rounded-lg text-[7px] font-black uppercase tracking-widest transition-all shrink-0 ${activeMode === 'moire' ? 'bg-cyan-600 text-white shadow-lg' : 'text-slate-500'}`}>WAVE</button>
+                <button onClick={() => { setActiveMode('attractor'); PlatformBridge.haptic.selection(); }} className={`px-2 py-1.5 rounded-lg text-[7px] font-black uppercase tracking-widest transition-all shrink-0 ${activeMode === 'attractor' ? 'bg-amber-600 text-white shadow-lg' : 'text-slate-500'}`}>CHS</button>
+                <button onClick={() => { setActiveMode('hysteresis'); PlatformBridge.haptic.selection(); }} className={`px-2 py-1.5 rounded-lg text-[7px] font-black uppercase tracking-widest transition-all shrink-0 ${activeMode === 'hysteresis' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500'}`}>HYS</button>
+                <button onClick={() => { setActiveMode('helix'); PlatformBridge.haptic.selection(); }} className={`px-2 py-1.5 rounded-lg text-[7px] font-black uppercase tracking-widest transition-all shrink-0 ${activeMode === 'helix' ? 'bg-indigo-500 text-white shadow-lg' : 'text-slate-500'}`}>DNA</button>
+                <button onClick={() => { setActiveMode('sim'); PlatformBridge.haptic.selection(); }} className={`px-2 py-1.5 rounded-lg text-[7px] font-black uppercase tracking-widest transition-all shrink-0 ${activeMode === 'sim' ? 'bg-indigo-500 text-white' : 'text-slate-500'}`}>SIM</button>
+                <button onClick={() => { setActiveMode('topology'); PlatformBridge.haptic.selection(); }} className={`px-2 py-1.5 rounded-lg text-[7px] font-black uppercase tracking-widest transition-all shrink-0 ${activeMode === 'topology' ? 'bg-emerald-600 text-white' : 'text-slate-500'}`}>TPL</button>
+                <button onClick={() => { setActiveMode('lattice'); PlatformBridge.haptic.selection(); }} className={`px-2 py-1.5 rounded-lg text-[7px] font-black uppercase tracking-widest transition-all shrink-0 ${activeMode === 'lattice' ? 'bg-indigo-500 text-white' : 'text-slate-500'}`}>LTC</button>
+              </div>
             </div>
-            <div className="space-y-1">
-              <h1 className="text-4xl font-black italic uppercase text-white leading-none tracking-tighter">{displayArchetype.title}</h1>
-              <p className="text-sm text-slate-400 font-medium leading-relaxed opacity-85 pt-2 border-l-2 border-indigo-500/50 pl-4">{displayArchetype.desc}</p>
-            </div>
+            
+            {activeMode === 'tensegrity' && (
+              <div className="space-y-2 animate-in">
+                <h1 className="text-3xl font-black italic uppercase text-indigo-400 leading-none tracking-tighter">Тенсегрити</h1>
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+                   Structural_Stress_Matrix // Art. 4
+                </p>
+              </div>
+            )}
 
-            {/* QUICK STATS WITH DELTA */}
-            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/5">
-                {[
-                    { key: 'integrity', label: t.results.integrity, val: result.integrity, prev: prevScan?.integrity },
-                    { key: 'neuro_sync', label: t.results.neuro_sync, val: result.neuroSync, prev: prevScan?.neuroSync }
-                ].map(stat => (
-                    <div key={stat.key} className="space-y-0.5">
-                        <span className="text-[8px] font-black uppercase text-slate-500 tracking-widest">{stat.label}</span>
-                        <div className="flex items-baseline gap-1">
-                            <span className="text-lg font-black text-white">{stat.val}%</span>
-                            <DeltaMarker current={stat.val} previous={stat.prev} />
-                        </div>
-                    </div>
-                ))}
-            </div>
+            {activeMode === 'relief' && (
+              <div className="space-y-2 animate-in">
+                <h1 className="text-3xl font-black italic uppercase text-emerald-400 leading-none tracking-tighter">Топография Воли</h1>
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+                   Potential_Energy_Surface // Art. 4
+                </p>
+              </div>
+            )}
 
-            <div className="pt-4 flex flex-col items-center">
-                <RadarChart points={result.graphPoints} onLabelClick={() => {}} t={t} />
-                <BioSignature f={result.state.foundation} a={result.state.agency} r={result.state.resource} e={result.state.entropy} className="mt-4 opacity-50" />
-            </div>
+            {activeMode === 'attractor' && (
+              <div className="space-y-2 animate-in">
+                <h1 className="text-3xl font-black italic uppercase text-amber-400 leading-none tracking-tighter">Аттрактор Хаоса</h1>
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+                   Lorenz_System_Projection // Art. 5
+                </p>
+              </div>
+            )}
+
+            {activeMode === 'moire' && (
+              <div className="space-y-2 animate-in">
+                <h1 className="text-3xl font-black italic uppercase text-cyan-400 leading-none tracking-tighter">Интерференция</h1>
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+                   Intent_vs_Shadow_Pattern // Art. 3
+                </p>
+              </div>
+            )}
+
+            {activeMode === 'hysteresis' && (
+              <div className="space-y-2 animate-in">
+                <h1 className="text-3xl font-black italic uppercase text-indigo-400 leading-none tracking-tighter">Петля Гистерезиса</h1>
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+                   Energy_Dissipation_Analysis // Art. 5
+                </p>
+              </div>
+            )}
+
+            {activeMode === 'ekg' && (
+              <div className="space-y-2 animate-in">
+                <h1 className="text-3xl font-black italic uppercase text-red-400 leading-none tracking-tighter">ЭКГ Сессии</h1>
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+                   Stress_Response_Analysis // Art. 6
+                </p>
+              </div>
+            )}
+
+            {activeMode === 'helix' && (
+              <div className="space-y-2 animate-in">
+                <h1 className="text-3xl font-black italic uppercase text-indigo-300 leading-none tracking-tighter">Спираль Когерентности</h1>
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+                   Conscious vs Unconscious // Art. 7
+                </p>
+              </div>
+            )}
+
+            {activeMode === 'emg' && (
+              <div className="space-y-2 animate-in">
+                <h1 className="text-3xl font-black italic uppercase text-indigo-300 leading-none tracking-tighter">Матрица Эмерджентности</h1>
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+                   Systemic_States: {emergentPatterns.length} FOUND // Ст. 7.1 Compliance
+                </p>
+              </div>
+            )}
+
+            {activeMode === 'sim' && (
+              <div className="space-y-2 animate-in">
+                <h1 className="text-3xl font-black italic uppercase text-indigo-300 leading-none tracking-tighter">Сценарная Симуляция</h1>
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+                   Intervention_Model: DETERMINISTIC // Ст. 19.2
+                </p>
+              </div>
+            )}
+
+            {activeMode === 'topology' && (
+              <div className="space-y-2 animate-in">
+                <h1 className="text-3xl font-black italic uppercase text-emerald-400 leading-none tracking-tighter">{t.topology.title}</h1>
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+                   Spatial_Distribution_Analysis // Art. 18.1
+                </p>
+              </div>
+            )}
+
+            {activeMode !== 'dossier' && !['emg', 'sim', 'paths', 'lattice', 'field', 'nucleus', 'sovereign', 'void', 'shadow', 'well', 'prism', 'topology', 'helix', 'ekg', 'hysteresis', 'moire', 'attractor', 'relief', 'tensegrity'].includes(activeMode) && (
+              <div className="space-y-2">
+                <h1 className="text-5xl font-black italic uppercase text-white leading-none tracking-tighter">{arch.title}</h1>
+                <p className="text-sm text-slate-400 font-medium leading-relaxed pt-3 border-l-2 border-indigo-500/5 pl-5 italic opacity-80">
+                  {arch.desc}
+                </p>
+              </div>
+            )}
         </div>
+        
+        <div className={`mt-8 relative w-full aspect-square rounded-3xl overflow-hidden border flex items-center justify-center transition-all duration-500 
+          ${activeMode === 'dossier' ? 'bg-transparent border-transparent aspect-auto' : 
+            activeMode === 'emg' ? 'bg-black border-indigo-500/20' : 
+            activeMode === 'sim' ? 'bg-black border-indigo-500/10' : 
+            activeMode === 'helix' ? 'bg-[#020617] border-indigo-500/10' :
+            activeMode === 'ekg' ? 'bg-[#020617] border-red-500/10' :
+            activeMode === 'hysteresis' ? 'bg-[#020617] border-indigo-500/20' :
+            activeMode === 'moire' ? 'bg-[#020617] border-cyan-500/20' :
+            activeMode === 'attractor' ? 'bg-[#020617] border-amber-500/20' :
+            activeMode === 'relief' ? 'bg-[#020617] border-emerald-500/20' :
+            activeMode === 'tensegrity' ? 'bg-[#020617] border-indigo-500/20' :
+            'bg-[#020617] border-slate-800'}`}>
+            
+            {activeMode === 'blueprint' && (
+                <RadarChart points={result.graphPoints} shadowPoints={result.shadowPoints} showShadow={true} t={t} onLabelClick={() => {}} className="scale-110" />
+            )}
+            {activeMode === 'tensegrity' && (
+                <div className="w-full h-full p-4 flex flex-col justify-center animate-in">
+                    <TensegrityStructure result={result} t={t} className="w-full h-full" />
+                </div>
+            )}
+            {activeMode === 'relief' && (
+                <div className="w-full h-full p-4 flex flex-col justify-center animate-in">
+                    <ReliefMap result={result} t={t} className="w-full h-full" />
+                </div>
+            )}
+            {activeMode === 'attractor' && (
+                <div className="w-full h-full p-4 flex flex-col justify-center animate-in">
+                    <StrangeAttractor result={result} t={t} className="w-full h-full" />
+                </div>
+            )}
+            {activeMode === 'moire' && (
+                <div className="w-full h-full p-4 flex flex-col justify-center animate-in">
+                    <InterferenceMoire result={result} t={t} className="w-full h-full" />
+                </div>
+            )}
+            {activeMode === 'hysteresis' && (
+                <div className="w-full h-full p-4 flex flex-col justify-center animate-in">
+                    <HysteresisLoop history={result.history} t={t} className="w-full h-full" />
+                </div>
+            )}
+            {activeMode === 'ekg' && (
+                <div className="w-full h-full p-4 flex flex-col justify-center">
+                    <SessionEKG pulse={result.sessionPulse} t={t} />
+                </div>
+            )}
+            {activeMode === 'helix' && (
+                <CoherenceHelix history={result.history} t={t} neuroSync={result.neuroSync} className="w-full h-full animate-in" />
+            )}
+            {activeMode === 'topology' && (
+                <PatternTopology patterns={result.activePatterns} t={t} className="w-full h-full animate-in" />
+            )}
+            {activeMode === 'emg' && (
+                <div className="w-full h-full p-4 overflow-y-auto no-scrollbar">
+                    <EmergenceMatrix patterns={emergentPatterns} className="w-full animate-in" />
+                </div>
+            )}
+            {activeMode === 'sim' && (
+                <div className="w-full h-full p-4 overflow-y-auto no-scrollbar">
+                    <SystemicSimulator result={result} t={t} className="w-full animate-in" />
+                </div>
+            )}
+            {activeMode === 'paths' && (
+                <div className="w-full h-full p-4 overflow-y-auto no-scrollbar">
+                    <BifurcationTree nodes={bifurcations} t={t} className="w-full animate-in" />
+                </div>
+            )}
+            {activeMode === 'lattice' && (
+                <ResonanceLattice lattice={lattice} pulse={result.sessionPulse} t={t} className="w-full h-full p-4 animate-in" />
+            )}
+            {activeMode === 'field' && (
+                <SystemicField metrics={clinical.extra.systemicMetrics} t={t} className="w-full h-full animate-in" interactive={true} />
+            )}
+            {activeMode === 'nucleus' && (
+                <AutopoiesisNucleus metrics={autopoiesis} t={t} className="w-full h-full animate-in" />
+            )}
+            {activeMode === 'sovereign' && (
+                <SovereigntyVector metrics={sovereignty} t={t} className="w-full h-full animate-in" />
+            )}
+            {activeMode === 'void' && (
+                <TeleologicalAttractor metrics={teleology} t={t} className="w-full h-full animate-in" />
+            )}
+            {activeMode === 'shadow' && (
+                <ShadowReveal contract={shadowContract} t={t} className="w-full h-full animate-in" />
+            )}
+            {activeMode === 'well' && (
+                <StabilityWell metrics={stability} t={t} className="w-full h-full animate-in" />
+            )}
+            {activeMode === 'prism' && (
+                <RefractionPrism vectors={refractionVectors} currentArchetype={result.archetypeKey} t={t} className="w-full h-full animate-in" />
+            )}
+            {activeMode === 'flux' && (
+                <div className="animate-in w-full h-full">
+                    <KineticFluxMap flux={result.entropyFlux} t={t} className="w-full h-full" />
+                </div>
+            )}
+            {activeMode === 'dossier' && (
+                <ClinicalSynthesisView synthesis={synthesis} t={t} className="w-full h-full animate-in" />
+            )}
+            {activeMode === 'signature' && (
+                <div className="animate-in flex flex-col items-center space-y-4">
+                    <BioSignature f={result.state.foundation} a={result.state.agency} r={result.state.resource} e={result.state.entropy} width={300} height={300} />
+                    <span className="text-[8px] font-black text-emerald-500 uppercase tracking-[0.5em] opacity-50">Soul_Signature_Deterministic</span>
+                </div>
+            )}
+        </div>
+
+        {!['dossier', 'emg', 'sim', 'paths', 'lattice', 'field', 'nucleus', 'sovereign', 'void', 'shadow', 'topology', 'helix', 'ekg', 'hysteresis', 'moire', 'attractor', 'relief', 'tensegrity'].includes(activeMode) && (
+          <div className="mt-6 pt-6 border-t border-white/5 flex justify-between items-center px-2">
+              <div className="space-y-1">
+                  <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Stability_Index (Art. 5)</span>
+                  <div className="flex items-center gap-2">
+                      <div className="h-1 w-24 bg-slate-800 rounded-full overflow-hidden">
+                          <div className={`h-full transition-all duration-1000 ${result.butterflySensitivity > 60 ? 'bg-red-500' : 'bg-emerald-500'}`} style={{ width: `${100 - result.butterflySensitivity}%` }}></div>
+                      </div>
+                      <span className="text-[10px] font-mono font-bold text-slate-300">{100 - result.butterflySensitivity}%</span>
+                  </div>
+              </div>
+              <div className="text-right">
+                  <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Butterfly_Risk</span>
+                  <p className={`text-[10px] font-mono font-bold ${result.butterflySensitivity > 60 ? 'text-red-400 animate-pulse' : 'text-slate-400'}`}>
+                      {result.butterflySensitivity > 60 ? 'HIGH_SENSITIVITY' : 'STABLE_SYSTEM'}
+                  </p>
+              </div>
+          </div>
+        )}
       </header>
 
-      {/* PRO SYNTHESIS BLOCK */}
-      {isPro && synthesis && (
-          <section>
-              <button 
-                onClick={() => setShowSynthesis(true)}
-                className="w-full bg-slate-900 border-2 border-dashed border-slate-700 p-6 rounded-[2rem] text-center group transition-all hover:border-indigo-500 hover:bg-indigo-950/30"
-              >
-                <div className="flex items-center justify-center gap-3">
-                    <span className="text-2xl filter grayscale group-hover:grayscale-0 transition-all">🔬</span>
-                    <h4 className="text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-indigo-300 transition-colors">{t.synthesis.synthesis_title}</h4>
-                </div>
-              </button>
-          </section>
-      )}
-
-      {/* NEW: CONFLICT BLOCK */}
-      <ConflictBlock conflictKey={coreConflictKey} t={t} />
-
-      {/* SESSION PREP BLOCK */}
-      <section className="bg-indigo-600 p-8 rounded-[2.5rem] shadow-xl space-y-6 relative overflow-hidden text-white">
-          <div className="absolute top-0 right-0 p-6 opacity-10 text-6xl">💬</div>
-          <div className="relative z-10">
-              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-200">{t.results.session_prep}</span>
-              <h3 className="text-xl font-black uppercase italic mt-1 leading-tight">{t.results.session_prep_desc}</h3>
+      <div onClick={() => { navigator.clipboard.writeText(result.shareCode); PlatformBridge.haptic.notification('success'); }} className="bg-[#0a0a0a] border-2 border-indigo-500/30 p-6 rounded-[2.5rem] flex flex-col items-center space-y-3 cursor-copy active:scale-95 transition-all shadow-2xl">
+          <span className="text-[9px] font-black uppercase tracking-[0.3em] text-indigo-400">CLINICAL ACCESS TOKEN</span>
+          <div className="w-full bg-black/50 p-4 rounded-xl border border-white/5">
+              <p className="text-xs font-mono text-white break-all text-center font-bold tracking-wider leading-relaxed">{result.shareCode}</p>
           </div>
-          <div className="space-y-3 relative z-10">
-              {sessionPrepQuestions.map((q, i) => (
-                  <div key={i} className="bg-white/10 p-4 rounded-2xl border border-white/10 backdrop-blur-sm">
-                      <p className="text-sm font-bold leading-relaxed">
-                          <span className="text-indigo-300 mr-2">0{i+1}.</span>
-                          {q}
-                      </p>
+          <span className="text-[7px] text-slate-500 uppercase tracking-widest opacity-80 font-bold">{t.results.share_code_help}</span>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4">
+          <button onClick={() => onSetView('protocol')} className="w-full bg-emerald-600/10 border-2 border-emerald-500/30 p-6 rounded-[2.5rem] flex items-center justify-between group active:scale-[0.98] transition-all shadow-xl">
+              <div className="flex items-center gap-5">
+                  <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-3xl">🗺️</div>
+                  <div className="text-left">
+                      <h3 className="text-[12px] font-black uppercase tracking-[0.2em] text-emerald-400">{t.roadmap.title}</h3>
+                      <p className="text-[8px] font-mono text-emerald-200/60 uppercase tracking-widest mt-1">7-DAY INTEGRATION SEQUENCE</p>
                   </div>
-              ))}
-          </div>
-          {onNewCycle && (
-              <button 
-                  onClick={onNewCycle}
-                  className="mt-4 w-full py-3 bg-white/20 hover:bg-white/30 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-white/10"
-              >
-                  {t.ui.start_new_cycle_btn}
-              </button>
-          )}
-      </section>
-
-      {/* ALGORITHM TRANSPARENCY (Article 18) */}
-      {result.formulaBreakdown && (
-        <AlgorithmTransparency breakdown={result.formulaBreakdown} t={t} />
-      )}
-
-      {/* Signal Decoder: High-Transparency Evidence Block (AXIS 9.1 FEATURE LOCK) */}
-      {isPro ? (
-          <SignalDecoder history={history} t={t} baseline={baseline} />
-      ) : (
-          <div className="px-2">
-             <div className="bg-slate-50 border border-slate-100 p-6 rounded-[2rem] text-center space-y-2 border-dashed">
-                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{t.results.signal_decoder_label}</span>
-                <p className="text-[10px] font-bold text-slate-500 italic">
-                    {t.results.pro_locked_desc}
-                </p>
-             </div>
-          </div>
-      )}
-
-      <SessionPulseGraph pulse={result.sessionPulse} t={t} locked={!isPro} />
-
-      {/* PRO SHARE CARD */}
-      <div className="bg-slate-900 p-6 rounded-[2.5rem] space-y-6 shadow-2xl border border-slate-800">
-          <div className="space-y-2">
-              <h3 className="text-[10px] font-black uppercase tracking-widest text-indigo-400">{t.results.brief_instruction}</h3>
-              <p className="text-xs text-slate-400 leading-relaxed font-medium">
-                  {t.results.share_code_help}
-              </p>
-          </div>
-          <button onClick={handleCopyCode} className={`w-full p-5 rounded-2xl font-black uppercase text-xs tracking-widest flex items-center justify-between transition-all active:scale-95 ${copySuccess ? 'bg-emerald-600 text-white' : 'bg-white text-slate-900 shadow-xl'}`}>
-              <span className="font-mono">{copySuccess ? t.pro_terminal.copy_success : result.shareCode.substring(0, 15) + '...'}</span>
-              <span>{copySuccess ? '✓' : '📋'}</span>
+              </div>
+              <span className="text-2xl text-emerald-500 group-hover:translate-x-2 transition-transform">➜</span>
           </button>
       </div>
 
-      <div className="px-2">
-         <div className={`p-4 rounded-2xl border border-dashed text-center ${isFragile ? 'bg-indigo-50 border-indigo-200' : 'bg-slate-50 border-slate-200'}`}>
-            <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 block mb-1">{t.ui.verdict_label || 'VERDICT'}</span>
-            <p className={`text-xs font-black uppercase italic ${isFragile ? 'text-indigo-600' : 'text-slate-600'}`}>{displayVerdict.label}</p>
-         </div>
+      <div className="grid grid-cols-2 gap-4 pt-4 px-2">
+          <button onClick={onShare} className="py-5 bg-indigo-600 text-white rounded-[2rem] font-black uppercase text-xs tracking-widest shadow-2xl active:scale-[0.97] transition-all border-b-4 border-indigo-800">{t.results.share_button}</button>
+          <button onClick={onBack} className="py-5 bg-slate-800 text-white border-2 border-slate-700 rounded-[2rem] font-black uppercase text-xs tracking-widest active:scale-[0.97] transition-all">{t.results.back}</button>
       </div>
 
-      {(result.activePatterns && result.activePatterns.length > 0) && (
-          <section className="space-y-4">
-              <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-900 px-2">{t.results.active_patterns_title}</h3>
-              <div className="grid grid-cols-1 gap-3">
-                  {result.activePatterns.map((patternKey) => (
-                      <PatternCard key={patternKey} beliefKey={patternKey} t={t} />
-                  ))}
-              </div>
-          </section>
-      )}
-
-      {/* Methodology Section */}
-      <section className="space-y-4">
-        <button 
-          onClick={() => setShowMethodology(!showMethodology)}
-          className="w-full bg-slate-50 border border-slate-200 p-6 rounded-[2rem] space-y-3 text-left group"
-        >
-            <div className="flex justify-between items-center">
-              <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t.results.methodology_title}</h4>
-              <span className="text-slate-300 group-hover:text-indigo-400 transition-colors">❯</span>
-            </div>
-            <p className="text-xs text-slate-600 leading-relaxed font-medium italic opacity-80">
-                {t.results.methodology_desc}
-            </p>
-        </button>
-        
-        {showMethodology && (
-          <div className="px-4 space-y-4 animate-in">
-             {t.methodology_faq?.map((item: {q: string, a: string}, i: number) => (
-               <div key={i} className="space-y-1">
-                 <h5 className="text-[10px] font-black text-indigo-600 uppercase tracking-tight">Q: {item.q}</h5>
-                 <p className="text-[11px] text-slate-500 leading-relaxed font-medium">{item.a}</p>
-               </div>
-             ))}
-          </div>
-        )}
-      </section>
-
-      <div className="grid grid-cols-2 gap-3 pt-6">
-          <button onClick={onShare} className="py-5 bg-indigo-600 text-white rounded-[2rem] font-black uppercase text-[10px] tracking-widest shadow-lg active:scale-95 transition-all">{t.results.share_button}</button>
-          <button onClick={onBack} className="py-5 bg-white text-slate-900 border border-slate-200 rounded-[2rem] font-black uppercase text-[10px] tracking-widest active:scale-95 transition-all">{t.results.back}</button>
-      </div>
-
-      <footer className="pt-10 pb-20 px-4 text-center space-y-3 opacity-60">
-          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed">
-              {t.results.footer_disclaimer}
-          </p>
+      <footer className="pt-16 pb-12 text-center opacity-30">
+          <p className="text-[7px] font-black uppercase tracking-[0.4em] text-slate-500">Genesis OS v6.0 // Emergence Architecture</p>
       </footer>
     </div>
   );

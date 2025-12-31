@@ -1,157 +1,149 @@
 
-import { RawAnalysisResult, AnalysisResult, ArchetypeKey, VerdictKey, PhaseType, TaskKey, PatternFlags, DomainType, MetricBreakdown } from '../types';
+import { RawAnalysisResult, AnalysisResult, ArchetypeKey, VerdictKey, PhaseType, TaskKey, PatternFlags, DomainType, AuditMetrics, GameHistoryItem, EntropyFluxVector, StructuralFracture } from '../types';
 import { SecurityCore } from '../utils/crypto';
-import { SYSTEM_METADATA } from '../constants';
+import { SYSTEM_METADATA, TOTAL_NODES } from '../constants';
+import { calculateForecast, WEIGHTS } from './psychologyService';
 
-const ARCHETYPE_INDEX_MAP: ArchetypeKey[] = [
-  'THE_ARCHITECT', 'THE_DRIFTER', 'THE_BURNED_HERO',
-  'THE_GOLDEN_PRISONER', 'THE_CHAOS_SURFER', 'THE_GUARDIAN'
-];
-
-const VERDICT_INDEX_MAP: VerdictKey[] = [
-  'HEALTHY_SCALE', 'BRILLIANT_SABOTAGE', 'INVISIBILE_CEILING',
-  'LEAKY_BUCKET', 'PARALYZED_GIANT', 'FROZEN_POTENTIAL', 'CRITICAL_DEFICIT'
-];
+const ARCHETYPE_INDEX_MAP: ArchetypeKey[] = ['THE_ARCHITECT', 'THE_DRIFTER', 'THE_BURNED_HERO', 'THE_GOLDEN_PRISONER', 'THE_CHAOS_SURFER', 'THE_CHAOS_SURFER'];
+const VERDICT_INDEX_MAP: VerdictKey[] = ['HEALTHY_SCALE', 'BRILLIANT_SABOTAGE', 'INVISIBILE_CEILING', 'LEAKY_BUCKET', 'PARALYZED_GIANT', 'FROZEN_POTENTIAL', 'CRITICAL_DEFICIT'];
 
 const TASKS_LOGIC: Record<PhaseType, Array<{ taskKey: TaskKey, targetMetricKey: string }>> = {
   SANITATION: [{ taskKey: "sanitation_1", targetMetricKey: "Focus" }, { taskKey: "sanitation_2", targetMetricKey: "Sync" }, { taskKey: "sanitation_3", targetMetricKey: "Space" }, { taskKey: "sanitation_4", targetMetricKey: "Clarity" }, { taskKey: "sanitation_5", targetMetricKey: "Control" }, { taskKey: "sanitation_6", targetMetricKey: "Awareness" }, { taskKey: "sanitation_7", targetMetricKey: "Space" }],
   STABILIZATION: [{ taskKey: "stabilization_1", targetMetricKey: "Agency" }, { taskKey: "stabilization_2", targetMetricKey: "Foundation" }, { taskKey: "stabilization_3", targetMetricKey: "Will" }, { taskKey: "stabilization_4", targetMetricKey: "Stability" }, { taskKey: "stabilization_5", targetMetricKey: "Focus" }, { taskKey: "stabilization_6", targetMetricKey: "Agency" }, { taskKey: "stabilization_7", targetMetricKey: "Integrity" }],
-  EXPANSION: [{ taskKey: "expansion_1", targetMetricKey: "Courage" }, { taskKey: "expansion_2", targetMetricKey: "Resource" }, { taskKey: "expansion_3", targetMetricKey: "Agency" }, { taskKey: "expansion_4", targetMetricKey: "Visibility" }, { taskKey: "expansion_5", targetMetricKey: "Scale" }, { taskKey: "expansion_6", targetMetricKey: "Vision" }, { taskKey: "expansion_7", targetMetricKey: "Integrity" }]
-};
-
-// Calculate pentagon coordinates
-const calculatePentagonPoints = (profile: Record<DomainType, number>) => {
-    const keys: DomainType[] = ['foundation', 'agency', 'social', 'legacy', 'money'];
-    const count = keys.length;
-    const center = 50;
-    const radiusScale = 0.45; // slightly less than 0.5 to fit in 100x100
-
-    return keys.map((key, i) => {
-        const value = profile[key] || 50;
-        const normalizedValue = value / 100;
-        const angle = (Math.PI * 2 * i) / count - Math.PI / 2; // Start from top
-        
-        // Calculate point based on value
-        const r = normalizedValue * (100 * radiusScale);
-        const x = center + Math.cos(angle) * r;
-        const y = center + Math.sin(angle) * r;
-        
-        return { x, y, label: key };
-    });
-};
-
-const generateFormulaBreakdown = (raw: RawAnalysisResult): MetricBreakdown[] => {
-    const { state, neuroSync, integrity } = raw;
-    const entropyFactor = 1 - (state.entropy / 280);
-    
-    return [
-        {
-            label: 'foundation',
-            formula: 'F = Σ(w_f * baseline_norm) * entropy_gravity',
-            baseValue: state.foundation,
-            entropyImpact: Math.round(state.foundation * (1 - entropyFactor)),
-            syncImpact: 0,
-            finalValue: state.foundation
-        },
-        {
-            label: 'integrity',
-            formula: 'I = [(F+A+R)/3] * [1 - (E/280)]',
-            baseValue: Math.round((state.foundation + state.agency + state.resource) / 3),
-            entropyImpact: Math.round(((state.foundation + state.agency + state.resource) / 3) * (state.entropy / 280)),
-            syncImpact: 0,
-            finalValue: integrity
-        },
-        {
-            label: 'neuro_sync',
-            formula: 'S = 100 - Σ(somatic_friction_penalty)',
-            baseValue: 100,
-            entropyImpact: 0,
-            syncImpact: 100 - neuroSync,
-            finalValue: neuroSync
-        }
-    ];
+  EXPANSION: [{ taskKey: "expansion_1", targetMetricKey: "Courage" }, { taskKey: "expansion_2", targetMetricKey: "Resource" }, { taskKey: "expansion_3", targetMetricKey: "Agency" }, { taskKey: "expansion_4", targetMetricKey: "Visibility" }, { taskKey: "expansion_5", targetMetricKey: "Scale" }, { taskKey: "expansion_6", targetMetricKey: "Vision" }, { taskKey: "integrity_7", targetMetricKey: "Integrity" }]
 };
 
 export const DiagnosticEngine = {
-  interpret(raw: RawAnalysisResult, patternFlags: PatternFlags & { isInconsistentRhythm?: boolean }): AnalysisResult {
-    const { state, phase, conflicts, domainProfile } = raw;
+  interpret(raw: RawAnalysisResult & { isCrisis?: boolean }, patternFlagsOverride?: PatternFlags): AnalysisResult {
+    const { foundation: f, agency: a, resource: r, entropy: e } = raw.state;
+    const { history, domainProfile } = raw;
     
-    const f = Math.min(100, state.foundation);
-    const a = Math.min(100, state.agency);
-    const r = Math.min(100, state.resource);
-    const e = Math.min(100, state.entropy);
+    // 1. Стандартный расчет спектра
+    const spectrum = [
+      { key: 'THE_CHAOS_SURFER' as ArchetypeKey, score: e * 1.6 },
+      { key: 'THE_DRIFTER' as ArchetypeKey, score: (100 - a) * 1.1 + (e * 0.4) },
+      { key: 'THE_BURNED_HERO' as ArchetypeKey, score: (a * 0.9 + (100 - r) * 0.9) },
+      { key: 'THE_GOLDEN_PRISONER' as ArchetypeKey, score: (r * 0.8 + (100 - a) * 0.8) },
+      { key: 'THE_GUARDIAN' as ArchetypeKey, score: (f * 0.7 + (100 - a) * 0.7) },
+      { key: 'THE_ARCHITECT' as ArchetypeKey, score: (a + f + r) / 3 }
+    ].sort((x, y) => y.score - x.score);
 
-    const archetypeSpectrum = ([
-      { key: 'THE_CHAOS_SURFER', score: e * 1.1 }, 
-      { key: 'THE_DRIFTER', score: (100 - a) * 0.9 + (e * 0.3) },
-      { key: 'THE_BURNED_HERO', score: (a * 0.8 + (100 - r) * 0.8) },
-      { key: 'THE_GOLDEN_PRISONER', score: (r * 0.7 + (100 - a) * 0.7) },
-      { key: 'THE_GUARDIAN', score: (f * 0.6 + (100 - a) * 0.6 + r * 0.4) },
-      { key: 'THE_ARCHITECT', score: (a + f + r) / 3 }
-    ] as { key: ArchetypeKey; score: number }[]).sort((a, b) => b.score - a.score);
+    const gap = spectrum.length > 1 ? (spectrum[0].score - spectrum[1].score) : 100;
+    const butterflySensitivity = Math.round(Math.max(0, 100 - gap));
 
-    const primary = archetypeSpectrum[0];
-    const secondary = archetypeSpectrum[1];
-
-    let verdictKey: VerdictKey = 'HEALTHY_SCALE';
-    if (f <= 35) verdictKey = 'CRITICAL_DEFICIT';
-    else if (a > 75 && f < 45) verdictKey = 'BRILLIANT_SABOTAGE';
-    else if (f > 75 && a < 40) verdictKey = 'INVISIBILE_CEILING';
-    else if (r > 70 && e > 55) verdictKey = 'LEAKY_BUCKET';
-    else if (a < 35 && e > 45) verdictKey = 'PARALYZED_GIANT';
-    else if (f < 50 && a < 50 && r < 50 && e < 40) verdictKey = 'FROZEN_POTENTIAL';
-
-    const pool = TASKS_LOGIC[phase];
-    const roadmap = Array.from({ length: 7 }, (_, i) => ({ day: i + 1, phase, ...pool[i % pool.length] }));
-
-    const archIndex = ARCHETYPE_INDEX_MAP.indexOf(primary.key);
-    const verdictIndex = VERDICT_INDEX_MAP.indexOf(verdictKey);
+    // 2. КИНЕТИЧЕСКИЙ РАСЧЕТ ПОТОКОВ ЭНТРОПИИ (Art. 6.1)
+    const entropyFlux: EntropyFluxVector[] = [];
+    const domains: DomainType[] = ['foundation', 'agency', 'money', 'social', 'legacy'];
     
-    // Titanium Integrity Protocol: Version Header + Salted Hash
-    const dataStr = `${Math.round(f)}|${Math.round(a)}|${Math.round(r)}|${Math.round(e)}|${archIndex}|${Math.round(raw.neuroSync)}|${verdictIndex}`;
-    const headerData = `${SYSTEM_METADATA.LOGIC_VERSION}::${dataStr}`;
-    const sig = SecurityCore.generateChecksum(headerData);
-    
-    const shareCode = btoa(`${headerData}#${sig}`);
-
-    const coreConflict = conflicts.length > 0 ? conflicts[0].key : (verdictKey !== 'HEALTHY_SCALE' ? verdictKey.toLowerCase() : 'none');
-    
-    let finalValidity = raw.validity;
-    let anomalyCount = 0;
-    if (patternFlags.isMonotonic) anomalyCount += 2;
-    if (patternFlags.isRoboticTiming) anomalyCount += 3;
-    if (patternFlags.isInconsistentRhythm) anomalyCount += 2;
-    if (patternFlags.isHighSkipRate) anomalyCount += 1;
-    if (patternFlags.isEarlyTermination) anomalyCount += 2;
-
-    if (anomalyCount >= 4) {
-        finalValidity = 'INVALID';
-    } else if (anomalyCount >= 2) {
-        finalValidity = 'SUSPICIOUS';
+    for (let i = 0; i < domains.length; i++) {
+        for (let j = 0; j < domains.length; j++) {
+            if (i === j) continue;
+            const from = domains[i];
+            const to = domains[j];
+            const valFrom = domainProfile[from];
+            const valTo = domainProfile[to];
+            const delta = valFrom - valTo;
+            if (delta > 25) { 
+                entropyFlux.push({
+                    from, to, intensity: Math.round(delta),
+                    velocity: 0.5 + (e / 100) * 2 
+                });
+            }
+        }
     }
 
-    const graphPoints = calculatePentagonPoints(domainProfile || { foundation: f, agency: a, money: r, social: 50, legacy: 50 });
+    // 3. ДЕТЕКЦИЯ СТРУКТУРНЫХ РАЗЛОМОВ (Art. 7.3)
+    const fractures: StructuralFracture[] = [];
+    if (history && history.length > 5) {
+        const latencies = history.map(h => h.latency);
+        const mean = latencies.reduce((sum, v) => sum + v, 0) / latencies.length;
+        const stdDev = Math.sqrt(latencies.map(x => Math.pow(x - mean, 2)).reduce((a, b) => a + b, 0) / latencies.length) || 1;
+
+        history.forEach(h => {
+            const z = (h.latency - mean) / stdDev;
+            const isDissonant = h.sensation === 's1' || h.sensation === 's4';
+            
+            if (z > 1.6 && isDissonant) {
+                fractures.push({
+                    nodeId: h.nodeId,
+                    domain: h.domain,
+                    intensity: Math.round(z * 20),
+                    beliefKey: h.beliefKey,
+                    description: z > 2.5 ? "Критический разлом когерентности" : "Точка системного напряжения"
+                });
+            }
+        });
+    }
+
+    const shadowProfile: Record<DomainType, number> = { foundation: 20, agency: 20, money: 20, social: 20, legacy: 20 };
+    if (history && history.length > 5) {
+        const latencies = history.map(h => h.latency);
+        const mean = latencies.reduce((sum, v) => sum + v, 0) / latencies.length;
+        history.forEach(h => {
+            const w = WEIGHTS[h.beliefKey] || WEIGHTS.default;
+            const z = h.latency > mean * 1.5 ? 1.5 : 0.5;
+            Object.keys(shadowProfile).forEach(d => {
+                const metricKey = d === 'money' ? 'r' : d[0] as 'f'|'a'|'s'|'l';
+                if (w[metricKey] < 0) {
+                    shadowProfile[d as DomainType] = Math.min(95, shadowProfile[d as DomainType] + Math.abs(w[metricKey]) * z);
+                }
+            });
+        });
+    }
+
+    const keys: DomainType[] = ['foundation', 'agency', 'money', 'social', 'legacy'];
+    const center = 50;
+    const graphPoints = keys.map((key, i) => {
+        const value = (raw.domainProfile as any)[key] || 50;
+        const angle = (Math.PI * 2 * i) / keys.length - Math.PI / 2;
+        return { x: center + Math.cos(angle) * (value / 100 * 45), y: center + Math.sin(angle) * (value / 100 * 45), label: key };
+    });
+
+    const shadowPoints = keys.map((key, i) => {
+        const value = shadowProfile[key];
+        const angle = (Math.PI * 2 * i) / keys.length - Math.PI / 2;
+        return { x: center + Math.cos(angle) * (value / 100 * 45), y: center + Math.sin(angle) * (value / 100 * 45), label: key };
+    });
+
+    const shadowArchetypeKey = spectrum[spectrum.length - 1].key;
+    let verdictKey: VerdictKey = 'HEALTHY_SCALE';
+    if (e > 80 || f <= 35) verdictKey = 'CRITICAL_DEFICIT';
+    else if (a > 75 && f < 45) verdictKey = 'BRILLIANT_SABOTAGE';
+
+    const recommendedPhase: PhaseType = f < 35 ? 'SANITATION' : 'STABILIZATION';
+    const headerData = `${SYSTEM_METADATA.LOGIC_VERSION}::СКРЫТО`;
+    const sig = SecurityCore.generateChecksum(headerData);
 
     return {
       ...raw,
-      state: { foundation: f, agency: a, resource: r, entropy: e },
-      validity: finalValidity,
       timestamp: Date.now(),
       createdAt: Date.now(),
-      shareCode,
-      archetypeKey: primary.key,
-      secondaryArchetypeKey: secondary?.key,
-      archetypeMatch: 100,
-      archetypeSpectrum,
-      verdictKey,
-      lifeScriptKey: `${verdictKey}_${primary.key}`.toLowerCase(),
-      roadmap,
+      archetypeMatch: Math.round(spectrum[0].score),
+      lifeScriptKey: `v8_std_${spectrum[0].key.toLowerCase()}`,
       graphPoints,
-      interventionStrategy: f < 40 ? 'stabilize_foundation' : e > 50 ? 'lower_entropy' : 'activate_will',
-      coreConflict: coreConflict,
-      shadowDirective: 'integrity_boost',
-      patternFlags,
-      formulaBreakdown: generateFormulaBreakdown(raw)
+      shadowPoints,
+      shadowArchetype: { 
+          key: shadowArchetypeKey, 
+          tension: Math.round(e), 
+          description: "Подавленная часть системы." 
+      },
+      forecast: calculateForecast(f, a, r, e),
+      refraction: spectrum.slice(0, 3).map(s => ({ key: s.key, match: Math.round(s.score), description: "Ось преломления" })),
+      interventionStrategy: f < 35 ? 'STABILIZATION' : 'GROWTH',
+      coreConflict: e > 50 ? 'IDENTITY_DIFFUSION' : 'STRUCTURAL_RESISTANCE',
+      shadowDirective: 'INTEGRATE_SHADOW',
+      shareCode: btoa(`${headerData}#${sig}`),
+      archetypeKey: spectrum[0].key,
+      secondaryArchetypeKey: spectrum[1]?.key,
+      archetypeSpectrum: spectrum,
+      verdictKey,
+      roadmap: Array.from({ length: 7 }, (_, i) => ({ day: i + 1, phase: recommendedPhase, ...TASKS_LOGIC[recommendedPhase][i % 7] })),
+      butterflySensitivity,
+      patternFlags: patternFlagsOverride || { isMonotonic: false, isHighSkipRate: false, isFlatline: false, isRoboticTiming: false, isSomaticMonotony: false, isEarlyTermination: false, dominantPosition: null },
+      entropyFlux,
+      fractures,
+      // Pass the crisis flag from raw to final result
+      isCrisis: raw.isCrisis
     };
   }
 };

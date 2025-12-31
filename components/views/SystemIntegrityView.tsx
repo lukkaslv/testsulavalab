@@ -8,7 +8,8 @@ const ORGAN_ICONS: Record<string, string> = {
     METABOLISM: '🧬',
     VOICE: '🗣️',
     IMMUNITY: '🛡️',
-    STRUCTURE: '🏗️'
+    STRUCTURE: '🏗️',
+    NETWORK: '📡'
 };
 
 // --- BIOMORPHIC COMPONENTS ---

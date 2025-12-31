@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { PlatformBridge } from '../../utils/helpers';
 import { Translations } from '../../types';
@@ -12,18 +11,18 @@ export const DataCorruptionView: React.FC<DataCorruptionViewProps> = ({ t, onRes
   const content = t.data_corruption;
 
   return (
-    <div className="flex flex-col items-center justify-center h-full space-y-8 animate-in px-4 text-center bg-red-50">
-      <div className="w-24 h-24 bg-red-100 rounded-3xl flex items-center justify-center text-5xl shadow-inner border border-red-200/50 animate-pulse">
+    <div className="flex flex-col items-center justify-center h-full space-y-8 animate-in px-4 text-center bg-slate-950 text-red-200">
+      <div className="w-24 h-24 bg-red-950/30 rounded-3xl flex items-center justify-center text-5xl shadow-inner border border-red-500/30 animate-pulse">
         ⚠️
       </div>
       <div className="space-y-4 max-w-sm">
-        <h2 className="text-2xl font-black uppercase tracking-tight text-red-900 leading-tight italic">
+        <h2 className="text-2xl font-black uppercase tracking-tight text-red-400 leading-tight italic">
           {content.title}
         </h2>
-        <p className="text-sm font-medium text-red-700 leading-relaxed">
+        <p className="text-sm font-medium text-red-300 leading-relaxed">
           {content.message}
         </p>
-        <p className="text-xs font-bold text-red-500">
+        <p className="text-xs font-bold text-red-400/80">
           {content.recommendation}
         </p>
       </div>

@@ -1,17 +1,16 @@
+
 import { useContext } from 'react';
 import { AppContext } from '../contexts/AppContext';
 import { AppContextType } from '../types';
 
 /**
- * Genesis OS Hook: useAppContext
- * Provides access to the global application state.
- * Must be used within an <AppProvider />.
+ * Хук Genesis OS: useAppContext
+ * Соответствие: Ст. 4.1 (Целостность Организма)
  */
-export const useAppContext = () => {
-  // FIXED: Cast the context to AppContextType to resolve property access errors in App.tsx and components
-  const context = useContext(AppContext) as AppContextType;
+export const useAppContext = (): AppContextType => {
+  const context = useContext(AppContext);
   if (!context) {
-    throw new Error('useAppContext must be used within an AppProvider. Check index.tsx wrapping.');
+    throw new Error('КРИТИЧЕСКАЯ ОШИБКА: useAppContext должен использоваться внутри AppProvider. Нарушение Ст. 4.1.');
   }
   return context;
 };

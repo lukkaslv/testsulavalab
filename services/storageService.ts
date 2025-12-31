@@ -2,6 +2,7 @@
 import { AnalysisResult, ScanHistory, SystemLogEntry, TelemetryEvent, FeedbackEntry, LicenseRecord, GameHistoryItem, DataCorruptionError } from '../types';
 import { STORAGE_KEYS } from '../constants';
 import { SecurityCore } from '../utils/crypto';
+import { IntegrityService } from './integrityService';
 
 export { STORAGE_KEYS };
 
@@ -65,14 +66,14 @@ export const StorageService = {
         const decrypted = SecurityCore.safeDecode(item, INTERNAL_KEY);
         if (decrypted) return decrypted as T;
         
-        console.warn(`StorageService: Access Denied for ${key} (Integrity/Device Mismatch)`);
-        throw new DataCorruptionError(`Integrity check failed for ${key}`);
+        console.warn(`StorageService: Доступ запрещен для ${key} (Нарушение целостности/Устройства)`);
+        throw new DataCorruptionError(`Сбой проверки целостности для ${key}`);
     }
 
     try {
       return JSON.parse(item) as T;
     } catch (e) {
-      throw new DataCorruptionError(`JSON parse failed for ${key}`);
+      throw new DataCorruptionError(`Сбой парсинга JSON для ${key}`);
     }
   },
 
@@ -91,8 +92,18 @@ export const StorageService = {
   getLicenseRegistry: (): LicenseRecord[] => StorageService.load<LicenseRecord[]>('genesis_license_registry', []),
 
   logTelemetry: (event: Omit<TelemetryEvent, 'timestamp' | 'isOutlier'>) => {
+      let data: TelemetryEvent[] = [];
+      
+      // Attempt to load existing telemetry
       try {
-          const data = StorageService.load<TelemetryEvent[]>(STORAGE_KEYS.TELEMETRY_DATA, []);
+          data = StorageService.load<TelemetryEvent[]>(STORAGE_KEYS.TELEMETRY_DATA, []);
+      } catch (e) {
+          // If corrupted, we reset to empty array to allow self-healing
+          console.warn("StorageService: Telemetry log corrupted, resetting.", e);
+          data = [];
+      }
+
+      try {
           const newEvent: TelemetryEvent = {
               ...event,
               timestamp: Date.now(),
@@ -102,11 +113,17 @@ export const StorageService = {
           if (data.length > 200) data.shift();
           StorageService.save(STORAGE_KEYS.TELEMETRY_DATA, data);
       } catch (e) {
-          console.error("Telemetry failed", e);
+          console.error("StorageService: Telemetry save failed", e);
       }
   },
 
-  getTelemetry: (): TelemetryEvent[] => StorageService.load<TelemetryEvent[]>(STORAGE_KEYS.TELEMETRY_DATA, []),
+  getTelemetry: (): TelemetryEvent[] => {
+      try {
+          return StorageService.load<TelemetryEvent[]>(STORAGE_KEYS.TELEMETRY_DATA, []);
+      } catch (e) {
+          return [];
+      }
+  },
 
   saveFeedback: (entry: FeedbackEntry) => {
       const logs = StorageService.load<FeedbackEntry[]>(STORAGE_KEYS.CLINICAL_FEEDBACK, []);
@@ -118,6 +135,12 @@ export const StorageService = {
   getFeedback: (): FeedbackEntry[] => StorageService.load<FeedbackEntry[]>(STORAGE_KEYS.CLINICAL_FEEDBACK, []),
 
   async saveScan(result: AnalysisResult): Promise<void> {
+    // Art 5.1: Final Integrity CheckPoint
+    if (!IntegrityService.checkTemporalStability() || !IntegrityService.isEnvironmentSafe()) {
+        console.error("🛑 STORAGE_ABORT: Система нестабильна. Скан отклонен.");
+        throw new Error("Сбой целостности при сохранении.");
+    }
+
     const history = loadHistory();
     const deterministicResult: AnalysisResult = { ...result, timestamp: Date.now() };
     
@@ -172,7 +195,7 @@ export const StorageService = {
   },
 
   clear: () => {
-    const preservedKeys: string[] = [STORAGE_KEYS.LANG, STORAGE_KEYS.AUDIT_LOG, STORAGE_KEYS.CLINICAL_FEEDBACK, 'genesis_license_registry'];
+    const preservedKeys: string[] = [STORAGE_KEYS.LANG, STORAGE_KEYS.AUDIT_LOG, STORAGE_KEYS.CLINICAL_FEEDBACK, 'genesis_license_registry', 'genesis_security_violation'];
     Object.values(STORAGE_KEYS).forEach(key => {
       if (!preservedKeys.includes(key as any)) {
         provider?.removeItem(key as any);

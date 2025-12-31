@@ -1,145 +1,141 @@
-import { AnalysisResult, ClinicalInterpretation, TherapyHypothesis, Translations } from '../types';
+
+import { AnalysisResult, ClinicalInterpretation, Translations, BeliefKey, InterventionMode, TherapyStep, SystemicMetrics, ShadowPattern, AutopoiesisMetrics, StatisticalMarkers, NeuropsychMarkers } from '../types';
+import { WEIGHTS, calculateEntropyFlux, calculateAutopoiesis } from './psychologyService';
+
+const calculateStats = (history: any[]): StatisticalMarkers => {
+    const latencies = history.map(h => h.latency).filter(l => l > 300);
+    if (latencies.length < 5) return { variance: 0, standardDeviation: 0, skewness: 0, kurtosis: 0, zScoreDistribution: [] };
+
+    const n = latencies.length;
+    const mean = latencies.reduce((a, b) => a + b, 0) / n;
+    const variance = latencies.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / n;
+    const stdDev = Math.sqrt(variance);
+
+    const zScores = latencies.map(l => (l - mean) / stdDev);
+
+    // Моделирование асимметрии (Skewness)
+    const skewness = (latencies.reduce((a, b) => a + Math.pow(b - mean, 3), 0) / n) / Math.pow(stdDev, 3);
+
+    return {
+        variance: Math.round(variance),
+        standardDeviation: Math.round(stdDev),
+        skewness: Number(skewness.toFixed(3)),
+        kurtosis: 0, // Упрощено
+        zScoreDistribution: zScores.map(z => Number(z.toFixed(2)))
+    };
+};
+
+const calculateNeuro = (result: AnalysisResult): NeuropsychMarkers => {
+    const { history, neuroSync, state } = result;
+    const neutralSomaCount = history.filter(h => h.sensation === 's0').length;
+    const alexithymiaIndex = Math.round((neutralSomaCount / (history.length || 1)) * 100);
+
+    const frictionNodes = history.filter(h => h.latency > 3500).map(h => h.nodeId);
+    
+    return {
+        alexithymiaIndex,
+        cognitiveFriction: Math.round(result.state.entropy * 0.8),
+        prefrontalExhaustion: history.slice(-10).every(h => h.latency < 1200) && state.agency > 70,
+        amygdalaTriggerNodes: frictionNodes
+    };
+};
 
 export const ClinicalDecoder = {
   decode(result: AnalysisResult, t: Translations): ClinicalInterpretation {
-    const { state, neuroSync, activePatterns, archetypeKey, flags, sessionPulse } = result;
-    const cd = t.clinical_decoder;
-    const p = cd.provocations;
-    const pt = t.pro_terminal;
-    const ph = t.pro_hub;
+    const { state, neuroSync, activePatterns, archetypeKey, domainProfile, archetypeSpectrum, history } = result;
+    const f = state.foundation, a = state.agency, e = state.entropy;
 
-    // 1. EXPERT SYSTEM: CONFIGURATION DETECTION
-    let configKey = 'balanced';
+    const stats = calculateStats(history || []);
+    const neuro = calculateNeuro(result);
+
+    const homeostasisCost = Math.round((e * 0.6) + ((100 - neuroSync) * 0.4));
     
-    if (state.agency >= 85 && state.foundation < 40) configKey = 'compensatory_overdrive';
-    else if (state.foundation < 30) configKey = 'critical_deficit'; 
-    else if (state.foundation < 45 && state.entropy < 35) configKey = 'economy_mode';
-    else if (state.agency > 70 && state.foundation < 45) configKey = 'mobilization';
-    else if (state.entropy > 55) {
-        configKey = flags?.entropyType === 'CREATIVE' ? 'chaotic_creative' : 'chaotic';
-    }
-    else if (state.foundation > 75 && state.agency < 45) configKey = 'rigid';
-
-    // 2. ALLIANCE SABOTAGE CALCULATION (Localized v5.0)
-    let trapType = "OBSERVATIONAL";
-    let provocation = "";
-
-    if (state.agency > 80 && neuroSync < 50) {
-        trapType = "INTELLECTUAL_SEDUCER";
-        provocation = p.seducer;
-    }
-    else if (state.foundation < 35 && state.entropy > 60) {
-        trapType = "ELUSIVE_SHADOW";
-        provocation = p.shadow;
-    }
-    else if (state.agency > 85 && state.foundation > 70) {
-        trapType = "GRANDIOSE_CRITIC";
-        provocation = p.critic;
-    }
-    else if (neuroSync < 40) {
-        trapType = "SOMATIC_WALL";
-        provocation = p.wall;
-    }
-    
-    // 3. PRIORITY LOGIC (Centralized)
-    let priority = pt.priority_stable;
-    let priorityLevel: 'low' | 'medium' | 'high' = 'low';
-    if (state.foundation < 30) {
-        priority = pt.priority_critical_deficit;
-        priorityLevel = 'high';
-    } else if (state.agency > 80 && state.foundation < 40) {
-        priority = pt.priority_manic_defense;
-        priorityLevel = 'high';
-    } else if (neuroSync < 40) {
-        priority = pt.priority_dissociation;
-        priorityLevel = 'medium';
-    }
-
-
-    // 4. DIFFERENTIAL MATRIX (Refined Weights v4.2)
-    const diffProb: Record<string, number> = {
-        narcissistic: Math.min(95, (state.agency * 0.65 + (100 - state.foundation) * 0.35)),
-        borderline: Math.min(95, ((100 - state.foundation) * 0.7 + state.entropy * 0.3)),
-        depressive: Math.min(95, ((100 - state.resource) * 0.6 + (100 - state.agency) * 0.4)),
-        systemic: activePatterns.includes('family_loyalty') ? 92 : (100 - state.foundation) * 0.4 + 20
+    const loyaltyIndex = Math.round(((domainProfile?.legacy || 50) * 0.6) + (activePatterns.includes('family_loyalty') ? 40 : 0));
+    const systemicMetrics: SystemicMetrics = {
+        loyaltyIndex,
+        differentiationLevel: 100 - loyaltyIndex,
+        ancestralPressure: Math.round((loyaltyIndex * 0.7) + (e * 0.3)),
+        fieldTension: Math.round((loyaltyIndex + e) / 2)
     };
 
-    // 5. NEURAL HEATMAP
-    const criticalNodes = (sessionPulse || [])
-        .filter(n => n.zScore > 1.8 || (n.tension > 85 && n.isBlock))
-        .map(n => n.id);
-
-    // 6. HYPOTHESES GENERATION
-    const hypotheses: TherapyHypothesis[] = [];
-    const h = cd.common_hypotheses;
+    let transferenceType = "Нейтральный / Рабочий";
+    let allianceRisk = 20;
     
-    if (configKey === 'compensatory_overdrive') {
-        hypotheses.push({
-            id: 'h_anes',
-            hypothesis: h.anesthesia.h,
-            basedOn: `ENT:${Math.round(state.entropy)} AGC:${Math.round(state.agency)}`,
-            focusForSession: h.anesthesia.q
-        });
-    }
-    if (state.foundation < 35) {
-        hypotheses.push({
-            id: 'h_srv',
-            hypothesis: h.survival_priority.h,
-            basedOn: `FND:${Math.round(state.foundation)}`,
-            focusForSession: h.survival_priority.q
-        });
+    if (a > 85 && f < 40) {
+        allianceRisk = 85;
+        transferenceType = "Контрзависимый (Борьба за власть, обесценивание специалиста)";
+    } else if (f < 30 && neuroSync < 40) {
+        allianceRisk = 60;
+        transferenceType = "Пограничный (Риск слияния и мгновенного разочарования)";
     }
 
-    // 7. RISK PROFILE (for Dashboard)
-    let riskLabel = ph.risk_level_nominal;
-    let riskLevel: 'critical' | 'high' | 'nominal' = 'nominal';
-    
-    if (state.foundation < 35) {
-        riskLabel = ph.risk_level_critical;
-        riskLevel = 'critical';
-    } else if (state.agency > 80 && state.foundation < 45) {
-        riskLabel = ph.risk_level_high;
-        riskLevel = 'high';
-    } else if (state.entropy > 65) {
-        riskLabel = ph.risk_level_high;
-        riskLevel = 'high';
-    }
+    let mode: InterventionMode = 'HOLDING';
+    if (f < 35) mode = 'STABILIZING';
+    else if (a > 80 && neuroSync > 50) mode = 'CONFRONTING';
+
+    const directives: string[] = [];
+    if (neuroSync < 35) directives.push("ВЕРБАЛЬНАЯ ТЕРАПИЯ МАЛОЭФФЕКТИВНА: Работайте через тело/дыхание.");
+    if (a > 80 && f < 40) directives.push("ЗАПРЕТ НА КОНФРОНТАЦИЮ: Риск психотического эпизода или срыва в манию.");
+    if (e > 75) directives.push("ЭКСТРЕННАЯ СТАБИЛИЗАЦИЯ: Ресурс системы исчерпан.");
+
+    const autopoiesis = calculateAutopoiesis(result);
+    const entropyFlux = calculateEntropyFlux(history || []);
 
     return {
-        systemConfiguration: {
-            title: cd.configs[configKey]?.title || "Nominal",
-            description: cd.configs[configKey]?.desc || "Normal functioning",
-            limitingFactor: state.foundation < 35 ? "Foundation" : state.agency < 40 ? "Agency" : "Resource"
+        systemConfiguration: { 
+            title: f < 30 ? "ДЕФИЦИТАРНАЯ" : isNaN(a/f) ? "НЕСТАБИЛЬНАЯ" : a/f > 2 ? "КОМПЕНСАТОРНАЯ" : "АДАПТИВНАЯ",
+            description: "Общая конфигурация психического аппарата клиента.",
+            limitingFactor: e > 65 ? "Внутренний хаос (Энтропия)" : f < 40 ? "Отсутствие опор (Фундамент)" : "Нет явных блоков"
         },
-        deepMechanism: {
-            title: cd.headers.mechanism,
-            analysis: [] 
+        deepMechanism: { title: "Механизм", analysis: [] },
+        metricInteractions: { 
+            farDescription: `Соотношение Воля/База: ${(a/f).toFixed(2)}. Ресурсная емкость: ${state.resource}%`,
+            syncDescription: neuroSync < 50 ? "Сигнал тела заблокирован умом." : "Высокая связность Ум-Тело." 
         },
-        metricInteractions: {
-            farDescription: `F${Math.round(state.foundation)} A${Math.round(state.agency)} R${Math.round(state.resource)}`,
-            syncDescription: cd.sync_patterns[neuroSync < 60 ? 'dissociation' : 'coherent']
+        archetypeClinical: { 
+            strategy: t.archetypes[archetypeKey]?.superpower || "Адаптация",
+            functionality: "Сохранение гомеостаза",
+            limit: "Неспособность к интеграции нового опыта"
         },
-        archetypeClinical: {
-            strategy: cd.archetype_strategies[archetypeKey]?.strategy || "Adaptive",
-            functionality: cd.archetype_strategies[archetypeKey]?.func || "Preservation",
-            limit: cd.archetype_strategies[archetypeKey]?.limit || "Growth"
-        },
-        beliefImpact: activePatterns.length > 0 ? activePatterns.map(p => t.beliefs[p] || p).join(", ") : "None detected",
-        hypotheses,
-        risks: state.foundation < 30 ? [cd.risks.decompensation] : [],
-        sessionEntry: cd.session_entries[trapType.toLowerCase().split('_')[1]] || cd.session_entries.intellectual,
-        priority,
-        priorityLevel,
-        riskProfile: {
-            label: riskLabel,
-            level: riskLevel
-        },
-        extra: {
-            diffProb,
-            criticalNodes,
-            trapType,
-            provocation
+        beliefImpact: activePatterns.join(", "),
+        hypotheses: [], 
+        risks: allianceRisk > 70 ? ["Высокий риск прерывания терапии", "Обесценивание сеттинга"] : [],
+        sessionEntry: f < 40 ? "Терапевтическая поддержка" : "Провокация / Рост",
+        priority: f < 35 ? "🛑 КРИТИЧЕСКАЯ" : "✅ НОРМА",
+        priorityLevel: f < 35 ? 'high' : 'low',
+        riskProfile: { label: e > 80 ? "ВЫСОКИЙ" : "НОМИНАЛ", level: e > 80 ? 'critical' : 'nominal' },
+        stats,
+        neuro,
+        extra: { 
+            diffProb: {}, criticalNodes: [], trapType: "OBS", provocation: "", bifurcations: [], evidence: [],
+            homeostasisCost,
+            systemicPressure: systemicMetrics.ancestralPressure, 
+            systemicMetrics,
+            directives, 
+            clusters: [], 
+            shadowContract: t.clinical_narratives?.shadow_contracts?.[`${archetypeKey.toLowerCase()}`] || "Скрытая выгода от неуспеха", 
+            antidote: t.pattern_library[activePatterns[0]]?.antidote || "Осознанность",
+            contraindications: directives.filter(d => d.includes("ЗАПРЕТ")),
+            interventionMode: mode, 
+            somaticMap: [], 
+            trajectory: [], 
+            transference: transferenceType,
+            prognosis: { 
+                integrationDifficulty: Math.round(e * 1.2), 
+                allianceRisk, 
+                stabilizationPath: f < 40 ? 'LONG' : 'FAST', 
+                primaryObstacle: a > 80 ? "Гордыня / Контроль" : "Страх / Бессилие" 
+            },
+            entropyFlux,
+            autopoiesis
         }
     };
+  },
+
+  generatePrepQuestions(result: AnalysisResult, t: Translations): string[] {
+      const q = [];
+      if (result.state.foundation < 35) q.push("Что в вашей жизни сейчас является 'незыблемым'?");
+      if (result.neuroSync < 50) q.push("Когда вы говорите 'я хочу', какая часть тела сжимается?");
+      return q;
   }
 };

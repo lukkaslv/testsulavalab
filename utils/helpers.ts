@@ -1,5 +1,22 @@
 
-// Deterministic simple hash for password validation
+/**
+ * Вспомогательные функции Genesis OS v5.0 (Форензика)
+ * Соответствие: Ст. 1.1 (Детерминизм), Ст. 4.1 (Целостность)
+ */
+
+// Глубокая заморозка для неизменяемых конституционных констант (Ст. 4.1)
+export const deepFreeze = <T extends object>(obj: T): T => {
+  Object.freeze(obj);
+  Object.getOwnPropertyNames(obj).forEach((prop) => {
+    const value = (obj as any)[prop];
+    if (value !== null && typeof value === "object" && !Object.isFrozen(value)) {
+      deepFreeze(value);
+    }
+  });
+  return obj;
+};
+
+// Детерминированный простой хеш для внутренней валидации (Ст. 1.1)
 export const simpleHash = (str: string): number => {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
@@ -10,10 +27,20 @@ export const simpleHash = (str: string): number => {
   return hash;
 };
 
-// Safe deep object property access
+// Форензический хеш для суверенитета данных (Ст. 13)
+export const forensicHash = (str: string): string => {
+    let h1 = 0x811c9dc5, h2 = 0xcbf29ce4;
+    for (let i = 0, l = str.length; i < l; i++) {
+        h1 = Math.imul(h1 ^ str.charCodeAt(i), 597399067);
+        h2 = Math.imul(h2 ^ str.charCodeAt(i), 285529207);
+    }
+    return (h1 >>> 0).toString(16).padStart(8, '0') + (h2 >>> 0).toString(16).padStart(8, '0');
+};
+
+// Безопасный доступ к глубоким свойствам объекта
 export const resolvePath = (obj: Record<string, any>, path: string): string => {
-  if (!obj) return `[ROOT_MISSING]`;
-  if (!path) return `[PATH_EMPTY]`;
+  if (!obj) return `[КОРЕНЬ_ОТСУТСТВУЕТ]`;
+  if (!path) return `[ПУТЬ_ПУСТ]`;
   
   const keys = path.split('.');
   let current: any = obj;
@@ -22,64 +49,49 @@ export const resolvePath = (obj: Record<string, any>, path: string): string => {
     if (current && typeof current === 'object' && key in current) {
       current = current[key];
     } else {
-      return `[KEY_ERROR: ${key}]`;
+      return `[ОШИБКА_КЛЮЧА: ${key}]`;
     }
   }
   
-  return typeof current === 'string' ? current : `[TYPE_ERROR: ${path}]`;
+  return typeof current === 'string' ? current : `[ОШИБКА_ТИПА: ${path}]`;
 };
 
-// --- PLATFORM BRIDGE ---
+// --- МОСТ ПЛАТФОРМЫ (Суверенная Реализация) ---
 type HapticStyle = 'light' | 'medium' | 'heavy' | 'rigid' | 'soft';
 type NotificationType = 'error' | 'success' | 'warning';
 
 export const PlatformBridge = {
-  // FIX: Cast window to any for Telegram access
   isTelegram: (): boolean => !!((window as any).Telegram?.WebApp?.initData),
 
-  // FIX: Cast window to any for Telegram access
   expand: () => (window as any).Telegram?.WebApp?.expand?.(),
-  // FIX: Cast window to any for Telegram access
   ready: () => (window as any).Telegram?.WebApp?.ready?.(),
 
   showConfirm: (message: string, callback: (confirmed: boolean) => void) => {
-    // FIX: Cast window to any for Telegram access
     const tg = (window as any).Telegram?.WebApp;
-    
-    // Check for native Telegram confirmation support first (v6.2+)
-    if (tg && tg.isVersionAtLeast && tg.isVersionAtLeast('6.2')) {
+    if (tg?.isVersionAtLeast?.('6.2')) {
       try {
-        tg.showConfirm(message, (confirmed: boolean) => {
-          callback(confirmed);
-        });
+        tg.showConfirm(message, (confirmed: boolean) => callback(confirmed));
         return;
       } catch (e) {
-        console.warn("Telegram showConfirm failed");
+        console.warn("Форензика: Сбой подтверждения Telegram, откат к нативному методу.");
       }
     }
-
-    // Rock-solid fallback
-    const confirmed = window.confirm(message);
-    callback(confirmed);
+    callback(window.confirm(message));
   },
 
   haptic: {
     impact: (style: HapticStyle) => {
-      // FIX: Cast window to any for Telegram access
       (window as any).Telegram?.WebApp?.HapticFeedback?.impactOccurred(style);
     },
     notification: (type: NotificationType) => {
-      // FIX: Cast window to any for Telegram access
       (window as any).Telegram?.WebApp?.HapticFeedback?.notificationOccurred(type);
     },
     selection: () => {
-      // FIX: Cast window to any for Telegram access
       (window as any).Telegram?.WebApp?.HapticFeedback?.selectionChanged();
     }
   },
 
   openLink: (url: string) => {
-    // FIX: Cast window to any for Telegram access
     if ((window as any).Telegram?.WebApp?.openLink) {
       (window as any).Telegram.WebApp.openLink(url);
     } else {

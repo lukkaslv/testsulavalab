@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Translations } from '../../types';
 import { PlatformBridge } from '../../utils/helpers';
 
@@ -8,90 +8,86 @@ interface GuideViewProps {
   onBack: () => void;
 }
 
-type GuideMode = 'client' | 'pro';
+type GuideMode = 'client' | 'pro' | 'transition';
 
 export const GuideView: React.FC<GuideViewProps> = ({ t, onBack }) => {
   const [mode, setMode] = useState<GuideMode>('client');
-  const content = mode === 'client' ? t.guide : t.pro_guide;
+  
+  const content = useMemo(() => {
+    if (mode === 'client') return t.guide;
+    if (mode === 'pro') return t.pro_guide;
+    return t.transition_protocol;
+  }, [mode, t]);
+
+  const sections = (content as any).sections || [];
+  const closingText = (content as any).metaphor || (content as any).closing;
 
   return (
-    <section className="space-y-6 animate-in py-4 flex flex-col h-full bg-slate-50">
-        {/* HEADER */}
-        <div className="flex justify-between items-center px-4 pb-4 border-b border-indigo-100/50 sticky top-0 bg-slate-50/95 backdrop-blur-md z-20 pt-2">
+    <div className="flex flex-col h-full animate-in bg-slate-950 text-slate-200">
+        <header className="px-4 pt-4 pb-4 flex justify-between items-center z-20 shrink-0 sticky top-0 backdrop-blur-xl bg-slate-950/80 border-b border-slate-800">
             <button 
-                onClick={() => {
-                    onBack();
-                    PlatformBridge.haptic.impact('light');
-                }} 
-                className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl text-[10px] font-black uppercase text-slate-600 active:scale-95 transition-all shadow-sm border border-slate-200"
+                onClick={onBack}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase active:scale-95 transition-all shadow-sm bg-slate-800 text-slate-300 border border-slate-700"
             >
                 ← {t.global.back}
             </button>
-            <div className="flex flex-col items-end">
-                 <span className="text-[10px] font-mono text-indigo-600 font-black tracking-widest">{content.title}</span>
-                 <span className="text-[7px] font-mono text-slate-400 uppercase">{content.subtitle}</span>
+            <div className="text-right">
+                 <h2 className="text-sm font-black tracking-tight text-indigo-400">{content.title}</h2>
+                 <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400">{content.subtitle}</p>
             </div>
-        </div>
+        </header>
 
-        {/* MODE TOGGLE */}
-        <div className="px-4">
-            <div className="bg-white p-1 rounded-xl flex shadow-sm border border-slate-200">
-                <button 
-                    onClick={() => { setMode('client'); PlatformBridge.haptic.impact('light'); }}
-                    className={`flex-1 py-2 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all ${mode === 'client' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
-                >
-                    {t.ui.mode_client}
-                </button>
-                <button 
-                    onClick={() => { setMode('pro'); PlatformBridge.haptic.impact('light'); }}
-                    className={`flex-1 py-2 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all ${mode === 'pro' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
-                >
-                    {t.ui.mode_pro}
-                </button>
-            </div>
-        </div>
-
-        <div className="space-y-8 px-4 pb-20 overflow-y-auto">
-            {/* INTRO DISCLAIMER - ONLY FOR CLIENTS */}
-            {mode === 'client' && (
-                <div className="bg-indigo-50/50 border border-indigo-100 p-6 rounded-[2rem] space-y-3">
-                     <div className="flex items-center gap-3">
-                         <span className="text-xl">🩺</span>
-                         <h3 className="text-[10px] font-black uppercase text-indigo-900 tracking-widest">{t.results.disclaimer_title}</h3>
-                     </div>
-                     <p className="text-[11px] font-medium text-indigo-800 leading-relaxed italic">
-                         {t.results.disclaimer_body}
-                     </p>
+        <div className="flex-1 flex flex-col overflow-y-auto no-scrollbar">
+            <div className="px-4 py-6 shrink-0">
+                <div className="p-1.5 rounded-2xl flex shadow-sm border bg-slate-900 border-slate-700">
+                    <button 
+                        onClick={() => { setMode('client'); PlatformBridge.haptic.selection(); }}
+                        className={`flex-1 py-3 text-xs font-black uppercase tracking-widest rounded-xl transition-all ${mode === 'client' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400'}`}
+                    >
+                        {t.ui.mode_client}
+                    </button>
+                    <button 
+                        onClick={() => { setMode('pro'); PlatformBridge.haptic.selection(); }}
+                        className={`flex-1 py-3 text-xs font-black uppercase tracking-widest rounded-xl transition-all ${mode === 'pro' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400'}`}
+                    >
+                        {t.ui.mode_pro}
+                    </button>
+                    <button 
+                        onClick={() => { setMode('transition'); PlatformBridge.haptic.selection(); }}
+                        className={`flex-1 py-3 text-xs font-black uppercase tracking-widest rounded-xl transition-all ${mode === 'transition' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400'}`}
+                    >
+                        {t.ui.mode_transition}
+                    </button>
                 </div>
-            )}
+            </div>
 
-            {/* SECTIONS */}
-            <div className="space-y-8">
-                {content.sections.map((section: any, idx: number) => (
-                    <div key={idx} className="space-y-4">
-                        <h4 className={`text-sm font-black uppercase tracking-tight border-l-4 pl-4 py-1 ${mode === 'pro' ? 'text-indigo-900 border-indigo-600' : 'text-slate-900 border-indigo-400'}`}>
-                            {section.title}
-                        </h4>
-                        <ul className="space-y-3 pl-2">
-                            {section.content.map((point: string, pIdx: number) => (
-                                <li key={pIdx} className="text-[11px] leading-relaxed text-slate-600 font-medium relative pl-4">
-                                    <span className={`absolute left-0 top-1.5 w-1.5 h-1.5 rounded-full ${mode === 'pro' ? 'bg-indigo-400' : 'bg-slate-300'}`}></span>
+            <div className="space-y-10 px-4 pb-20">
+                {sections.map((section: { title: string, content: string[] }, idx: number) => (
+                    <div key={idx} className="space-y-4 animate-in" style={{ animationDelay: `${idx * 0.1}s` }}>
+                        <div className="flex items-center gap-3">
+                            <span className="text-[10px] font-mono font-black text-indigo-400">/ 0{idx + 1}</span>
+                            <h4 className="text-sm font-black uppercase tracking-tight text-indigo-200">
+                                {section.title}
+                            </h4>
+                        </div>
+                        <div className="p-6 rounded-[2rem] space-y-4 shadow-sm border bg-indigo-950/40 border-indigo-500/20 text-slate-300">
+                            {section.content.map((point, pIdx) => (
+                                <p key={pIdx} className="text-sm leading-relaxed font-medium italic">
                                     {point}
-                                </li>
+                                </p>
                             ))}
-                        </ul>
+                        </div>
                     </div>
                 ))}
-            </div>
-
-            {/* CLOSING METAPHOR / NOTE */}
-            <div className={`p-8 rounded-[2rem] relative overflow-hidden shadow-2xl ${mode === 'pro' ? 'bg-indigo-900 text-white' : 'bg-slate-900 text-white'}`}>
-                 <div className="absolute top-0 right-0 p-6 opacity-10 text-6xl">{mode === 'pro' ? '⚡' : '🧭'}</div>
-                 <p className="relative z-10 text-lg font-black uppercase italic leading-tight tracking-tight text-center">
-                     "{mode === 'client' ? (content as any).metaphor : (content as any).closing}"
-                 </p>
+                
+                <div className="p-8 rounded-[2.5rem] relative overflow-hidden shadow-2xl transition-all duration-700 bg-indigo-950 border border-indigo-500/30 text-white">
+                     <div className="absolute top-0 right-0 p-6 opacity-10 text-6xl">{mode === 'transition' ? '🌊' : mode === 'pro' ? '⚡' : '🧭'}</div>
+                     <p className="relative z-10 text-lg font-black uppercase italic leading-tight tracking-tight text-center">
+                         {closingText}
+                     </p>
+                </div>
             </div>
         </div>
-    </section>
+    </div>
   );
 };

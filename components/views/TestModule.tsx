@@ -1,8 +1,10 @@
 
-import { memo, useState, useEffect } from 'react';
-import { DomainType, Translations, Choice, Scene, AdaptiveState } from '../../types';
+import { memo, useState, useEffect, useRef, useMemo } from 'react';
+import { DomainType, Translations, Choice, Scene, AdaptiveState, InterventionType, BeliefKey, GameHistoryItem } from '../../types';
 import { AdaptiveProgressBar } from '../AdaptiveProgressBar';
 import { PlatformBridge } from '../../utils/helpers';
+import { useAppContext } from '../../hooks/useAppContext';
+import { WEIGHTS } from '../../services/psychologyService';
 
 interface TestViewProps {
   t: Translations;
@@ -15,190 +17,242 @@ interface TestViewProps {
   adaptiveState: AdaptiveState;
 }
 
-const SomaticBreak = ({ t, onContinue }: { t: Translations, onContinue: () => void }) => (
-    <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center p-8 animate-in backdrop-blur-2xl bg-indigo-950/90 text-center">
-        <div className="w-24 h-24 bg-white/10 rounded-full flex items-center justify-center text-4xl mb-8 animate-pulse-slow">🧘</div>
-        <h2 className="text-2xl font-black uppercase text-white mb-4 italic tracking-tight">{t.sync.break_title}</h2>
-        <p className="text-sm text-indigo-200 mb-10 leading-relaxed font-medium">
-            {t.sync.break_desc}
-        </p>
-        <button 
-            onClick={onContinue} 
-            className="w-full max-w-xs py-5 bg-white text-indigo-950 rounded-[1.5rem] font-black uppercase text-xs tracking-widest shadow-2xl active:scale-95 transition-all"
-        >
-            {t.sync.break_btn}
-        </button>
-    </div>
-);
+type AtmosphereState = 'NEUTRAL' | 'TURBULENCE' | 'FREEZE' | 'FLOW' | 'HEAVY';
 
-const SoftTriggerWarning = ({ t }: { t: Translations }) => (
-    <div className="bg-amber-50 border border-amber-100 p-3 rounded-xl flex items-center gap-3 animate-in shadow-sm">
-        <span className="text-lg">⚠️</span>
-        <div className="flex-1">
-            <h4 className="text-[9px] font-black uppercase text-amber-900 tracking-widest">{t.safety.trigger_warning_title}</h4>
-            <p className="text-[8px] font-bold text-amber-700 leading-tight uppercase opacity-80">{t.safety.trigger_warning_desc}</p>
+const calculateAtmosphere = (history: GameHistoryItem[]): AtmosphereState => {
+    if (history.length < 3) return 'NEUTRAL';
+    
+    const window = history.slice(-3);
+    const avgLatency = window.reduce((a, b) => a + b.latency, 0) / window.length;
+    const hasDissonance = window.some(h => h.sensation === 's1' || h.sensation === 's4');
+    
+    const totalWeight = window.reduce((acc, h) => {
+        const w = (WEIGHTS as any)[h.beliefKey] || WEIGHTS.default;
+        return acc + Math.abs(w.f) + Math.abs(w.a) + Math.abs(w.r) + Math.abs(w.e);
+    }, 0);
+
+    if (avgLatency > 3500) return 'FREEZE';
+    if (hasDissonance && totalWeight > 15) return 'TURBULENCE';
+    if (totalWeight > 20) return 'HEAVY';
+    if (avgLatency < 2000 && !hasDissonance) return 'FLOW';
+    
+    return 'NEUTRAL';
+};
+
+const BiofeedbackLayer = memo(({ state }: { state: AtmosphereState }) => {
+    const config = {
+        NEUTRAL: { bg: 'from-[#020617] to-[#0f172a]', pulse: 'opacity-10' },
+        TURBULENCE: { bg: 'from-[#2a1205] to-[#0f172a]', pulse: 'opacity-20 animate-pulse' },
+        FREEZE: { bg: 'from-[#082f49] to-[#020617]', pulse: 'opacity-10' },
+        FLOW: { bg: 'from-[#022c22] to-[#020617]', pulse: 'opacity-20' },
+        HEAVY: { bg: 'from-[#1e1b4b] to-[#020617]', pulse: 'opacity-20' }
+    }[state];
+
+    return (
+        <div className={`absolute inset-0 z-0 transition-all duration-1000 bg-gradient-to-b ${config.bg}`}>
+            {/* Grain Texture */}
+            <div className="absolute inset-0 opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')] pointer-events-none mix-blend-overlay"></div>
+            
+            {/* The Core Breath */}
+            <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-indigo-500/5 blur-[100px] pointer-events-none transition-all duration-1000 ${config.pulse}`}></div>
         </div>
-    </div>
-);
+    );
+});
 
-const IntensityMeter = ({ intensity }: { intensity: number }) => (
-    <div className="flex items-center gap-1">
-        {[1, 2, 3, 4, 5].map((lvl) => (
-            <div 
-                key={lvl} 
-                className={`w-1 h-3 rounded-full transition-all duration-500 ${lvl <= intensity ? 'bg-indigo-500' : 'bg-slate-200'}`}
-                style={{ opacity: lvl <= intensity ? 1 : 0.3 }}
-            ></div>
-        ))}
-    </div>
-);
-
-const EmergencyModal = ({ t, onReturn, onExit }: { t: Translations, onReturn: () => void, onExit: () => void }) => (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 animate-in backdrop-blur-xl bg-slate-900/80">
-        <div className="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl space-y-6 text-center border border-slate-100">
-            <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center text-3xl mx-auto shadow-inner">🆘</div>
-            <div className="space-y-2">
-                <h2 className="text-lg font-black uppercase text-slate-900 tracking-tight">{t.safety.emergency_contacts_title}</h2>
-                <p className="text-[11px] font-bold text-slate-500 leading-relaxed italic">{t.safety.emergency_contacts_desc}</p>
+const InterventionOverlay = ({ type, t, onResolve }: { type: InterventionType, t: Translations, onResolve: () => void }) => {
+    const mp = t.mirror_protocol || { break_glass: "BREAK GLASS", manic_title: "MANIC", somatic_title: "SOMATIC", resume_btn: "RESUME" };
+    const isManic = type.code === 'MANIC_BREAK';
+    
+    return (
+        <div className="fixed inset-0 z-[100] bg-[#020617]/95 backdrop-blur-xl flex flex-col items-center justify-center p-8 animate-in text-center">
+            <div className="w-24 h-24 rounded-full border-2 border-red-500/50 flex items-center justify-center mb-8 animate-pulse shadow-[0_0_50px_rgba(239,68,68,0.2)]">
+                <span className="text-4xl">{isManic ? '⚡' : '🧊'}</span>
             </div>
-            <div className="space-y-3">
-                <button onClick={onReturn} className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg active:scale-95 transition-all">
-                    {t.safety.return_btn}
-                </button>
-                <button onClick={onExit} className="w-full py-4 bg-slate-100 text-slate-500 rounded-2xl font-black uppercase text-[10px] tracking-widest active:scale-95 transition-all">
-                    {t.global.back}
-                </button>
-            </div>
+            <h2 className="text-xl font-black text-red-500 uppercase tracking-[0.3em] mb-4">{mp.break_glass}</h2>
+            <p className="text-sm font-medium text-slate-200 leading-relaxed italic max-w-xs mx-auto mb-12">
+                "{isManic ? mp.manic_desc : mp.somatic_desc}"
+            </p>
+            <button onClick={() => { PlatformBridge.haptic.notification('success'); onResolve(); }} className="px-10 py-4 bg-white text-black rounded-xl font-black uppercase text-xs tracking-widest hover:bg-slate-200 transition-all shadow-xl active:scale-95">
+                {mp.resume_btn}
+            </button>
         </div>
-    </div>
-);
+    );
+};
 
 export const TestView = memo<TestViewProps>(({ t, activeModule, currentId, scene, onChoice, onExit, getSceneText, adaptiveState }) => {
+  const { history } = useAppContext();
   const numericId = parseInt(currentId);
   const isCalibration = numericId < 3;
   const isAdaptive = adaptiveState.clarity > 20;
 
   const [selectedChoiceId, setSelectedChoiceId] = useState<string | null>(null);
-  const [showEmergency, setShowEmergency] = useState(false);
-  const [showBreak, setShowBreak] = useState(false);
-  const isIntense = scene.intensity >= 5;
+  const [isPacingLocked, setIsPacingLocked] = useState(false);
+  const [pacingProgress, setPacingProgress] = useState(0);
+  const [showIntervention, setShowIntervention] = useState(false);
+  const resolvedInterventionRef = useRef<string | null>(null);
 
-  // Fatigue Mitigation: Every 20 nodes, suggest a break
+  const atmosphere = useMemo(() => calculateAtmosphere(history), [history.length]);
+
   useEffect(() => {
-      if (numericId > 0 && numericId % 20 === 0) {
-          setShowBreak(true);
+      if (adaptiveState.intervention) {
+          const key = `${adaptiveState.intervention.code}_${history.length}`;
+          if (resolvedInterventionRef.current !== key) {
+              setShowIntervention(true);
+              PlatformBridge.haptic.notification('error');
+          }
       }
-      setSelectedChoiceId(null);
-  }, [currentId, numericId]);
+  }, [adaptiveState.intervention, history.length]);
 
-  const handleChoiceClick = (c: Choice) => {
-    if (selectedChoiceId) return; 
-    
-    setSelectedChoiceId(c.id);
-    PlatformBridge.haptic.impact('medium');
-    
-    setTimeout(() => {
-        onChoice(c);
-    }, 120);
+  useEffect(() => {
+      setSelectedChoiceId(null);
+      const lastEntry = history[history.length - 1];
+      const isFast = lastEntry && lastEntry.latency < 1200;
+      const recentHistory = history.slice(-3);
+      const isRushing = recentHistory.length === 3 && recentHistory.every(h => h.latency < 1500);
+
+      if ((isFast || isRushing) && !isCalibration && !showIntervention) {
+          setIsPacingLocked(true);
+          setPacingProgress(0);
+          const lockDuration = isRushing ? 2500 : 1500;
+          const step = 50;
+          const interval = setInterval(() => {
+              setPacingProgress(p => {
+                  const increment = (step / lockDuration) * 100;
+                  if (p + increment >= 100) {
+                      clearInterval(interval);
+                      setIsPacingLocked(false);
+                      PlatformBridge.haptic.notification('success');
+                      return 100;
+                  }
+                  return p + increment;
+              });
+          }, step); 
+          return () => clearInterval(interval);
+      } else {
+          setIsPacingLocked(false);
+          setPacingProgress(100);
+      }
+  }, [currentId, showIntervention]);
+
+  const handleInterventionResolve = () => {
+      if (adaptiveState.intervention) {
+          resolvedInterventionRef.current = `${adaptiveState.intervention.code}_${history.length}`;
+      }
+      setShowIntervention(false);
   };
 
-  return (
-    <div className="space-y-6 py-6 px-4 animate-in flex flex-col h-full relative">
-      
-      {showEmergency && <EmergencyModal t={t} onReturn={() => setShowEmergency(false)} onExit={onExit} />}
-      {showBreak && <SomaticBreak t={t} onContinue={() => setShowBreak(false)} />}
+  const handleChoiceClick = (c: Choice) => {
+    if (selectedChoiceId || isPacingLocked || showIntervention) return; 
+    setSelectedChoiceId(c.id);
+    
+    // SEMANTIC HAPTICS (Art. 4.3)
+    const w = (WEIGHTS as any)[c.beliefKey as BeliefKey] || WEIGHTS.default;
+    if (Math.abs(w.e) >= 3) PlatformBridge.haptic.notification('warning');
+    else if (w.f >= 2) PlatformBridge.haptic.impact('heavy');
+    else if (c.position === 0) PlatformBridge.haptic.impact('light');
+    else PlatformBridge.haptic.impact('medium');
 
-      <div className="flex justify-between items-center shrink-0">
-         <div className="flex items-center gap-3">
-             <button onClick={onExit} aria-label={t.global.back} className="w-10 h-10 flex items-center justify-center bg-slate-100 rounded-full text-slate-500 font-black text-sm hover:bg-slate-200 transition-colors active:scale-90">✕</button>
-             <div className="flex flex-col">
-                <span className="text-[9px] font-mono text-slate-400 font-bold uppercase tracking-widest leading-none">{t.ui.module_label}</span>
-                <span className="text-[11px] font-black text-indigo-600 uppercase tracking-widest leading-none mt-1">
-                  {isCalibration ? t.global.calibrating : t.domains[activeModule]}
-                </span>
-             </div>
+    onChoice(c);
+  };
+
+  if (showIntervention && adaptiveState.intervention) {
+      return <InterventionOverlay type={adaptiveState.intervention} t={t} onResolve={handleInterventionResolve} />;
+  }
+
+  return (
+    <div className="h-full relative overflow-hidden flex flex-col font-sans select-none">
+      <BiofeedbackLayer state={atmosphere} />
+
+      {/* TOP NAVIGATION */}
+      <div className="relative z-10 px-6 pt-6 flex justify-between items-center opacity-60">
+         <div className="flex items-center gap-2">
+             <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+             <span className="text-[9px] font-black tracking-[0.2em] text-slate-400 uppercase">
+                 {isCalibration ? "CALIB" : t.domains[activeModule]}
+             </span>
          </div>
-         <div className="flex flex-col items-end gap-1">
-             <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
-                 <span className="text-[8px] font-mono font-bold text-slate-400">NODE_{currentId.padStart(2, '0')}</span>
-             </div>
-             <IntensityMeter intensity={scene.intensity} />
-         </div>
+         <button onClick={onExit} className="text-slate-500 hover:text-white transition-colors p-2 -mr-2">
+             <span className="text-lg font-bold">✕</span>
+         </button>
       </div>
       
-      <AdaptiveProgressBar 
-        clarity={adaptiveState.clarity} 
-        isAdaptive={isAdaptive} 
-        contradictionsCount={adaptiveState.contradictions.length} 
-        confidenceScore={adaptiveState.confidenceScore}
-      />
+      <div className="px-6 pt-4 relative z-10">
+        <AdaptiveProgressBar 
+            clarity={adaptiveState.clarity} 
+            isAdaptive={isAdaptive} 
+            contradictionsCount={adaptiveState.contradictions.length} 
+        />
+      </div>
 
-      {isIntense && <SoftTriggerWarning t={t} />}
-
-      <div className="flex-1 flex flex-col justify-center space-y-6 transition-all">
-        <h3 className="text-2xl font-black uppercase text-slate-900 leading-tight tracking-tight">
-            {getSceneText(scene.titleKey)}
-        </h3>
-        
-        <div className="bg-white p-7 rounded-[2rem] text-slate-600 font-semibold border border-slate-100 shadow-xl relative overflow-hidden">
-             <div className="absolute top-0 right-0 p-6 opacity-5 text-indigo-500 text-6xl font-black select-none pointer-events-none">?</div>
-             <p className="relative z-10 text-xl leading-relaxed text-left hyphens-auto">
-                {getSceneText(scene.descKey)}
-             </p>
+      {/* QUESTION SPACE (The Void) */}
+      <div className="flex-1 flex flex-col justify-center px-6 relative z-10 -mt-10">
+        <div className="space-y-6">
+            <h3 className="text-3xl sm:text-4xl font-black uppercase text-slate-100 leading-none tracking-tight">
+                {getSceneText(scene.titleKey)}
+            </h3>
+            <div className="flex items-start gap-4">
+                <div className="w-0.5 h-12 bg-indigo-500/50 shrink-0 mt-1"></div>
+                <p className="text-lg sm:text-xl font-medium text-slate-400 leading-snug tracking-wide">
+                    {getSceneText(scene.descKey)}
+                </p>
+            </div>
         </div>
       </div>
 
-      <div 
-        className="space-y-3 shrink-0 transition-all"
-        role="radiogroup"
-        aria-label="Choices"
-      >
-        {scene.choices.map((c, i) => {
-          const isSelected = selectedChoiceId === c.id;
-          return (
-            <button 
-                key={c.id} 
-                role="radio"
-                aria-checked={isSelected}
-                disabled={!!selectedChoiceId}
-                onClick={() => handleChoiceClick(c)} 
-                className={`w-full p-6 text-left border rounded-[1.5rem] shadow-sm font-bold text-sm uppercase flex items-center gap-4 transition-all duration-150 active:scale-[0.97] group 
-                ${isSelected 
-                    ? 'bg-indigo-600 border-indigo-500 text-white scale-[0.98] ring-4 ring-indigo-500/20' 
-                    : 'bg-white border-slate-200 text-slate-700 hover:border-indigo-300 active:bg-indigo-50'}`}
-            >
-                <span className={`w-9 h-9 rounded-xl border flex items-center justify-center font-mono text-[11px] transition-colors
-                    ${isSelected ? 'bg-indigo-500 border-indigo-400 text-white' : 'bg-slate-50 border-slate-100 text-slate-400'}`}>
-                    0{i+1}
-                </span>
-                <span className={`flex-1 leading-snug ${isSelected ? 'text-white' : 'text-slate-700'}`}>
-                    {getSceneText(c.textKey)}
-                </span>
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="pt-2 pb-6 flex justify-center">
-         <button onClick={() => setShowEmergency(true)} className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] px-4 py-2 rounded-full border border-slate-100 hover:bg-red-50 hover:text-red-400 hover:border-red-100 transition-all">
-            {t.safety.uncomfortable_btn}
-         </button>
+      {/* CHOICE TRIGGERS (Thumb Zone) */}
+      <div className="px-4 pb-8 pt-4 space-y-3 relative z-10 bg-gradient-to-t from-[#020617] via-[#020617]/90 to-transparent">
+        {isPacingLocked ? (
+            <div className="h-[220px] flex flex-col items-center justify-center space-y-6 animate-in">
+                <div className="relative w-12 h-12 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-teal-500/20 rounded-full animate-ping"></div>
+                    <span className="text-xl animate-pulse">🌬️</span>
+                </div>
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-teal-500 animate-pulse">
+                    {t.test_metrics.adaptive_pacing}
+                </p>
+                <div className="w-32 h-0.5 bg-slate-800 rounded-full overflow-hidden">
+                    <div className="h-full bg-teal-500 transition-all ease-linear duration-75" style={{ width: `${pacingProgress}%` }}></div>
+                </div>
+            </div>
+        ) : (
+            scene.choices.map((c, i) => {
+              const isSelected = selectedChoiceId === c.id;
+              return (
+                <button 
+                    key={c.id} 
+                    disabled={!!selectedChoiceId}
+                    onClick={() => handleChoiceClick(c)} 
+                    className={`w-full group relative overflow-hidden p-0 rounded-2xl transition-all duration-200 active:scale-[0.98] ${
+                        isSelected ? 'scale-[0.99] opacity-100' : 'opacity-100'
+                    }`}
+                    style={{ animation: `fadeInUp 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards ${i * 0.05}s` }}
+                >
+                    <div className={`
+                        absolute inset-0 transition-all duration-300
+                        ${isSelected ? 'bg-indigo-600' : 'bg-slate-900 border border-slate-800 group-hover:border-slate-600'}
+                    `}></div>
+                    
+                    <div className="relative flex items-center p-5 gap-4">
+                        <span className={`
+                            w-6 h-6 rounded-lg flex items-center justify-center text-[9px] font-black border transition-colors
+                            ${isSelected 
+                                ? 'bg-white/20 border-white/20 text-white' 
+                                : 'bg-black/20 border-white/5 text-slate-500 group-hover:text-slate-300'}
+                        `}>
+                            {i+1}
+                        </span>
+                        <span className={`
+                            text-sm font-bold uppercase tracking-wide transition-colors
+                            ${isSelected ? 'text-white' : 'text-slate-300 group-hover:text-white'}
+                        `}>
+                            {getSceneText(c.textKey)}
+                        </span>
+                    </div>
+                </button>
+              );
+            })
+        )}
       </div>
     </div>
   );
 });
-
-export const ReflectionView = ({ t, sensation }: { t: Translations, sensation?: string }) => {
-  const message = t.sensation_feedback[sensation as keyof typeof t.sensation_feedback] || t.sensation_feedback.s4;
-  
-  return (
-    <div className="flex flex-col items-center justify-center h-full animate-in bg-white">
-        <div className="w-24 h-24 bg-indigo-50 rounded-full flex items-center justify-center mb-6 animate-pulse">
-            <span className="text-4xl">📡</span>
-        </div>
-        <h3 className="text-lg font-black uppercase text-indigo-900 tracking-widest text-center max-w-[200px] leading-relaxed">
-            {message}
-        </h3>
-    </div>
-  );
-};

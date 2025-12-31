@@ -4,17 +4,17 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import { AppProvider } from './contexts/AppContext';
 
-console.log("🚀 Genesis OS: Core index initialized");
+console.log("🚀 Genesis OS: Ядро индекса инициализировано");
 
-// Global Safety Net
+// Глобальная сеть безопасности (Global Safety Net)
 window.addEventListener('unhandledrejection', (event) => {
-  console.error('🔥 CRITICAL_ASYNC_ERROR:', event.reason);
-  // Silent recovery - prevent app crash
+  console.error('🔥 КРИТИЧЕСКАЯ_АСИНХ_ОШИБКА:', event.reason);
+  // Тихий режим восстановления - предотвращение падения приложения
   event.preventDefault();
 });
 
-// Ensure full viewport on Telegram
-// FIX: Cast window to any for Telegram WebApp access
+// Обеспечение полного экрана в Telegram
+// ИСПРАВЛЕНИЕ: Приведение window к any для доступа к Telegram WebApp
 const tg = (window as any).Telegram?.WebApp;
 if (tg) {
   tg.ready();
@@ -32,5 +32,5 @@ if (rootElement) {
     </React.StrictMode>
   );
 } else {
-  console.error("Critical: Root element not found");
+  console.error("Критическая ошибка: Корневой элемент не найден");
 }

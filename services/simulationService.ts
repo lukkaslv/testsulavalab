@@ -1,7 +1,8 @@
+
 import { ALL_BELIEFS, MODULE_REGISTRY, TOTAL_NODES } from '../constants';
-import { translations } from '../translations';
+import { translations } from '@/translations';
 import { WEIGHTS } from './psychologyService';
-import { BeliefKey, SimulationReport } from '../types';
+import { BeliefKey, SimulationReport, JourneyAnomaly, PersonaResult } from '../types';
 
 // Deterministic Pseudo-Random for Simulation (Same input = Same report)
 const pseudoRandom = (seed: number) => {
@@ -45,8 +46,8 @@ export const SimulationService = {
 
     // 2. Semantic Analysis
     const sceneTexts: string[] = [];
-    // FIX: Cast scene object to ensure 'desc' property visibility during analysis
-    Object.values(translations.ru.scenes).forEach((s: any) => {
+    // FIX: Access scenes through the correct path on translations.ru
+    Object.values(translations.ru.scenes || {}).forEach((s: any) => {
         if (s.desc && s.desc.length > 10) sceneTexts.push(s.desc);
     });
     report.semanticGhost.vocabularySize = new Set(sceneTexts.join(' ').split(' ')).size;
@@ -87,7 +88,7 @@ export const SimulationService = {
         } else {
             report.pathfinder.anomalies.push({ 
                 type: 'MATH_DRIFT', 
-                details: `Persona ${p.name} violated boundary constraints: F=${f.toFixed(1)}, A=${a.toFixed(1)}, E=${e.toFixed(1)}` 
+                details: `Персона ${p.name} нарушила граничные условия: F=${f.toFixed(1)}, A=${a.toFixed(1)}, E=${e.toFixed(1)}` 
             });
         }
 

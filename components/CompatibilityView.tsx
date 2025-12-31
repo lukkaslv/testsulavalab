@@ -139,7 +139,6 @@ export const CompatibilityView: React.FC<CompatibilityViewProps> = ({ t, onBack 
   const [partnerCode, setPartnerCode] = useState('');
   const [clientResult, setClientResult] = useState<AnalysisResult | null>(null);
 
-  const currentLang = t.subtitle.includes('LUKA') && t.onboarding.title.includes('ნავიგატორი') ? 'ka' : 'ru';
   const cd = t.clinical_decoder;
 
   const handleAnalyze = () => {
@@ -158,23 +157,23 @@ export const CompatibilityView: React.FC<CompatibilityViewProps> = ({ t, onBack 
       if (!clientResult) return null;
       
       const legacy = ClinicalDecoder.decode(clientResult, t);
-      const narrative = generateClinicalNarrative(clientResult, currentLang);
+      const narrative = generateClinicalNarrative(clientResult);
       
       // Extract Urgent Priority based on metrics
       let priority = "";
       let priorityLevel: 'low' | 'medium' | 'high' = 'low';
       
       if (clientResult.state.foundation < 30) {
-          priority = currentLang === 'ru' ? "🛑 АВАРИЙНЫЙ РЕЖИМ (CRITICAL)" : "🛑 ავარიული რეჟიმი";
+          priority = "🛑 АВАРИЙНЫЙ РЕЖИМ (CRITICAL)";
           priorityLevel = 'high';
       } else if (clientResult.state.agency > 80 && clientResult.state.foundation < 40) {
-          priority = currentLang === 'ru' ? "⚠️ РИСК СРЫВА (MANIC DEFENSE)" : "⚠️ ჩავარდნის რისკი";
+          priority = "⚠️ РИСК СРЫВА (MANIC DEFENSE)";
           priorityLevel = 'high';
       } else if (clientResult.neuroSync < 40) {
-          priority = currentLang === 'ru' ? "🧊 ДИССОЦИАЦИЯ (FREEZE)" : "🧊 დისოციაცია";
+          priority = "🧊 ДИССОЦИАЦИЯ (FREEZE)";
           priorityLevel = 'medium';
       } else {
-          priority = currentLang === 'ru' ? "✅ ШТАТНЫЙ РЕЖИМ (STABLE)" : "✅ შტატური რეჟიმი";
+          priority = "✅ ШТАТНЫЙ РЕЖИМ (STABLE)";
           priorityLevel = 'low';
       }
 
@@ -184,7 +183,7 @@ export const CompatibilityView: React.FC<CompatibilityViewProps> = ({ t, onBack 
           priority,
           priorityLevel
       };
-  }, [clientResult, t, currentLang]);
+  }, [clientResult, t]);
 
   return (
     <section className="space-y-6 animate-in py-4 flex flex-col h-full bg-white">

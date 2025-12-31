@@ -1,3 +1,4 @@
+
 {
   "compilerOptions": {
     "target": "ES2022",
@@ -19,5 +20,5 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["index.tsx", "App.tsx", "types.ts", "constants.ts", "translations.ts", "services/**/*.ts", "components/**/*.tsx", "hooks/**/*.ts", "utils/**/*.ts"]
+  "include": ["index.tsx", "App.tsx", "types.ts", "constants.ts", "translations/**/*.ts", "services/**/*.ts", "components/**/*.tsx", "hooks/**/*.ts", "utils/**/*.ts", "dossier/**/*.ts", "translations.ts"]
 }

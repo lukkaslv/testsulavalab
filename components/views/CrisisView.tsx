@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Translations } from '../../types';
 import { PlatformBridge } from '../../utils/helpers';
 
@@ -7,13 +8,43 @@ interface CrisisViewProps {
   onExit: () => void;
 }
 
+const BreathingCircle = () => {
+    const [scale, setScale] = useState(1);
+    const [text, setText] = useState('ВДОХ');
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setScale(s => s === 1 ? 1.5 : 1);
+            setText(t => t === 'ВДОХ' ? 'ВЫДОХ' : 'ВДОХ');
+            PlatformBridge.haptic.impact('soft');
+        }, 4000);
+        return () => clearInterval(interval);
+    }, []);
+
+    return (
+        <div className="relative w-40 h-40 flex items-center justify-center my-8">
+            <div 
+                className="absolute inset-0 bg-teal-500/10 rounded-full transition-all duration-[4000ms] ease-in-out border border-teal-500/20"
+                style={{ transform: `scale(${scale})` }}
+            ></div>
+            <div 
+                className="absolute inset-0 bg-teal-500/5 rounded-full transition-all duration-[4000ms] ease-in-out delay-100"
+                style={{ transform: `scale(${scale * 0.8})` }}
+            ></div>
+            <div className="text-sm font-black text-teal-300 tracking-[0.2em] animate-pulse">
+                {text}
+            </div>
+        </div>
+    );
+};
+
 const HelplineCard = ({ flag, name, number, desc }: { flag: string; name: string; number: string; desc: string }) => (
-    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm text-left flex items-center gap-4">
+    <div className="bg-slate-800/80 p-5 rounded-2xl border border-slate-700/50 shadow-sm text-left flex items-center gap-4 backdrop-blur-md">
         <div className="text-3xl">{flag}</div>
         <div className="flex-1">
-            <h4 className="text-sm font-black text-slate-800">{name}</h4>
-            <p className="text-lg font-bold text-indigo-600 font-mono tracking-wider my-1">{number}</p>
-            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{desc}</p>
+            <h4 className="text-xs font-black text-slate-200 uppercase tracking-wide">{name}</h4>
+            <a href={`tel:${number}`} className="text-xl font-black text-teal-400 font-mono tracking-widest my-1 block">{number}</a>
+            <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{desc}</p>
         </div>
     </div>
 );
@@ -22,21 +53,27 @@ export const CrisisView: React.FC<CrisisViewProps> = ({ t, onExit }) => {
   const cv = t.crisis_view;
 
   return (
-    <div className="flex flex-col items-center justify-center h-full space-y-8 animate-in px-4 text-center bg-indigo-50">
-      <div className="w-24 h-24 bg-white rounded-3xl flex items-center justify-center text-5xl shadow-xl border border-indigo-100 animate-pulse-slow">
-        🛡️
-      </div>
-      <div className="space-y-4 max-w-sm">
-        <h2 className="text-2xl font-black uppercase tracking-tight text-indigo-900 leading-tight italic">
+    <div className="flex flex-col items-center justify-center h-full space-y-6 animate-in px-6 text-center bg-slate-950 text-slate-200 relative overflow-hidden">
+      {/* Ambient Background */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(20,184,166,0.08)_0%,transparent_70%)] pointer-events-none"></div>
+      
+      <div className="space-y-4 max-w-sm relative z-10">
+        <div className="w-16 h-16 mx-auto bg-teal-900/20 rounded-full flex items-center justify-center text-2xl border border-teal-500/20 shadow-xl">
+            ⚓
+        </div>
+        
+        <h2 className="text-xl font-black uppercase tracking-[0.2em] text-teal-400 leading-tight">
           {cv.title}
         </h2>
-        <p className="text-sm font-medium text-indigo-800/80 leading-relaxed">
-          {cv.message}
+        <p className="text-sm font-medium text-slate-400 leading-relaxed max-w-[280px] mx-auto italic">
+          "{cv.message}"
         </p>
       </div>
+
+      <BreathingCircle />
       
-      <div className="w-full max-w-sm space-y-4">
-        <p className="text-xs font-bold text-slate-500">{cv.recommendation}</p>
+      <div className="w-full max-w-sm space-y-3 relative z-10">
+        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pb-2">{cv.recommendation}</p>
         <HelplineCard 
             flag="🇷🇺" 
             name={cv.ru_helpline_name} 
@@ -44,10 +81,10 @@ export const CrisisView: React.FC<CrisisViewProps> = ({ t, onExit }) => {
             desc={cv.ru_helpline_desc}
         />
         <HelplineCard 
-            flag="🇬🇪" 
-            name={cv.ge_helpline_name} 
-            number={cv.ge_helpline_number} 
-            desc={cv.ge_helpline_desc}
+            flag="🆘" 
+            name="МЧС Психологи" 
+            number="+7 (495) 989-50-50" 
+            desc="Экстренная помощь"
         />
       </div>
 
@@ -56,10 +93,14 @@ export const CrisisView: React.FC<CrisisViewProps> = ({ t, onExit }) => {
           PlatformBridge.haptic.notification('success');
           onExit();
         }}
-        className="w-full max-w-xs py-5 bg-indigo-600 text-white rounded-[1.5rem] font-black uppercase text-xs tracking-widest shadow-2xl active:scale-95 transition-all mt-4"
+        className="w-full max-w-xs py-5 bg-teal-900/30 text-teal-400 border border-teal-500/30 rounded-[1.5rem] font-black uppercase text-[10px] tracking-[0.2em] shadow-lg active:scale-95 transition-all mt-4 hover:bg-teal-900/50"
       >
         {cv.exit_button_text}
       </button>
+      
+      <p className="text-[8px] text-slate-600 font-mono absolute bottom-6 opacity-50 uppercase tracking-widest">
+          Protocol Art. 17.3 Active // Safety First
+      </p>
     </div>
   );
 };

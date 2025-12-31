@@ -100,7 +100,7 @@ export class SystemLogger {
 
   clear() {
     this.logs = [];
-    this.info('System', 'Logs cleared');
+    this.info('System', 'Логи очищены');
   }
 }
 

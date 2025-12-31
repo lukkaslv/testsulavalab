@@ -4,7 +4,6 @@ import { ScanHistory, Translations } from '../types';
 
 interface EvolutionDashboardProps {
   history: ScanHistory | null;
-  lang: 'ru' | 'ka';
   t: Translations;
 }
 

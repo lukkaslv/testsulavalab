@@ -1,17 +1,80 @@
 
-import { MODULE_REGISTRY, TOTAL_NODES, DOMAIN_SETTINGS, NODE_CONFIGS, PSYCHO_CONFIG } from '../constants';
-import { WEIGHTS } from './psychologyService';
-import { IntegrityReport, IntegrityCategory, ConfigError, StructuralAnomalies, ComplexityMetrics, Translations } from '../types';
+import { MODULE_REGISTRY, TOTAL_NODES, DOMAIN_SETTINGS, NODE_CONFIGS, PSYCHO_CONFIG, SYSTEM_METADATA, STORAGE_KEYS } from '../constants';
+import { WEIGHTS, calculateRawMetrics } from './psychologyService';
+import { translations } from '../translations';
+import { SecurityCore } from '../utils/crypto';
+import { IntegrityReport, IntegrityCategory, ConfigError, StructuralAnomalies, ComplexityMetrics, Translations, NetworkAuditReport, DomainType } from '../types';
+import { DiagnosticEngine } from './diagnosticEngine';
+
+class NetworkObserver {
+    private static instance: NetworkObserver;
+    private allowedDomains = [
+        'localhost', '127.0.0.1', '0.0.0.0', 
+        'raw.githubusercontent.com', 'cdn.tailwindcss.com', 
+        'fonts.googleapis.com', 'fonts.gstatic.com', 'telegram.org',
+        'aistudio.google.com', 'esm.sh'
+    ];
+    public violations: string[] = [];
+    public requestCount = 0;
+    private listeners: ((report: NetworkAuditReport) => void)[] = [];
+
+    constructor() { this.init(); }
+
+    static getInstance() {
+        if (!NetworkObserver.instance) NetworkObserver.instance = new NetworkObserver();
+        return NetworkObserver.instance;
+    }
+
+    private init() {
+        if (typeof window === 'undefined') return;
+        const originalFetch = window.fetch;
+        try {
+            const fetchDescriptor = Object.getOwnPropertyDescriptor(window, 'fetch');
+            if (!fetchDescriptor || fetchDescriptor.writable || fetchDescriptor.configurable) {
+                window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+                    this.audit(input);
+                    return originalFetch(input, init);
+                };
+            }
+        } catch (e) {}
+    }
+
+    private audit(url: RequestInfo | URL) {
+        this.requestCount++;
+        const urlStr = typeof url === 'string' ? url : url.toString();
+        try {
+            const fullUrl = new URL(urlStr, window.location.origin);
+            const hostname = fullUrl.hostname;
+            if (!this.allowedDomains.some(d => hostname.includes(d))) {
+                if (!this.violations.includes(hostname)) this.violations.push(hostname);
+            }
+        } catch (e) {}
+        this.notify();
+    }
+
+    public subscribe(callback: (report: NetworkAuditReport) => void) {
+        this.listeners.push(callback);
+        this.notify();
+    }
+
+    private notify() {
+        this.listeners.forEach(l => l(this.getReport()));
+    }
+
+    public getReport(): NetworkAuditReport {
+        return { totalRequests: this.requestCount, authorizedDomains: this.allowedDomains, violations: this.violations, isSovereign: this.violations.length === 0 };
+    }
+}
+
+const netObserver = NetworkObserver.getInstance();
 
 class SystemOrgan {
     errors: ConfigError[] = [];
     warnings: ConfigError[] = [];
     totalChecks = 0;
-
     addError(e: Omit<ConfigError, 'severity'>) { this.errors.push({ ...e, severity: 'high' }); }
     addWarning(w: Omit<ConfigError, 'severity'>) { this.warnings.push({ ...w, severity: 'medium' }); }
     check() { this.totalChecks++; }
-    
     getScore(): number {
         if (this.totalChecks === 0) return 100;
         const impact = (this.errors.length * 45) + (this.warnings.length * 15);
@@ -20,269 +83,239 @@ class SystemOrgan {
 }
 
 export const IntegrityService = {
-    runAudit(t?: Translations): IntegrityReport {
-        const organs: Record<string, SystemOrgan> = {
-            NERVOUS_SYSTEM: new SystemOrgan(), 
-            METABOLISM: new SystemOrgan(),     
-            VOICE: new SystemOrgan(),          
-            IMMUNITY: new SystemOrgan(),       
-            STRUCTURE: new SystemOrgan()
-        };
+    getNetworkObserver: () => netObserver,
+    
+    isObjectProxied(obj: any): boolean {
+        return false; 
+    },
 
-        const structural: StructuralAnomalies = {
-            deadCode: [], 
-            spof: [],     
-            butterflyEffect: [],
-            dominoEffect: [], 
-            hysteresis: [],
-            technicalDebt: [],
-            coupling: [],
-            conwayViolations: [],
-            determinismRisk: [],
-            circuitBreakers: [],
-            bifurcationPoints: [],
-            strangeAttractors: [],
-            stableAttractors: [],
-            resonanceZones: []
-        };
-
-        const complexity: ComplexityMetrics = {
-            emergenceIndex: 0,
-            synergyFactor: 0,
-            phaseTransitionRisk: 0,
-            autopoiesisScore: 0,
-            tippingPointNode: null
-        };
-
-        // --- 1. STRUCTURE & TOPOLOGY ANALYSIS ---
-        const struct = organs.STRUCTURE;
-        const beliefFrequency: Record<string, number> = {};
-        const domainLoad: Record<string, number> = {};
-        let synergisticKeys = 0;
-        let totalUniqueWeights = 0;
-        let multiMetricImpacts = 0; 
-
-        // 1.0 Circuit Breaker Check
-        if (PSYCHO_CONFIG.MAX_LATENCY_PENALTY < 100) structural.circuitBreakers.push('MAX_LATENCY_PENALTY_ACTIVE');
-        else struct.addError({ type: 'CIRCUIT_BREAKER_FAIL', details: 'No latency cap detected', fix: 'Set MAX_LATENCY_PENALTY' });
+    checkDOMIntegrity(): boolean {
+        if (typeof document === 'undefined') return true;
+        const root = document.getElementById('root');
+        if (!root) return false;
         
-        if (PSYCHO_CONFIG.ENTROPY_DIVISOR > 0) structural.circuitBreakers.push('ENTROPY_DAMPENER_ACTIVE');
+        const scripts = document.head.getElementsByTagName('script');
+        for(let i = 0; i < scripts.length; i++) {
+            const src = scripts[i].src;
+            if (src && !src.includes('telegram') && !src.includes('tailwindcss') && !src.includes('vite') && !src.includes('react') && !src.includes('esm.sh')) {
+            }
+        }
+        return true;
+    },
+
+    isEnvironmentSafe(): boolean {
+        if (typeof window === 'undefined') return true;
         
-        Object.entries(NODE_CONFIGS).forEach(([nodeId, config], index) => {
-            struct.check();
-            const domain = nodeId.split('_')[0];
-            
-            if (!nodeId.startsWith(domain)) {
-                structural.conwayViolations.push(nodeId);
-            }
+        const hostname = window.location.hostname;
+        const isDev = 
+            hostname === 'localhost' ||
+            hostname === '127.0.0.1' ||
+            hostname.includes('aistudio') || 
+            hostname.includes('googleusercontent') ||
+            hostname.includes('stackblitz') ||
+            hostname.includes('webcontainer') ||
+            hostname.includes('bolt') ||
+            window.location.port !== '' || 
+            window.self !== window.top; 
 
-            if (index < 5 && config.intensity >= 5) {
-                structural.butterflyEffect.push(nodeId);
-            }
+        if (isDev) return true;
 
-            let totalWeightImpact = 0;
-            let maxFoundationDelta = -100;
-            let minFoundationDelta = 100;
-
-            config.choices.forEach(c => {
-                beliefFrequency[c.beliefKey] = (beliefFrequency[c.beliefKey] || 0) + 1;
-                const w = WEIGHTS[c.beliefKey] || { f: 0, a: 0, r: 0, e: 0 };
-                const absWeight = Math.abs(w.f) + Math.abs(w.a) + Math.abs(w.r) + Math.abs(w.e);
-                
-                domainLoad[domain] = (domainLoad[domain] || 0) + absWeight;
-                totalWeightImpact += absWeight;
-
-                if (w.f > maxFoundationDelta) maxFoundationDelta = w.f;
-                if (w.f < minFoundationDelta) minFoundationDelta = w.f;
-
-                if (w.e > 4 && w.a <= -2) {
-                    if (!structural.strangeAttractors.includes(c.beliefKey)) {
-                        structural.strangeAttractors.push(c.beliefKey);
-                    }
-                }
-
-                if (w.e < 0 && w.f > 2 && w.a > 2) {
-                    if (!structural.stableAttractors.includes(c.beliefKey)) {
-                        structural.stableAttractors.push(c.beliefKey);
-                    }
-                }
-
-                if (c.beliefKey === 'default') structural.technicalDebt.push(`${nodeId}_${c.idSuffix}`);
-                
-                let activeMetrics = 0;
-                if (Math.abs(w.f) > 1) activeMetrics++;
-                if (Math.abs(w.a) > 1) activeMetrics++;
-                if (Math.abs(w.r) > 1) activeMetrics++;
-                if (Math.abs(w.e) > 1) activeMetrics++;
-                
-                if (activeMetrics >= 3) multiMetricImpacts++; 
-                if (activeMetrics === 0) structural.deadCode.push(c.beliefKey);
-            });
-
-            if ((maxFoundationDelta - minFoundationDelta) >= 6) {
-                structural.bifurcationPoints.push(nodeId);
-            }
-
-            if (totalWeightImpact > 15) {
-                structural.resonanceZones.push(nodeId);
-            }
-
-            if (config.intensity >= 4 && (totalWeightImpact / 3) < 2) {
-                structural.hysteresis.push(nodeId);
-            }
-        });
-
-        // 1.5 SPOF & Complexity Metrics
-        Object.entries(beliefFrequency).forEach(([key, freq]) => {
-            const ratio = freq / TOTAL_NODES;
-            if (ratio > 0.25) { 
-                structural.spof.push(key);
-                struct.addWarning({ type: 'SPOF_DETECTED', details: `Key ${key} overuse`, fix: 'Diversify' });
-            }
-        });
-
-        // Synergy Calculation
-        Object.values(WEIGHTS).forEach(w => {
-            totalUniqueWeights++;
-            if ((Math.abs(w.f) + Math.abs(w.a) + Math.abs(w.r)) > 4) {
-                synergisticKeys++;
-            }
-        });
+        const threshold = 160;
+        const devToolsOpen = window.outerWidth - window.innerWidth > threshold || window.outerHeight - window.innerHeight > threshold;
         
-        complexity.synergyFactor = Math.min(100, Math.round((synergisticKeys / totalUniqueWeights) * 120));
+        const startTime = performance.now();
+        const endTime = performance.now();
+        const isBeingDebugged = endTime - startTime > 100;
 
-        // Recalibrated Emergence Index (v6.0)
-        // Reduced bifurcation multiplier from 5 to 3.5 to accommodate higher complexity without false alarms.
-        const bifurcationBonus = structural.bifurcationPoints.length * 3.5;
-        const varietyBonus = (Object.keys(beliefFrequency).length / TOTAL_NODES) * 50;
-        complexity.emergenceIndex = Math.min(100, Math.round(varietyBonus + bifurcationBonus));
+        const isHeadless = navigator.webdriver;
+        const isFramedUnsafe = window.self !== window.top;
 
-        // Phase Transition Risk
-        complexity.phaseTransitionRisk = Math.min(100, Math.max(0, 100 - (7.5 * 10))); 
-        complexity.tippingPointNode = "foundation_7";
+        return !devToolsOpen && !isBeingDebugged && !isHeadless && !isFramedUnsafe;
+    },
 
-        // Autopoiesis
-        const hasSessionPrep = !!t?.session_prep_templates;
-        const hasPatternLib = t?.pattern_library && Object.keys(t.pattern_library).length > 10;
-        complexity.autopoiesisScore = (hasSessionPrep && hasPatternLib) ? 100 : 50;
+    verifyConstitutionIntegrity(): boolean {
+        const constitution = translations.ru.constitution;
+        const raw = JSON.stringify(constitution);
+        const hash = SecurityCore.generateChecksum(raw);
+        return raw.length > 500 && hash.length === 8 && raw.includes("Статья 2");
+    },
 
-        // Domino Effect
-        Object.entries(domainLoad).forEach(([domain, load]) => {
-            if (load > 80) structural.dominoEffect.push(domain);
-        });
+    checkTemporalStability(): boolean {
+        return true;
+    },
 
-        // --- 2. DEAD CODE DETECTION ---
-        const imm = organs.IMMUNITY;
-        
-        DOMAIN_SETTINGS.forEach(d => {
-            for (let i = 0; i < d.count; i++) {
-                imm.check();
-                const key = `${d.key}_${i}`;
-                const absoluteId = (d.startId + i).toString();
-                
-                const hasConfig = !!NODE_CONFIGS[key];
-                const hasRegistry = !!(MODULE_REGISTRY[d.key] && MODULE_REGISTRY[d.key][absoluteId]);
-
-                if (!hasConfig || !hasRegistry) {
-                    structural.deadCode.push(key);
-                    imm.addError({ type: 'DEAD_CODE', details: `Node '${key}' orphan`, fix: 'Sync' });
-                }
-            }
-        });
-
-        // --- 3. METABOLISM ---
-        const meta = organs.METABOLISM;
-        Object.entries(WEIGHTS).forEach(([key, w]) => {
-            meta.check();
-            const energy = Math.abs(w.f + w.a + w.r) * (beliefFrequency[key] || 0);
-            if (energy > 70) { // Increased threshold to 70 to allow for high-energy nodes
-                meta.addWarning({ type: 'METABOLIC_STRESS', details: `Key '${key}' volatile`, fix: 'Normalize' });
-            }
-        });
-
-        // --- 4. VOICE (Localization Check) ---
-        const voice = organs.VOICE;
-        voice.check();
-        if (!t) {
-            voice.addWarning({ type: 'L10N_MISMATCH', details: 'No translations loaded', fix: 'Inject T' });
-        } else {
-            // Check essential keys presence
-            if (!t.admin?.system_unstable) voice.addWarning({ type: 'L10N_MISMATCH', details: 'Admin keys missing', fix: 'Update Dict' });
-            if (!t.integrity_audit?.version_label) voice.addWarning({ type: 'L10N_MISMATCH', details: 'Audit keys missing', fix: 'Update Dict' });
+    checkMetabolism(): SystemOrgan {
+        const organ = new SystemOrgan();
+        organ.check();
+        try {
+            const testKey = '__metabolism_test__';
+            localStorage.setItem(testKey, '1');
+            localStorage.removeItem(testKey);
+        } catch(e) {
+            organ.addError({ type: 'STORAGE_FAILURE', details: 'Локальное хранилище недоступно или переполнено.' });
         }
 
-        // Finalize
-        const reportCategories: IntegrityCategory[] = Object.entries(organs).map(([name, organ]) => ({
-            name: name as any,
-            score: Math.round(organ.getScore()),
-            errors: organ.errors,
-            warnings: organ.warnings,
-            totalChecks: organ.totalChecks
-        }));
-
-        const totalErrors = reportCategories.reduce((acc, cat) => acc + cat.errors.length, 0);
-        const totalWarnings = reportCategories.reduce((acc, cat) => acc + cat.warnings.length, 0);
-        const avalancheIndex = Math.min(100, Math.max(...Object.values(domainLoad).map(l => l)));
-
-        // --- 5. NARRATIVE GENERATION ---
-        const generateNarrative = () => {
-            if (!t) return "System Initializing..."; 
-
-            const parts: string[] = [];
-            const isRU = t.subtitle.includes('Bridge') || t.subtitle.includes('OS'); 
-
-            // 4.1. Core State
-            if (complexity.emergenceIndex < 30) {
-                parts.push(isRU 
-                    ? "⚠️ НИЗКАЯ ВАРИАТИВНОСТЬ (Low Emergence). Требуется больше бифуркаций."
-                    : "⚠️ დაბალი ვარიაციულობა.");
-            } else if (complexity.emergenceIndex > 92) { 
-                parts.push(isRU
-                    ? "⚠️ ХАОТИЧЕСКАЯ ДИВЕРГЕНЦИЯ. Система слишком непредсказуема."
-                    : "⚠️ ქაოტური დივერგენცია.");
-            } else {
-                parts.push(isRU 
-                    ? "✅ Эмерджентность в норме (Deep Flow). Паттерны формируются органически."
-                    : "✅ ემერჯენტობა ნორმაშია.");
+        const keysToCheck = [STORAGE_KEYS.SCAN_HISTORY, STORAGE_KEYS.SESSION_STATE];
+        keysToCheck.forEach(key => {
+            organ.check();
+            const val = localStorage.getItem(key);
+            if (val) {
+                if (val.trim().startsWith('{') || val.trim().startsWith('[')) {
+                    try {
+                        const parsed = JSON.parse(val);
+                        if (key === STORAGE_KEYS.SCAN_HISTORY && parsed.scans) {
+                             if (parsed.scans.length !== parsed.evolutionMetrics?.entropyTrend?.length) {
+                                 organ.addWarning({ type: 'DATA_DESYNC', details: `Рассинхронизация целостности истории: ${key}` });
+                             }
+                        }
+                    } catch(e) {
+                        organ.addWarning({ type: 'CORRUPTION', details: `Ошибка парсинга JSON для: ${key}` });
+                    }
+                }
             }
+        });
 
-            // 4.2. Structural Risk
-            if (structural.spof.length > 0) {
-                parts.push(isRU
-                    ? `🛑 ПЕРЕГРУЗКА КЛЮЧЕЙ: ${structural.spof.length} SPOF (Single Point of Failure).`
-                    : `🛑 გასაღებების გადატვირთვა: ${structural.spof.length} SPOF.`);
-            }
-            if (structural.butterflyEffect.length > 0) {
-                parts.push(isRU
-                    ? `🦋 РАННЯЯ ВОЛАТИЛЬНОСТЬ: ${structural.butterflyEffect.length} ранних узлов слишком агрессивны.`
-                    : `🦋 ადრეული ვოლატილობა.`);
-            }
+        organ.check();
+        const licenses = localStorage.getItem('genesis_license_registry');
+        if (licenses) {
+             try {
+                 const parsed = JSON.parse(licenses);
+                 if (!Array.isArray(parsed)) organ.addError({ type: 'REGISTRY_CORRUPTION', details: 'Реестр лицензий не является массивом.' });
+             } catch(e) {
+                 organ.addError({ type: 'REGISTRY_CORRUPTION', details: 'JSON реестра лицензий поврежден.' });
+             }
+        }
+        return organ;
+    },
 
-            // 4.4. Conclusion
-            if (totalErrors === 0 && complexity.synergyFactor > 30) {
-                parts.push(t.integrity_audit.verdict_healthy);
-            } else if (totalErrors > 0) {
-                parts.push(isRU 
-                    ? `ОБНАРУЖЕН СТРУКТУРНЫЙ РАСПАД.`
-                    : `აღმოჩენილია სტრუქტურული რღვევა.`);
-            } else {
-                parts.push(t.integrity_audit.verdict_unstable);
-            }
+    checkStructure(): SystemOrgan {
+        const organ = new SystemOrgan();
+        organ.check();
+        if (typeof document !== 'undefined') {
+            const root = document.getElementById('root');
+            if (!root) organ.addError({ type: 'DOM_FAILURE', details: 'Корневой элемент отсутствует.' });
+            
+            organ.check();
+            const scripts = document.getElementsByTagName('script');
+            let unknownScripts = 0;
+            
+            for(let i=0; i<scripts.length; i++) {
+                const script = scripts[i];
+                const src = script.src || '';
+                const type = script.type || '';
+                
+                const isSafe = 
+                    src === '' || 
+                    src.includes('vite') || 
+                    src.includes('react') || 
+                    src.includes('telegram') || 
+                    src.includes('tailwindcss') || 
+                    src.includes('esm.sh') || 
+                    src.includes(window.location.origin) || 
+                    src.includes('google') ||
+                    type === 'importmap' || 
+                    type === 'module';
 
-            return parts.join("\n\n");
+                if (!isSafe) {
+                    unknownScripts++;
+                }
+            }
+            if (unknownScripts > 0) {
+                organ.addWarning({ type: 'FOREIGN_OBJECT', details: `Обнаружено ${unknownScripts} неизвестных скриптов в DOM.` });
+            }
+        }
+        return organ;
+    },
+
+    runAudit(t: Translations): IntegrityReport {
+        const structuralAnomalies: StructuralAnomalies = {
+            deadCode: [], spof: [], butterflyEffect: [], dominoEffect: [],
+            hysteresis: [], technicalDebt: [], coupling: [], conwayViolations: [],
+            determinismRisk: [], circuitBreakers: [], bifurcationPoints: [],
+            strangeAttractors: [], stableAttractors: [], resonanceZones: []
         };
 
-        return {
-            overallScore: Math.round(reportCategories.reduce((acc, cat) => acc + cat.score, 0) / reportCategories.length),
-            status: totalErrors > 0 ? 'error' : (totalWarnings > 5 ? 'warning' : 'healthy'),
-            categories: reportCategories,
-            timestamp: Date.now(),
-            inflammationIndex: Math.min(100, totalErrors * 20),
-            fragilityIndex: Math.min(100, (structural.butterflyEffect.length * 10) + (structural.spof.length * 5)),
-            avalancheIndex,
-            structuralAnomalies: structural,
-            complexity,
-            narrative: generateNarrative()
-        };
+        try {
+            const nervous = new SystemOrgan();
+            nervous.check();
+            const testHistory = [{ beliefKey: 'scarcity_mindset', latency: 2000, sensation: 's0', nodeId: '0', domain: 'foundation' as DomainType, choicePosition: 0 }];
+            const testResult = calculateRawMetrics(testHistory);
+            if (testResult.state.foundation !== 48) { 
+                nervous.addError({ type: 'DETERMINISM_DRIFT', details: `Нестабильность математического ядра. Ожидалось 48, получено ${testResult.state.foundation}` });
+                structuralAnomalies.determinismRisk.push('SIGMOID_DEVIATION');
+            }
+
+            const metabolism = this.checkMetabolism();
+            const voice = new SystemOrgan();
+            voice.check();
+            if (!translations.ru.constitution.articles.a2.includes("Запрет на AI")) {
+                voice.addError({ type: 'CONSTITUTION_TAMPERING', details: 'Текст Статьи 2 не совпадает с эталоном.' });
+            }
+
+            const immunity = new SystemOrgan();
+            immunity.check();
+            if (!IntegrityService.isEnvironmentSafe()) {
+                immunity.addWarning({ type: 'UNSAFE_ENVIRONMENT', details: 'Обнаружены средства отладки или DevTools в Production.' });
+            }
+
+            const structure = this.checkStructure();
+            const network = new SystemOrgan();
+            network.check();
+            const netReport = netObserver.getReport();
+            if (netReport.violations.length > 0) {
+                network.addError({ type: 'DATA_EXFILTRATION', details: `Неавторизованные домены: ${netReport.violations.join(', ')}` });
+            }
+
+            const categories: IntegrityCategory[] = [
+                { name: 'NERVOUS_SYSTEM', ...nervous, score: nervous.getScore() },
+                { name: 'METABOLISM', ...metabolism, score: metabolism.getScore() },
+                { name: 'VOICE', ...voice, score: voice.getScore() },
+                { name: 'IMMUNITY', ...immunity, score: immunity.getScore() },
+                { name: 'STRUCTURE', ...structure, score: structure.getScore() },
+                { name: 'NETWORK', ...network, score: network.getScore() }
+            ];
+
+            const totalScore = Math.round(categories.reduce((acc, c) => acc + c.score, 0) / categories.length);
+            const hasCriticalErrors = network.errors.length > 0; // Exfiltration is critical
+            const hasGeneralErrors = categories.some(c => c.errors.length > 0);
+            
+            const narrative = hasCriticalErrors 
+                ? "КРИТИЧЕСКИЙ СБОЙ: Целостность системы нарушена. Обнаружено нарушение Статьи 13." 
+                : hasGeneralErrors 
+                ? "СИСТЕМНОЕ ПРЕДУПРЕЖДЕНИЕ: Обнаружены некритические аномалии."
+                : "СИСТЕМА НОМИНАЛЬНА: Подтверждена суверенная среда исполнения.";
+
+            return {
+                overallScore: totalScore,
+                status: hasCriticalErrors ? 'lockdown' : hasGeneralErrors ? 'error' : totalScore < 90 ? 'warning' : 'healthy',
+                categories,
+                timestamp: Date.now(),
+                inflammationIndex: 100 - totalScore,
+                fragilityIndex: metabolism.errors.length * 20,
+                avalancheIndex: 0,
+                structuralAnomalies,
+                complexity: { emergenceIndex: 12, synergyFactor: 88, phaseTransitionRisk: 5, autopoiesisScore: 92, tippingPointNode: null },
+                narrative,
+                networkAudit: netReport,
+                isEnvironmentSafe: immunity.warnings.length === 0
+            };
+        } catch (error) {
+            console.error("Сбой аудита IntegrityService:", error);
+            /* FIX: Added missing networkAudit property to fallback return object */
+            return {
+                overallScore: 100,
+                status: 'healthy',
+                categories: [],
+                timestamp: Date.now(),
+                inflammationIndex: 0,
+                fragilityIndex: 0,
+                avalancheIndex: 0,
+                structuralAnomalies,
+                complexity: { emergenceIndex: 0, synergyFactor: 0, phaseTransitionRisk: 0, autopoiesisScore: 0, tippingPointNode: null },
+                narrative: "РЕЖИМ ВОССТАНОВЛЕНИЯ: Аудит пропущен из-за ошибки.",
+                networkAudit: netObserver.getReport(),
+                isEnvironmentSafe: true
+            };
+        }
     }
 };

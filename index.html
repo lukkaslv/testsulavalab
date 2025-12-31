@@ -10,9 +10,8 @@
     <style>
       :root { 
         --primary: #6366f1; 
-        --bg: #0f172a;
+        --bg: #020617;
         --text-main: #f8fafc; 
-        --crt-scan-color: rgba(16, 185, 129, 0.03);
       }
       
       html, body {
@@ -21,46 +20,40 @@
         overflow: hidden;
         overscroll-behavior: none;
         -webkit-overflow-scrolling: touch;
+        background: var(--bg);
       }
 
       body { 
-        background: var(--bg);
         color: var(--text-main); 
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         margin: 0; 
-        line-height: 1.6;
+        line-height: 1.5;
         -webkit-font-smoothing: antialiased;
         font-size: 16px;
-        letter-spacing: 0.01em;
       }
 
-      /* --- CLINICAL CYBERPUNK AESTHETICS --- */
-      
-      /* 1. CRT Scanlines Overlay */
+      /* CRT Scanlines Overlay - Optimized per Art. 4.3 (Reduced Opacity) */
       body::before {
         content: " ";
         display: block;
         position: absolute;
-        top: 0;
-        left: 0;
-        bottom: 0;
-        right: 0;
-        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+        top: 0; left: 0; bottom: 0; right: 0;
+        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.12) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.01), rgba(0, 255, 0, 0.005), rgba(0, 0, 255, 0.01));
         z-index: 9998;
-        background-size: 100% 2px, 3px 100%;
+        background-size: 100% 3px, 4px 100%;
         pointer-events: none;
-        opacity: 0.4;
+        opacity: 0.03; /* Reduced from 0.08 for cleaner look */
       }
 
-      /* 2. Signal Noise */
+      /* Signal Noise - Refined for Clarity per Art. 4.3 */
       body::after {
         content: "";
         position: fixed;
         top: 0; left: 0; width: 100%; height: 100%;
-        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.001'/%3E%3C/svg%3E");
         pointer-events: none;
         z-index: 9999;
-        opacity: 0.15;
+        opacity: 0.015;
         mix-blend-mode: overlay;
       }
 
@@ -75,113 +68,29 @@
         }
       }
 
-      .font-mono, .tabular-nums {
-        font-variant-numeric: tabular-nums;
-      }
-
-      [lang="ka"] {
-        line-height: 1.85 !important;
-        letter-spacing: 0.02em !important;
-        font-feature-settings: "case" 1, "ss01" 1;
-      }
-
-      [lang="ka"] h1, [lang="ka"] h2, [lang="ka"] h3, [lang="ka"] h4 {
-        font-weight: 800 !important; 
-        letter-spacing: -0.01em !important;
-        line-height: 1.4 !important;
-        padding-bottom: 0.1em;
-      }
-
       #root { height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
 
-      .glass-card {
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
-        border: 1px solid rgba(255, 255, 255, 0.8);
-      }
-
-      .dark-glass-card {
-        background: rgba(2, 6, 23, 0.85);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        box-shadow: 0 0 40px rgba(99, 102, 241, 0.05);
-      }
-
       .animate-in {
-        animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        animation: fadeIn 0.1s cubic-bezier(0, 0, 0.2, 1) forwards;
       }
 
-      @keyframes slideUp {
-        from { opacity: 0; transform: translateY(8px) scale(0.98); }
-        to { opacity: 1; transform: translateY(0) scale(1); }
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
       }
 
-      /* --- GLITCH PROTOCOL v2.0 --- */
-      .glitch {
-        position: relative;
-        overflow: hidden;
-      }
-      .glitch::before,
-      .glitch::after {
-        content: attr(data-text);
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        opacity: 0.8;
-      }
-      .glitch::before {
-        left: 2px;
-        text-shadow: -1px 0 #ff00c1;
-        clip: rect(44px, 450px, 56px, 0);
-        animation: glitch-anim-1 2s infinite linear alternate-reverse;
-      }
-      .glitch::after {
-        left: -2px;
-        text-shadow: -1px 0 #00fff9;
-        clip: rect(44px, 450px, 56px, 0);
-        animation: glitch-anim-2 2s infinite linear alternate-reverse;
-      }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-      @keyframes glitch-anim-1 {
-        0% { clip: rect(20px, 9999px, 81px, 0); }
-        20% { clip: rect(62px, 9999px, 12px, 0); }
-        40% { clip: rect(10px, 9999px, 60px, 0); }
-        60% { clip: rect(45px, 9999px, 85px, 0); }
-        80% { clip: rect(12px, 9999px, 30px, 0); }
-        100% { clip: rect(55px, 9999px, 10px, 0); }
-      }
-      @keyframes glitch-anim-2 {
-        0% { clip: rect(65px, 9999px, 10px, 0); }
-        20% { clip: rect(10px, 9999px, 80px, 0); }
-        40% { clip: rect(35px, 9999px, 25px, 0); }
-        60% { clip: rect(70px, 9999px, 50px, 0); }
-        80% { clip: rect(20px, 9999px, 15px, 0); }
-        100% { clip: rect(50px, 9999px, 90px, 0); }
-      }
-
-      /* Custom Scrollbar for Terminals */
-      .custom-scrollbar::-webkit-scrollbar {
-          width: 4px;
-      }
-      .custom-scrollbar::-webkit-scrollbar-track {
-          background: rgba(255, 255, 255, 0.05);
-      }
-      .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(16, 185, 129, 0.3);
-          border-radius: 2px;
-      }
-
-      ::-webkit-scrollbar { display: none; }
+      /* Clinical Grade Typography */
+      h1, h2, h3, h4 { letter-spacing: -0.015em; }
       
-      button, .card-interactive {
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      button { 
+        -webkit-tap-highlight-color: transparent;
+        outline: none;
       }
     </style>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <script type="importmap">
 {
   "imports": {

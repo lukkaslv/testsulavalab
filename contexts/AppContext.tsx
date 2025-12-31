@@ -1,196 +1,218 @@
 
 import React, { createContext, useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { translations } from '../translations';
-import { Translations, GameHistoryItem, ScanHistory, SubscriptionTier, DataCorruptionError, AppContextType } from '../types';
+import { translations } from '@/translations';
+import { Translations, GameHistoryItem, ScanHistory, SubscriptionTier, DataCorruptionError, AppContextType, NetworkAuditReport, IntegrityReport, LifeContext } from '../types';
 import { StorageService, STORAGE_KEYS, SessionState } from '../services/storageService';
 import { PlatformBridge } from '../utils/helpers';
 import { SUBSCRIPTION_LIMITS } from '../constants';
+import { IntegrityService } from '../services/integrityService';
+import { SecurityCore } from '../utils/crypto';
 
 export const AppContext = createContext<AppContextType | null>(null);
 
-const VALID_VIEWS = ['auth', 'boot', 'dashboard', 'test', 'body_sync', 'reflection', 'results', 'admin', 'compatibility', 'guide', 'system_integrity', 'system_simulation'];
+const VALID_VIEWS = [
+    'auth', 'boot', 'dashboard', 'test', 'body_sync', 'results', 
+    'admin', 'pro_terminal', 'guide', 'system_integrity', 'system_simulation', 
+    'pro_hub', 'scan_detail', 'privacy', 'academy', 'security_monitor', 
+    'constitution', 'processing', 'compare', 'brief_explainer', 'transparency',
+    'stabilization', 'specialist_atlas', 'changelog', 'scientific_foundations', 'specialist_oath',
+    'protocol', 'dev_sanctuary', 'codex', 'archetypes', 'tech_standard'
+];
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [lang, setLang] = useState<'ru' | 'ka'>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.LANG);
-    return (saved === 'ru' || saved === 'ka') ? saved : 'ru';
-  });
+  const lang: 'ru' = 'ru';
+  const rawTranslations: Translations = useMemo(() => translations[lang], [lang]);
   
-  const t: Translations = useMemo(() => translations[lang], [lang]);
   const [view, setView] = useState<string>('auth');
-  const [dataStatus, setDataStatus] = useState<string>('ok');
-  const [completedNodeIds, setCompletedNodeIds] = useState<number[]>([]);
-  const [history, setHistory] = useState<GameHistoryItem[]>([]);
+  const [sessionContext, setSessionContextState] = useState<LifeContext>('NORMAL');
   const [isDemo, setIsDemo] = useState(false);
   const [isPro, setIsPro] = useState(false);
   const [isMaster, setIsMaster] = useState(false); 
+  const [isSafeDevMode, setIsSafeDevMode] = useState(() => localStorage.getItem('genesis_safe_dev') === 'true');
+  
   const [licenseTier, setLicenseTier] = useState<SubscriptionTier>('FREE');
-  const [bootShown] = useState(() => sessionStorage.getItem('genesis_boot_seen') === 'true');
+  const [networkReport, setNetworkReport] = useState<NetworkAuditReport>({ totalRequests: 0, authorizedDomains: [], violations: [], isSovereign: true });
+  const [integrityReport, setIntegrityReport] = useState<IntegrityReport | null>(null);
+
+  const [dataStatus, setDataStatus] = useState<string>('ok');
+  const [completedNodeIds, setCompletedNodeIds] = useState<number[]>([]);
+  const [history, setHistory] = useState<GameHistoryItem[]>([]);
   const [scanHistory, setScanHistory] = useState<ScanHistory>({ scans: [], latestScan: null, evolutionMetrics: { entropyTrend: [], integrityTrend: [], dates: [] } });
 
   const isInitialized = useRef(false);
 
+  // ПРОТОКОЛ УБЕЖИЩА: Семантическая Очистка (Ст. 10.4 Изоляция)
+  const t = useMemo(() => {
+    if (!isSafeDevMode) return rawTranslations;
+    
+    const scrub = (obj: any): any => {
+        if (typeof obj === 'string') return `[ТЕХ_ID_${obj.length}]`;
+        if (Array.isArray(obj)) return obj.map(scrub);
+        if (obj && typeof obj === 'object') {
+            const scrubbed: any = {};
+            for (const key in obj) scrubbed[key] = scrub(obj[key]);
+            return scrubbed;
+        }
+        return obj;
+    };
+
+    return {
+        ...rawTranslations,
+        beliefs: Object.keys(rawTranslations.beliefs).reduce((acc, key) => ({...acc, [key]: `ID_${key.toUpperCase()}`}), {}),
+        archetypes: Object.keys(rawTranslations.archetypes).reduce((acc, key) => ({...acc, [key]: scrub(rawTranslations.archetypes[key])}), {}),
+        scenes: Object.keys(rawTranslations.scenes).reduce((acc, key) => ({...acc, [key]: scrub(rawTranslations.scenes[key])}), {}),
+    } as unknown as Translations;
+  }, [rawTranslations, isSafeDevMode]);
+
+  const setSafeDevMode = useCallback((active: boolean) => {
+      setIsSafeDevMode(active);
+      localStorage.setItem('genesis_safe_dev', active ? 'true' : 'false');
+      PlatformBridge.haptic.notification('success');
+  }, []);
+
+  const setSessionContext = useCallback((ctx: LifeContext) => {
+      setSessionContextState(ctx);
+      StorageService.save(STORAGE_KEYS.SESSION_CONTEXT, ctx);
+      PlatformBridge.haptic.selection();
+  }, []);
+
+  const sanitizeMemory = useCallback(() => {
+      SecurityCore.nullify(scanHistory.latestScan);
+      scanHistory.scans.forEach(s => SecurityCore.nullify(s));
+      setScanHistory({ scans: [], latestScan: null, evolutionMetrics: { entropyTrend: [], integrityTrend: [], dates: [] } });
+      setHistory([]);
+      setCompletedNodeIds([]);
+  }, [scanHistory]);
+
+  useEffect(() => {
+      const beat = () => {
+          const report = IntegrityService.runAudit(rawTranslations);
+          setIntegrityReport(report);
+          if (report.status === 'lockdown' && isPro && view !== 'security_monitor') {
+              sanitizeMemory();
+              setView('security_monitor');
+              PlatformBridge.haptic.notification('error');
+          }
+      };
+      beat();
+      const interval = setInterval(beat, 5000);
+      return () => clearInterval(interval);
+  }, [rawTranslations, isPro, view, sanitizeMemory]);
+
+  useEffect(() => {
+      IntegrityService.getNetworkObserver().subscribe(setNetworkReport);
+  }, []);
+
   const usageStats = useMemo(() => {
       const limit = SUBSCRIPTION_LIMITS[licenseTier] || 1;
-      const used = scanHistory?.scans?.length || 0;
-      const isUnlimited = limit > 9000;
-      const canStart = used < limit || isUnlimited;
-      return { used, limit, isUnlimited, canStart };
-  }, [licenseTier, scanHistory]);
+      const used = scanHistory.scans.length;
+      return { used, limit, isUnlimited: limit > 9000, canStart: (limit > 9000) || (used < limit) };
+  }, [licenseTier, scanHistory.scans.length]);
 
   const setViewAndPersist = useCallback((newView: string) => {
-    if (!VALID_VIEWS.includes(newView)) {
-        console.warn(`View Integrity: Blocked attempt to visit invalid view [${newView}]. Reverting to dashboard.`);
-        newView = 'dashboard';
-    }
-    
-    // Axis 9.4: Persist navigation intent
+    if (!VALID_VIEWS.includes(newView)) return;
     sessionStorage.setItem('genesis_last_view', newView);
     setView(newView);
   }, []);
 
   useEffect(() => {
-    // RUN ONCE ON MOUNT
     if (isInitialized.current) return;
-    
-    PlatformBridge.ready();
     PlatformBridge.expand();
+    PlatformBridge.ready();
     
     try {
         const sessionState = StorageService.load<SessionState>(STORAGE_KEYS.SESSION_STATE, { nodes: [], history: [] });
-        if (sessionState && sessionState.nodes) {
-            setCompletedNodeIds(sessionState.nodes.map(id => typeof id === 'string' ? parseInt(id, 10) : id));
-            setHistory(Array.isArray(sessionState.history) ? sessionState.history : []);
-        }
+        setCompletedNodeIds(sessionState.nodes.map(id => Number(id)));
+        setHistory(sessionState.history);
+        setScanHistory(StorageService.getScanHistory());
+        setSessionContextState(StorageService.load<LifeContext>(STORAGE_KEYS.SESSION_CONTEXT, 'NORMAL'));
     } catch (e) {
         if (e instanceof DataCorruptionError) setDataStatus('corrupted');
     }
 
-    const loadedScanHistory = StorageService.getScanHistory();
-    if (loadedScanHistory) setScanHistory(loadedScanHistory);
-
     const sessionAuth = localStorage.getItem(STORAGE_KEYS.SESSION);
-    const savedTierRaw = localStorage.getItem('genesis_tier');
-    const savedTier = (['FREE','SOLO','CLINICAL','LAB'].includes(savedTierRaw || '') ? savedTierRaw : 'FREE') as SubscriptionTier;
-    const isMasterSession = localStorage.getItem('genesis_master') === 'true';
-    
     if (sessionAuth === 'true') { 
         setIsPro(true);
-        setLicenseTier(savedTier);
-        if (isMasterSession) setIsMaster(true);
-
+        setLicenseTier((localStorage.getItem('genesis_tier') as SubscriptionTier) || 'FREE');
+        setIsMaster(localStorage.getItem('genesis_master') === 'true');
         const lastView = sessionStorage.getItem('genesis_last_view');
-        const safeView = VALID_VIEWS.includes(lastView || '') ? lastView! : 'dashboard';
-        
-        // Master view restoration logic
-        if (isMasterSession && ['admin', 'system_integrity', 'system_simulation'].includes(safeView)) {
-            setView(safeView);
-        } else if (['dashboard', 'compatibility', 'guide', 'results'].includes(safeView)) {
-            setView(safeView);
-        } else {
-            setView('dashboard');
-        }
+        setView(VALID_VIEWS.includes(lastView || '') ? lastView! : 'pro_hub');
+    } else if (sessionAuth === 'client') {
+        setView('dashboard');
     }
-    else if (sessionAuth === 'client' || sessionAuth === 'demo') {
-        setIsDemo(sessionAuth === 'demo');
-        setLicenseTier('FREE');
-        setView(bootShown ? 'dashboard' : 'boot');
-    }
-
     isInitialized.current = true;
-  }, [bootShown]);
+  }, []);
 
   const handleLogin = useCallback((password: string, demo = false, tier: SubscriptionTier = 'FREE'): boolean => {
-    PlatformBridge.haptic.impact('light');
     const pwd = password.toLowerCase().trim();
-    
+    PlatformBridge.haptic.selection();
+
     if (pwd === "genesis_prime") {
         localStorage.setItem(STORAGE_KEYS.SESSION, 'true');
         localStorage.setItem('genesis_tier', 'LAB');
         localStorage.setItem('genesis_master', 'true');
-        setLicenseTier('LAB'); 
-        setIsPro(true); 
-        setIsMaster(true);
+        setLicenseTier('LAB'); setIsPro(true); setIsMaster(true);
         setViewAndPersist('admin'); 
         return true;
     }
-
     if (pwd === "genesis_client" || demo) {
-        const sessionType = demo ? 'demo' : 'client';
-        localStorage.setItem(STORAGE_KEYS.SESSION, sessionType);
-        setIsDemo(demo); 
-        setIsPro(false); 
-        setLicenseTier('FREE');
-        setViewAndPersist(bootShown ? 'dashboard' : 'boot');
+        localStorage.setItem(STORAGE_KEYS.SESSION, 'client');
+        setIsDemo(demo); setViewAndPersist('dashboard');
         return true;
     }
-
     if (pwd === "genesis_lab_entry") {
       localStorage.setItem(STORAGE_KEYS.SESSION, 'true');
       localStorage.setItem('genesis_tier', tier);
-      setLicenseTier(tier); 
-      setIsPro(true); 
-      setIsMaster(false);
-      setViewAndPersist(bootShown ? 'dashboard' : 'boot');
+      setLicenseTier(tier); setIsPro(true); 
+      setViewAndPersist('pro_hub');
       return true;
     }
     return false;
-  }, [bootShown, setViewAndPersist]);
+  }, [setViewAndPersist]);
 
   const handleLogout = useCallback(() => { 
-      localStorage.removeItem(STORAGE_KEYS.SESSION);
-      localStorage.removeItem('genesis_master');
-      localStorage.removeItem('genesis_tier');
-      sessionStorage.removeItem('genesis_last_view');
-      setIsPro(false); 
-      setIsMaster(false); 
-      setIsDemo(false);
+      sanitizeMemory();
+      localStorage.clear();
+      sessionStorage.clear();
       setView('auth'); 
-  }, []);
+  }, [sanitizeMemory]);
 
   const handleReset = useCallback((force: boolean = false) => {
     const action = () => {
-      const langSave = localStorage.getItem(STORAGE_KEYS.LANG);
-      const sessionSave = localStorage.getItem(STORAGE_KEYS.SESSION);
-      const tierSave = localStorage.getItem('genesis_tier');
-      
+      const isProSession = isPro;
+      const tier = licenseTier;
       localStorage.clear();
       sessionStorage.clear();
-      
-      if (!force && sessionSave === 'true') {
+      if (!force && isProSession) {
           localStorage.setItem(STORAGE_KEYS.SESSION, 'true');
-          localStorage.setItem('genesis_tier', tierSave || 'FREE');
+          localStorage.setItem('genesis_tier', tier);
       }
-      localStorage.setItem(STORAGE_KEYS.LANG, langSave || 'ru');
       window.location.reload();
     };
-
     if (force) action(); 
-    else {
-        PlatformBridge.showConfirm(
-            t.ui.reset_confirm,
-            (confirmed) => { if (confirmed) action(); }
-        );
+    else PlatformBridge.showConfirm(t.ui.reset_confirm, (confirmed) => confirmed && action());
+  }, [t, isPro, licenseTier]);
+
+  const handleFullReset = useCallback(() => {
+    PlatformBridge.haptic.notification('warning');
+    sanitizeMemory();
+    localStorage.clear();
+    sessionStorage.clear();
+    if (window.indexedDB) {
+        indexedDB.databases().then(dbs => dbs.forEach(db => db.name && indexedDB.deleteDatabase(db.name)));
     }
-  }, [t]);
+    window.location.href = '/';
+  }, [sanitizeMemory]);
 
-  const onLangChange = useCallback((newLang: 'ru' | 'ka') => {
-      setLang(newLang);
-      localStorage.setItem(STORAGE_KEYS.LANG, newLang);
-  }, []);
-
-  const value: AppContextType = {
-    lang, setLang, t, view, setViewAndPersist,
+  const value = useMemo<AppContextType>(() => ({
+    lang, t, view, setViewAndPersist, 
+    sessionContext, setSessionContext,
     isDemo, isPro, isMaster, licenseTier,
-    completedNodeIds, setCompletedNodeIds: (fn: any) => setCompletedNodeIds(fn),
-    history, setHistory: (fn: any) => setHistory(fn),
-    dataStatus, scanHistory, usageStats,
-    handleLogin, handleLogout, handleReset, onLangChange
-  };
+    isSafeDevMode, setSafeDevMode,
+    completedNodeIds, setCompletedNodeIds, history, setHistory,
+    dataStatus, scanHistory, usageStats, networkReport, integrityReport,
+    handleLogin, handleLogout, handleReset, handleFullReset
+  }), [view, sessionContext, setSessionContext, isDemo, isPro, isMaster, licenseTier, isSafeDevMode, setSafeDevMode, completedNodeIds, history, dataStatus, scanHistory, usageStats, networkReport, integrityReport, handleLogin, handleLogout, handleReset, handleFullReset, t]);
 
-  return (
-    <AppContext.Provider value={value}>
-      {children}
-    </AppContext.Provider>
-  );
+  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };

@@ -1,13 +1,12 @@
-import { GameHistoryItem, Contradiction, AdaptiveState, BeliefKey, DomainType } from '../types';
+
+import { GameHistoryItem, Contradiction, AdaptiveState, BeliefKey, DomainType, InterventionType } from '../types';
 import { TOTAL_NODES, DOMAIN_SETTINGS } from '../constants';
+import { calculateRawMetrics } from './psychologyService';
 
-// Genesis OS v4.9 - Integrity Calibration
-// CLARITY_PER_NODE reduced to 2.0 so 50 nodes = 100%
-const CLARITY_PER_NODE = 2.0; 
-const CONTRADICTION_PENALTY = 1.5; 
-const MIN_REQUIRED_NODES = 40; // Hard limit for clinical validity
-
-const POSITIVE_BELIEFS: BeliefKey[] = ['money_is_tool', 'self_permission', 'capacity_expansion'];
+// Genesis OS v5.0 - Finalization Patch
+const CLARITY_PER_NODE = 2.5; 
+const CONTRADICTION_PENALTY = 1.0; 
+const MIN_REQUIRED_NODES = 50; // Forced to full set for testing
 
 export const getDomainForNodeId = (nodeId: number): DomainType | null => {
   for (const d of DOMAIN_SETTINGS) {
@@ -21,28 +20,19 @@ export const getDomainForNodeId = (nodeId: number): DomainType | null => {
 export const AdaptiveQuestionEngine = {
   analyzeContradictions(history: GameHistoryItem[], userBaseline: number): Contradiction[] {
     const contradictions: Contradiction[] = [];
+    const POSITIVE_BELIEFS: BeliefKey[] = ['money_is_tool', 'self_permission', 'capacity_expansion'];
 
     history.forEach(h => {
       const numericId = parseInt(h.nodeId, 10);
       if (isNaN(numericId) || numericId < 3) return; 
 
-      if (h.latency > userBaseline * 2.8 && POSITIVE_BELIEFS.includes(h.beliefKey as BeliefKey)) {
+      if (h.latency > userBaseline * 2.5 && POSITIVE_BELIEFS.includes(h.beliefKey as BeliefKey)) {
         contradictions.push({
           type: 'latency_mask',
           nodeId: h.nodeId,
           beliefKey: h.beliefKey,
-          severity: 0.85,
-          description: 'High cognitive effort for standard choice'
-        });
-      }
-
-      if ((h.sensation === 's1' || h.sensation === 's4') && POSITIVE_BELIEFS.includes(h.beliefKey as BeliefKey)) {
-        contradictions.push({
-          type: 'somatic_clash',
-          nodeId: h.nodeId,
-          beliefKey: h.beliefKey,
-          severity: 0.95,
-          description: 'Physical friction detected'
+          severity: 0.8,
+          description: 'Когнитивное трение при выборе ресурсного варианта'
         });
       }
     });
@@ -50,62 +40,58 @@ export const AdaptiveQuestionEngine = {
     return contradictions;
   },
 
+  detectInterventionNeed(history: GameHistoryItem[]): InterventionType | null {
+      // Art. 6 Feedback Loops: Check for run-away positive feedback loops (Mania/Panic)
+      if (history.length < 8) return null;
+
+      // Check if we already triggered one recently (Debounce)
+      // This requires the UI to track interventions, but here we can check if behavior persisted
+      // For simplicity in this engine, we rely on the state snapshot
+
+      const recent = history.slice(-5);
+      
+      // 1. MANIC BREAK (Fast + High Agency + Low Foundation)
+      // We need metrics for this check
+      const metrics = calculateRawMetrics(history);
+      const isFast = recent.every(h => h.latency < 1500);
+      
+      if (isFast && metrics.state.agency > 75 && metrics.state.foundation < 35) {
+          return {
+              code: 'MANIC_BREAK',
+              trigger: 'VELOCITY_OVERLOAD',
+              requiredAction: 'SLOW_DOWN'
+          };
+      }
+
+      // 2. SOMATIC WAKEUP (Disassociation)
+      // 7 consecutive 's0' (Neutral)
+      const somaticStreak = history.slice(-7);
+      if (somaticStreak.length === 7 && somaticStreak.every(h => h.sensation === 's0')) {
+          return {
+              code: 'SOMATIC_WAKEUP',
+              trigger: 'DISASSOCIATION_LOCK',
+              requiredAction: 'BREATHE'
+          };
+      }
+
+      return null;
+  },
+
   selectNextQuestion(history: GameHistoryItem[], contradictions: Contradiction[], excludedId?: number): string | null {
     const sanitizedHistory = history.filter(h => h && h.nodeId);
-    
-    const completedIds = new Set(sanitizedHistory.map(h => {
-        const id = parseInt(h.nodeId, 10);
-        return isNaN(id) ? -1 : id;
-    }));
+    const completedIds = new Set(sanitizedHistory.map(h => parseInt(h.nodeId, 10)));
     
     if (excludedId !== undefined && !isNaN(excludedId)) {
         completedIds.add(excludedId);
     }
     
-    // Safety exit: only if we reached absolute limit
     if (completedIds.size >= TOTAL_NODES) return null;
 
-    // 1. Calibration (First 3)
-    for (let i = 0; i < 3; i++) {
-        if (!completedIds.has(i)) return i.toString();
-    }
-    
-    // 2. Ensure all domains have at least 3 nodes before stopping
-    for (const domain of DOMAIN_SETTINGS) {
-        const domainNodes = sanitizedHistory.filter(h => h.domain === domain.key);
-        if (domainNodes.length < 3) {
-            for (let i = 0; i < domain.count; i++) {
-                const id = domain.startId + i;
-                if (!completedIds.has(id)) return id.toString();
-            }
-        }
+    // После 50 вопросов система считает, что данных достаточно (полный цикл)
+    if (completedIds.size >= MIN_REQUIRED_NODES) {
+        return null; 
     }
 
-    // 3. Target domains with contradictions
-    let domainTension: Record<string, number> = { foundation: 0, agency: 0, money: 0, social: 0, legacy: 0 };
-    contradictions.forEach(c => {
-        const item = sanitizedHistory.find(h => h.nodeId === c.nodeId);
-        if (item && domainTension[item.domain] !== undefined) {
-            domainTension[item.domain]++;
-        }
-    });
-
-    const sortedDomains = (Object.entries(domainTension) as [DomainType, number][])
-        .filter(([_, score]) => score > 0)
-        .sort((a, b) => b[1] - a[1]) 
-        .map(([key]) => key);
-
-    for (const domainKey of sortedDomains) {
-        const domainCfg = DOMAIN_SETTINGS.find(d => d.key === domainKey);
-        if (domainCfg) {
-             for (let i = 0; i < domainCfg.count; i++) {
-                const id = domainCfg.startId + i;
-                if (!completedIds.has(id)) return id.toString();
-             }
-        }
-    }
-
-    // 4. Sequential search as final fallback
     for (let i = 0; i < TOTAL_NODES; i++) {
         if (!completedIds.has(i)) return i.toString();
     }
@@ -118,18 +104,21 @@ export const AdaptiveQuestionEngine = {
     const rawClarity = history.length * CLARITY_PER_NODE;
     const penalty = contradictions.length * CONTRADICTION_PENALTY;
     
-    const clarity = Math.min(100, Math.max(0, rawClarity - penalty));
+    let clarity = Math.min(100, Math.max(0, rawClarity - penalty));
+    
+    // Check for Intervention FIRST
+    const intervention = this.detectInterventionNeed(history);
+    
     const suggestedNextNodeId = this.selectNextQuestion(history, contradictions, currentNodeId);
-
-    // Clinical Logic: Cannot be complete if clarity < 100 AND history < MIN_REQUIRED_NODES
-    const isStatisticallyReady = clarity >= 100 && history.length >= MIN_REQUIRED_NODES;
 
     return {
       clarity,
       contradictions,
-      isComplete: isStatisticallyReady || suggestedNextNodeId === null || history.length >= TOTAL_NODES,
+      // FORCE strict 50 nodes check. Ignore clarity score for completion.
+      isComplete: history.length >= TOTAL_NODES,
       suggestedNextNodeId,
-      confidenceScore: 100 // Simplified for logic check
+      confidenceScore: Math.min(100, 70 + (history.length)),
+      intervention
     };
   }
 };
