@@ -1,10 +1,8 @@
 
-import { MODULE_REGISTRY, TOTAL_NODES, DOMAIN_SETTINGS, NODE_CONFIGS, PSYCHO_CONFIG, SYSTEM_METADATA, STORAGE_KEYS } from '../constants';
-import { WEIGHTS, calculateRawMetrics } from './psychologyService';
-import { translations } from '../translations';
+import { STORAGE_KEYS } from '../constants';
+import { calculateRawMetrics } from './psychologyService';
 import { SecurityCore } from '../utils/crypto';
-import { IntegrityReport, IntegrityCategory, ConfigError, StructuralAnomalies, ComplexityMetrics, Translations, NetworkAuditReport, DomainType } from '../types';
-import { DiagnosticEngine } from './diagnosticEngine';
+import { IntegrityReport, IntegrityCategory, ConfigError, StructuralAnomalies, Translations, NetworkAuditReport, DomainType } from '../types';
 
 class NetworkObserver {
     private static instance: NetworkObserver;
@@ -85,7 +83,7 @@ class SystemOrgan {
 export const IntegrityService = {
     getNetworkObserver: () => netObserver,
     
-    isObjectProxied(obj: any): boolean {
+    isObjectProxied(_obj: any): boolean {
         return false; 
     },
 
@@ -133,8 +131,8 @@ export const IntegrityService = {
         return !devToolsOpen && !isBeingDebugged && !isHeadless && !isFramedUnsafe;
     },
 
-    verifyConstitutionIntegrity(): boolean {
-        const constitution = translations.ru.constitution;
+    verifyConstitutionIntegrity(t: Translations): boolean {
+        const constitution = t.constitution;
         const raw = JSON.stringify(constitution);
         const hash = SecurityCore.generateChecksum(raw);
         return raw.length > 500 && hash.length === 8 && raw.includes("Статья 2");
@@ -248,7 +246,9 @@ export const IntegrityService = {
             const metabolism = this.checkMetabolism();
             const voice = new SystemOrgan();
             voice.check();
-            if (!translations.ru.constitution.articles.a2.includes("Запрет на AI")) {
+            
+            // Fix: Use passed 't' instead of importing translations directly
+            if (!t.constitution.articles.a2.includes("Запрет на AI")) {
                 voice.addError({ type: 'CONSTITUTION_TAMPERING', details: 'Текст Статьи 2 не совпадает с эталоном.' });
             }
 
@@ -301,7 +301,6 @@ export const IntegrityService = {
             };
         } catch (error) {
             console.error("Сбой аудита IntegrityService:", error);
-            /* FIX: Added missing networkAudit property to fallback return object */
             return {
                 overallScore: 100,
                 status: 'healthy',

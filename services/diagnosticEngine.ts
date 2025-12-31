@@ -1,11 +1,8 @@
 
-import { RawAnalysisResult, AnalysisResult, ArchetypeKey, VerdictKey, PhaseType, TaskKey, PatternFlags, DomainType, AuditMetrics, GameHistoryItem, EntropyFluxVector, StructuralFracture } from '../types';
+import { RawAnalysisResult, AnalysisResult, ArchetypeKey, VerdictKey, PhaseType, TaskKey, PatternFlags, DomainType, EntropyFluxVector, StructuralFracture } from '../types';
 import { SecurityCore } from '../utils/crypto';
-import { SYSTEM_METADATA, TOTAL_NODES } from '../constants';
+import { SYSTEM_METADATA } from '../constants';
 import { calculateForecast, WEIGHTS } from './psychologyService';
-
-const ARCHETYPE_INDEX_MAP: ArchetypeKey[] = ['THE_ARCHITECT', 'THE_DRIFTER', 'THE_BURNED_HERO', 'THE_GOLDEN_PRISONER', 'THE_CHAOS_SURFER', 'THE_CHAOS_SURFER'];
-const VERDICT_INDEX_MAP: VerdictKey[] = ['HEALTHY_SCALE', 'BRILLIANT_SABOTAGE', 'INVISIBILE_CEILING', 'LEAKY_BUCKET', 'PARALYZED_GIANT', 'FROZEN_POTENTIAL', 'CRITICAL_DEFICIT'];
 
 const TASKS_LOGIC: Record<PhaseType, Array<{ taskKey: TaskKey, targetMetricKey: string }>> = {
   SANITATION: [{ taskKey: "sanitation_1", targetMetricKey: "Focus" }, { taskKey: "sanitation_2", targetMetricKey: "Sync" }, { taskKey: "sanitation_3", targetMetricKey: "Space" }, { taskKey: "sanitation_4", targetMetricKey: "Clarity" }, { taskKey: "sanitation_5", targetMetricKey: "Control" }, { taskKey: "sanitation_6", targetMetricKey: "Awareness" }, { taskKey: "sanitation_7", targetMetricKey: "Space" }],

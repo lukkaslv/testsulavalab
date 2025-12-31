@@ -1,5 +1,5 @@
 
-import { AnalysisResult, DomainType } from '../types';
+import { AnalysisResult } from '../types';
 
 /**
  * Genesis OS Metaphor Engine v1.0

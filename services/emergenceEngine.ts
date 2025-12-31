@@ -19,7 +19,7 @@ export interface EmergentPattern {
 export const EmergenceEngine = {
     detectPatterns(result: AnalysisResult): EmergentPattern[] {
         const { state, domainProfile, neuroSync: sync } = result;
-        const { foundation: f, agency: a, resource: r, entropy: e } = state;
+        const { foundation: f, agency: a, entropy: e } = state;
         const patterns: EmergentPattern[] = [];
 
         // 1. "Стеклянная Колонна" (The Glass Pillar)

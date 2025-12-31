@@ -125,7 +125,7 @@ const sigmoidUpdate = (
     current: number, 
     delta: number, 
     entropyCurrent: number, 
-    f: number, r: number, l: number, 
+    f: number, // r and l removed
     domain: DomainType, 
     resilience: number,
     physics: typeof CONTEXT_PHYSICS['NORMAL']
@@ -168,11 +168,12 @@ export function calculateRawMetrics(history: GameHistoryItem[]): RawAnalysisResu
     
     currentResilience = Math.round(((f + r) / 2) * (syncScore / 100) * (1 - (e / 180)));
     
-    f = sigmoidUpdate(f, w.f, e, f, r, l, 'foundation', currentResilience, physics);
-    a = sigmoidUpdate(a, w.a, e, f, r, l, 'agency', currentResilience, physics);
-    r = sigmoidUpdate(r, w.r, e, f, r, l, 'money', currentResilience, physics);
-    s = sigmoidUpdate(s, w.s, e, f, r, l, 'social', currentResilience, physics);
-    l = sigmoidUpdate(l, w.l, e, f, r, l, 'legacy', currentResilience, physics);
+    // Updated calls to sigmoidUpdate without r and l parameters
+    f = sigmoidUpdate(f, w.f, e, f, 'foundation', currentResilience, physics);
+    a = sigmoidUpdate(a, w.a, e, f, 'agency', currentResilience, physics);
+    r = sigmoidUpdate(r, w.r, e, f, 'money', currentResilience, physics);
+    s = sigmoidUpdate(s, w.s, e, f, 'social', currentResilience, physics);
+    l = sigmoidUpdate(l, w.l, e, f, 'legacy', currentResilience, physics);
     
     // Entropy is damped in Crisis/High Load to prevent premature collapse in calculation
     const e_delta = (w.e * (zScore > 2.2 ? 1.4 : 1.0));
