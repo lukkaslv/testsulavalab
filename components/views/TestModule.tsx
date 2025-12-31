@@ -164,7 +164,7 @@ export const TestView = memo<TestViewProps>(({ t, activeModule, currentId, scene
       <BiofeedbackLayer state={atmosphere} />
 
       {/* TOP NAVIGATION */}
-      <div className="relative z-10 px-6 pt-6 flex justify-between items-center opacity-60">
+      <div className="relative z-10 px-6 pt-6 flex justify-between items-center opacity-60 shrink-0">
          <div className="flex items-center gap-2">
              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
              <span className="text-[9px] font-black tracking-[0.2em] text-slate-400 uppercase">
@@ -176,7 +176,7 @@ export const TestView = memo<TestViewProps>(({ t, activeModule, currentId, scene
          </button>
       </div>
       
-      <div className="px-6 pt-4 relative z-10">
+      <div className="px-6 pt-4 relative z-10 shrink-0">
         <AdaptiveProgressBar 
             clarity={adaptiveState.clarity} 
             isAdaptive={isAdaptive} 
@@ -185,8 +185,8 @@ export const TestView = memo<TestViewProps>(({ t, activeModule, currentId, scene
       </div>
 
       {/* QUESTION SPACE (The Void) */}
-      <div className="flex-1 flex flex-col justify-center px-6 relative z-10 -mt-10">
-        <div className="space-y-6">
+      <div className="flex-1 flex flex-col justify-center px-6 relative z-10 overflow-y-auto custom-scrollbar min-h-0">
+        <div className="space-y-6 py-4">
             <h3 className="text-3xl sm:text-4xl font-black uppercase text-slate-100 leading-none tracking-tight">
                 {getSceneText(scene.titleKey)}
             </h3>
@@ -199,8 +199,8 @@ export const TestView = memo<TestViewProps>(({ t, activeModule, currentId, scene
         </div>
       </div>
 
-      {/* CHOICE TRIGGERS (Thumb Zone) */}
-      <div className="px-4 pb-8 pt-4 space-y-3 relative z-10 bg-gradient-to-t from-[#020617] via-[#020617]/90 to-transparent">
+      {/* CHOICE TRIGGERS (Thumb Zone) - Uplifted for ergonomics */}
+      <div className="px-4 pb-12 pt-6 space-y-3 relative z-20 bg-gradient-to-t from-[#020617] via-[#020617] to-transparent shrink-0 backdrop-blur-sm">
         {isPacingLocked ? (
             <div className="h-[220px] flex flex-col items-center justify-center space-y-6 animate-in">
                 <div className="relative w-12 h-12 flex items-center justify-center">
@@ -232,9 +232,9 @@ export const TestView = memo<TestViewProps>(({ t, activeModule, currentId, scene
                         ${isSelected ? 'bg-indigo-600' : 'bg-slate-900 border border-slate-800 group-hover:border-slate-600'}
                     `}></div>
                     
-                    <div className="relative flex items-center p-5 gap-4">
+                    <div className="relative flex items-center p-5 gap-4 min-h-[72px]">
                         <span className={`
-                            w-6 h-6 rounded-lg flex items-center justify-center text-[9px] font-black border transition-colors
+                            w-7 h-7 shrink-0 rounded-lg flex items-center justify-center text-[10px] font-black border transition-colors
                             ${isSelected 
                                 ? 'bg-white/20 border-white/20 text-white' 
                                 : 'bg-black/20 border-white/5 text-slate-500 group-hover:text-slate-300'}
@@ -242,7 +242,7 @@ export const TestView = memo<TestViewProps>(({ t, activeModule, currentId, scene
                             {i+1}
                         </span>
                         <span className={`
-                            text-sm font-bold uppercase tracking-wide transition-colors
+                            text-sm font-bold uppercase tracking-wide transition-colors text-left leading-tight
                             ${isSelected ? 'text-white' : 'text-slate-300 group-hover:text-white'}
                         `}>
                             {getSceneText(c.textKey)}

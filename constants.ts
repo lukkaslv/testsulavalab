@@ -25,7 +25,7 @@ export const SYSTEM_METADATA = {
 };
 
 export const SYSTEM_LINKS = {
-    TRIBUTE_SUB: 'https://t.me/tribute/app?startapp=sK2g', 
+    TRIBUTE_SUB: 'https://web.tribute.tg/s/K2g', 
     SUPPORT: 'https://t.me/genesis_support'
 };
 

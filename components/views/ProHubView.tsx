@@ -1,4 +1,3 @@
-
 import React, { memo, useMemo, useState, useEffect, useRef } from 'react';
 import { Translations, ScanHistory, SubscriptionTier, AnalysisResult } from '../../types';
 import { PlatformBridge } from '../../utils/helpers';
@@ -149,7 +148,7 @@ const FieldMonitor = memo(({ history, t }: { history: ScanHistory | null, t: Tra
     );
 });
 
-const SessionCartridge = ({ scan, onClick }: { scan: AnalysisResult, onClick: () => void }) => {
+const SessionCartridge: React.FC<{ scan: AnalysisResult, onClick: () => void }> = ({ scan, onClick }) => {
     // Mini-DNA Bar code
     const metrics = [scan.state.foundation, scan.state.agency, scan.state.resource, scan.state.entropy, scan.neuroSync];
     const isCritical = scan.state.foundation < 35 || scan.state.entropy > 75;

@@ -1,3 +1,4 @@
+import React from 'react';
 
 export type DomainType = 'foundation' | 'agency' | 'money' | 'social' | 'legacy';
 

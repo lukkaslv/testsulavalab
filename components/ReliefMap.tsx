@@ -23,7 +23,7 @@ export const ReliefMap: React.FC<ReliefMapProps> = memo(({ result, className }) 
 
   useEffect(() => {
       // Calculate Ruggedness (Variance in heights)
-      const values = Object.values(domainProfile);
+      const values = Object.values(domainProfile) as number[];
       const min = Math.min(...values);
       const max = Math.max(...values);
       const entropyFactor = state.entropy / 20;
