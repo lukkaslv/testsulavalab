@@ -1,6 +1,5 @@
-
-import React, { useState, useEffect } from 'react';
-import { Translations, IntegrityReport, IntegrityCategory, StructuralAnomalies, ComplexityMetrics, ConfigError } from '../../types';
+import React, { useState, useEffect, useRef } from 'react';
+import { Translations, IntegrityReport, IntegrityCategory, StructuralAnomalies, ComplexityMetrics, ConfigError, StochasticAnalysisReport } from '../../types';
 import { IntegrityService } from '../../services/integrityService';
 
 const ORGAN_ICONS: Record<string, string> = {
@@ -164,6 +163,69 @@ const AnomalyList = ({ structural, labels, t }: { structural: StructuralAnomalie
     );
 };
 
+const StochasticResonanceMonitor = ({ analysis, t }: { analysis: StochasticAnalysisReport, t: Translations }) => {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const iv = t.integrity_audit.stochastic_resonance;
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        let frame: number;
+        let time = 0;
+
+        const draw = () => {
+            const w = canvas.width, h = canvas.height;
+            ctx.clearRect(0,0,w,h);
+            const plot = (path: number[], color: string, isNoise: boolean) => {
+                ctx.beginPath();
+                path.forEach((p, i) => {
+                    const x = (i / path.length) * w;
+                    const y = h - (p / 100) * h;
+                    if (i === 0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+                });
+                ctx.strokeStyle = color;
+                ctx.lineWidth = isNoise ? 1 : 2;
+                ctx.globalAlpha = isNoise ? 0.3 : 1.0;
+                ctx.stroke();
+                ctx.globalAlpha = 1.0;
+            };
+
+            const offset = Math.floor(time * 20) % analysis.signalPath.length;
+            const rotatingSignal = [...analysis.signalPath.slice(offset), ...analysis.signalPath.slice(0, offset)];
+
+            plot(analysis.noisePath, '#ef4444', true);
+            plot(rotatingSignal, '#10b981', false);
+            
+            time += 0.01;
+            frame = requestAnimationFrame(draw);
+        };
+
+        draw();
+        return () => cancelAnimationFrame(frame);
+    }, [analysis]);
+
+    return (
+        <div className="mx-4 bg-slate-900/90 border border-white/5 p-4 rounded-xl shadow-lg backdrop-blur-md">
+            <h4 className="text-[8px] font-black uppercase text-indigo-400 tracking-[0.2em] mb-2">{iv.title}</h4>
+            <canvas ref={canvasRef} width={300} height={80} className="w-full h-20 bg-black/40 rounded border border-slate-800" />
+            <div className="flex justify-between items-end mt-2">
+                <div className="flex gap-4">
+                    <div className="flex items-center gap-1"><div className="w-2 h-0.5 bg-emerald-500"></div><span className="text-[7px] text-slate-500">{iv.signal_label}</span></div>
+                    <div className="flex items-center gap-1"><div className="w-2 h-0.5 bg-red-500 opacity-50"></div><span className="text-[7px] text-slate-500">{iv.noise_label}</span></div>
+                </div>
+                <div>
+                    <span className="text-[7px] text-slate-500">{iv.snr_label}: </span>
+                    <span className="text-[9px] text-emerald-400 font-bold">{analysis.signalToNoiseRatio}%</span>
+                </div>
+            </div>
+            <p className="text-[8px] text-slate-600 italic mt-3 border-t border-white/5 pt-2">{iv.conclusion}</p>
+        </div>
+    );
+};
+
+
 export const SystemIntegrityView: React.FC<{ t: Translations; onBack: () => void; }> = ({ t, onBack }) => {
   const [report, setReport] = useState<IntegrityReport | null>(null);
   const [selectedOrgan, setSelectedOrgan] = useState<IntegrityCategory | null>(null);
@@ -249,6 +311,7 @@ export const SystemIntegrityView: React.FC<{ t: Translations; onBack: () => void
           <div className="shrink-0 space-y-4 pb-4 w-full">
               <NarrativeTerminal text={report.narrative} t={t} />
               <AnomalyList structural={report.structuralAnomalies} labels={anomalyLabels} t={t} />
+              <StochasticResonanceMonitor analysis={report.stochasticAnalysis} t={t} />
           </div>
       </div>
 
@@ -276,13 +339,13 @@ export const SystemIntegrityView: React.FC<{ t: Translations; onBack: () => void
                           <>
                             {selectedOrgan.errors.map((e: ConfigError, i: number) => (
                                 <div key={i} className="p-3 bg-red-950/20 border-l-2 border-red-500 rounded-r-lg">
-                                    <span className="text-[8px] font-black text-red-400 block mb-1">[CRITICAL] {e.type}</span>
+                                    <span className="text-[8px] font-black text-red-400 block mb-1">[КРИТИЧНО] {e.type}</span>
                                     <p className="text-[10px] text-slate-300 font-medium">{e.details}</p>
                                 </div>
                             ))}
                             {selectedOrgan.warnings.map((w: ConfigError, i: number) => (
                                 <div key={i} className="p-3 bg-amber-950/20 border-l-2 border-amber-500 rounded-r-lg">
-                                    <span className="text-[8px] font-black text-amber-400 block mb-1">[WARNING] {w.type}</span>
+                                    <span className="text-[8px] font-black text-amber-400 block mb-1">[ПРЕДУПРЕЖДЕНИЕ] {w.type}</span>
                                     <p className="text-[10px] text-slate-300 font-medium">{w.details}</p>
                                 </div>
                             ))}

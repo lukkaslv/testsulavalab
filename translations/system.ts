@@ -1,4 +1,3 @@
-
 export const systemTranslations = {
     safety: { title: "Безопасность", alert_title: "Внимание", alert_message: "Риск дестабилизации." },
     crisis_view: { title: "РЕЖИМ ЗАЩИТЫ", message: "Критическое истощение.", recommendation: "Обратитесь к специалисту.", ru_helpline_name: "Служба экстренной помощи", ru_helpline_number: "112", ru_helpline_desc: "Круглосуточно", exit_button_text: "ВЫХОД" },
@@ -6,7 +5,14 @@ export const systemTranslations = {
         title: "ЦЕЛОСТНОСТЬ", version_label: "V2.0", exit_btn: "ВЫХОД", initializing: "...", dynamics_label: "ДИНАМИКА", system_narrative: "ЛОГ", no_anomalies: "НЕТ", efficiency: "Эффективность", optimal: "ОК", verdict_healthy: "ЗДОРОВ", verdict_unstable: "РИСКИ", 
         metrics: { emergence: "ЭМЕРДЖ", synergy: "СИНЕРГИЯ", phase_risk: "РИСК СРЫВА" }, 
         organs: { NERVOUS_SYSTEM: "НС", METABOLISM: "ОБМЕН", VOICE: "ГОЛОС", IMMUNITY: "ИММУН", STRUCTURE: "СТРУКТ", NETWORK: "СЕТЬ" }, 
-        anomalies: { DEAD_CODE: "МЕРТВЫЙ", SPOF: "ОТКАЗ", BUTTERFLY: "БАБОЧКА", DOMINO: "ДОМИНО", HYSTERESIS: "ГИСТЕРЕЗИС", TECH_DEBT: "ДОЛГ", COUPLING: "СВЯЗЬ", CONWAY: "КОНВЕЙ", DETERMINISM: "ДЕТЕРМ", CIRCUIT_BRK: "BREAK", BIFURCATION: "БИФУРК", ATTRACTORS: "АТТРАКТ", STABLE: "СТАБИЛ", RESONANCE: "РЕЗОНАНС" } 
+        anomalies: { DEAD_CODE: "МЕРТВЫЙ", SPOF: "ОТКАЗ", BUTTERFLY: "БАБОЧКА", DOMINO: "ДОМИНО", HYSTERESIS: "ГИСТЕРЕЗИС", TECH_DEBT: "ДОЛГ", COUPLING: "СВЯЗЬ", CONWAY: "КОНВЕЙ", DETERMINISM: "ДЕТЕРМ", CIRCUIT_BRK: "BREAK", BIFURCATION: "БИФУРК", ATTRACTORS: "АТТРАКТ", STABLE: "СТАБИЛ", RESONANCE: "РЕЗОНАНС" },
+        stochastic_resonance: {
+            title: "Стохастический Резонанс",
+            signal_label: "СИГНАЛ",
+            noise_label: "ШУМ",
+            snr_label: "SNR",
+            conclusion: "Подтверждение детерминизма (Ст. 1.1). Система отличает сигнал от случайного шума."
+        }
     },
     security_monitor: { title: "МОНИТОР БЕЗОПАСНОСТИ", requests_label: "ЗАПРОСЫ", domains_label: "ДОМЕНЫ", violations_label: "НАРУШЕНИЯ", integrity_desc: "Проверка целостности пройдена." },
     constitution: { title: "Конституция Genesis OS", subtitle: "Верховный Документ", articles: { a1: "Ст. 1: Природа Системы", a1_desc: "Genesis OS — детерминированный алгоритм.", a2: "Ст. 2: Абсолютный Запрет на AI", a2_desc: "Запрещено использование генеративных нейросетей в ядре.", a3: "Ст. 3: Клиническая Достоверность", a3_desc: "Алгоритмы основаны на научных моделях.", a4: "Ст. 4: Принцип Единого Организма", a4_desc: "Система целостна.", a13: "Ст. 13: Приватность", a13_desc: "Данные локальны.", a28: "Ст. 28: Незыблемость", a28_desc: "Конституция имеет высшую силу." } },

@@ -1,376 +1,312 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { AnalysisResult, Translations } from '../../types';
+import React, { useState, useMemo } from 'react';
+import { AnalysisResult, Translations, SessionStep } from '../../types';
 import { CompatibilityEngine } from '../../services/compatibilityEngine';
+import { generateClinicalNarrative } from '../../services/clinicalNarratives';
 import { ClinicalDecoder } from '../../services/clinicalDecoder';
-import { PlatformBridge } from '../../utils/helpers';
-import { SupervisorService } from '../../services/supervisorService';
-import { AutopoiesisNucleus } from '../AutopoiesisNucleus';
 
 interface ProTerminalViewProps {
   t: Translations;
   onBack: () => void;
 }
 
-// --- SUB-COMPONENTS ---
-
-const MonitorCard = ({ label, value, sub, color = "text-white", warning = false }: { label: string, value: string | number, sub: string, color?: string, warning?: boolean }) => (
-    <div className={`p-4 rounded-2xl border flex flex-col justify-between h-28 relative overflow-hidden group ${warning ? 'bg-red-950/20 border-red-500/30' : 'bg-slate-900/60 border-white/5'}`}>
-        {warning && <div className="absolute top-0 right-0 p-2 text-red-500 opacity-20 text-4xl font-black">!</div>}
-        <span className="text-[7px] font-black text-slate-500 uppercase tracking-[0.2em] relative z-10">{label}</span>
-        <div className="relative z-10">
-            <span className={`text-2xl font-black font-mono tracking-tighter ${color}`}>{value}</span>
-            <div className={`h-1 w-8 rounded-full mt-2 ${warning ? 'bg-red-500' : 'bg-slate-700'}`}></div>
+const NarrativeSection = ({ title, content, highlight = false, alert = false, special = false, icon }: { title: string, content: string, highlight?: boolean, alert?: boolean, special?: boolean, icon?: string }) => (
+    <div className={`space-y-2 ${highlight ? 'bg-indigo-500/5 p-4 rounded-xl border border-indigo-500/10' : alert ? 'bg-red-950/20 p-4 rounded-xl border border-red-900/30' : special ? 'bg-emerald-950/10 p-4 rounded-xl border border-emerald-900/20' : 'py-3 border-b border-slate-800/50'}`}>
+        <h4 className={`text-[9px] font-black uppercase tracking-widest pb-1 flex items-center gap-2 ${alert ? 'text-red-400' : special ? 'text-emerald-400' : highlight ? 'text-indigo-300' : 'text-slate-500'}`}>
+            {icon && <span className="text-sm opacity-80">{icon}</span>}
+            {title}
+        </h4>
+        <div className="whitespace-pre-wrap text-[10px] text-slate-300 leading-relaxed font-mono pl-1 opacity-90">
+            {content}
         </div>
-        <p className="text-[8px] text-slate-500 uppercase font-bold tracking-wider relative z-10">{sub}</p>
     </div>
 );
 
-const DecryptionCore = ({ onDecrypt, onBack }: { onDecrypt: (code: string) => void, onBack: () => void }) => {
-    const [code, setCode] = useState('');
-    const [status, setStatus] = useState<'IDLE' | 'ANALYZING' | 'INVALID'>('IDLE');
+const SupervisionCard = ({ title, children, type = 'info' }: { title: string, children?: React.ReactNode, type?: 'info' | 'alert' | 'secret' }) => (
+    <div className={`rounded-xl border relative overflow-hidden ${
+        type === 'alert' ? 'bg-red-950/10 border-red-500/30' : 
+        type === 'secret' ? 'bg-indigo-950/30 border-indigo-500/30' : 
+        'bg-slate-900/30 border-slate-700/50'
+    }`}>
+        {type === 'secret' && <div className="absolute top-0 right-0 p-2 text-[40px] opacity-5 pointer-events-none">🔒</div>}
+        <div className={`px-3 py-2 border-b text-[8px] font-black uppercase tracking-[0.2em] flex justify-between items-center ${
+             type === 'alert' ? 'border-red-500/20 text-red-400' : 
+             type === 'secret' ? 'border-indigo-500/20 text-indigo-300' : 
+             'border-slate-700/50 text-slate-500'
+        }`}>
+            <span>{title}</span>
+            <span>{type === 'alert' ? '⚠️' : type === 'secret' ? 'СЕКРЕТНО' : 'ИНФО'}</span>
+        </div>
+        <div className="p-3">
+            {children}
+        </div>
+    </div>
+);
 
-    const handleSubmit = async () => {
-        if (!code.trim()) return;
-        setStatus('ANALYZING');
-        PlatformBridge.haptic.impact('medium');
-        
-        // Artificial delay for "processing" feel (Art. 4.3 Aesthetics)
-        await new Promise(r => setTimeout(r, 800));
-        
-        const result = CompatibilityEngine.decodeSmartCode(code);
-        if (result && result.validity !== 'BREACH') {
-            PlatformBridge.haptic.notification('success');
-            onDecrypt(code);
-        } else {
-            PlatformBridge.haptic.notification('error');
-            setStatus('INVALID');
-            setTimeout(() => setStatus('IDLE'), 1500);
-        }
-    };
+const SessionArc = ({ steps }: { steps: SessionStep[] }) => (
+    <div className="grid grid-cols-1 gap-2 my-4">
+        {steps.map((step, idx) => (
+            <div key={idx} className="flex gap-3 bg-slate-900/50 p-3 rounded-xl border border-slate-800 items-start">
+                <div className={`flex flex-col items-center justify-center w-8 shrink-0 space-y-1 pt-1`}>
+                    <div className={`w-2 h-2 rounded-full ${idx === 0 ? 'bg-emerald-500' : idx === 1 ? 'bg-indigo-500' : 'bg-slate-500'}`}></div>
+                    <div className="w-0.5 h-6 bg-slate-800 last:hidden"></div>
+                </div>
+                <div>
+                    <span className="text-[8px] font-black uppercase tracking-widest text-slate-500 block mb-0.5">ШАГ {idx + 1}: {step.phase}</span>
+                    <h5 className="text-[10px] font-bold text-slate-200 uppercase">{step.title}</h5>
+                    <p className="text-[10px] text-slate-400 leading-tight mt-1 font-mono opacity-80">{step.action}</p>
+                </div>
+            </div>
+        ))}
+    </div>
+);
+
+const VitalMonitor = ({ label, value, color }: { label: string, value: number, color: string }) => (
+    <div className="bg-slate-900 rounded p-1.5 min-w-[40px] border border-slate-800/50">
+        <span className="text-[6px] uppercase text-slate-500 block tracking-widest mb-0.5">{label}</span>
+        <div className="flex items-end gap-1">
+            <span className={`text-[10px] font-bold font-mono leading-none ${color}`}>{value}</span>
+            <div className="flex-1 h-1 bg-slate-800 rounded-sm overflow-hidden mb-0.5">
+                <div className={`h-full ${color.replace('text-', 'bg-')} opacity-60`} style={{ width: `${value}%` }}></div>
+            </div>
+        </div>
+    </div>
+);
+
+const ValidityPanel = ({ result }: { result: AnalysisResult }) => {
+    const isSuspicious = result.validity !== 'VALID';
+    const flags = result.flags || { isAlexithymiaDetected: false, isSocialDesirabilityBiasDetected: false, isSlowProcessingDetected: false };
+    
+    if (!isSuspicious && !flags.isAlexithymiaDetected && !flags.isSocialDesirabilityBiasDetected) return null;
 
     return (
-        <div className="h-full flex flex-col items-center justify-center p-4 sm:p-8 bg-[#020617] animate-in relative overflow-hidden">
-            {/* Background Grid */}
-            <div className="absolute inset-0 bg-[linear-gradient(rgba(99,102,241,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(99,102,241,0.03)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none"></div>
-
-            <div className="w-full max-w-sm space-y-8 relative z-10">
-                <div className="text-center space-y-2">
-                    <div className="w-20 h-20 mx-auto bg-slate-900 border border-slate-700 rounded-3xl flex items-center justify-center text-4xl shadow-2xl relative group">
-                        <div className="absolute inset-0 border-2 border-indigo-500/30 rounded-3xl animate-pulse"></div>
-                        🔑
+        <div className="bg-red-950/20 border border-red-900/40 p-3 rounded-xl mb-4">
+            <div className="flex justify-between items-center mb-2 border-b border-red-900/30 pb-1">
+                <span className="text-[8px] font-black uppercase tracking-widest text-red-400">КОНТРОЛЬ КАЧЕСТВА СИГНАЛА</span>
+                <span className="text-[8px] font-mono text-red-500 bg-red-900/20 px-1 rounded">{result.validity}</span>
+            </div>
+            <div className="space-y-1">
+                {flags.isAlexithymiaDetected && (
+                    <div className="flex gap-2 items-center text-[9px] text-slate-300">
+                        <span>🧊</span> 
+                        <span><strong>Соматическая Слепота:</strong> Клиент выбирает 'Нейтрально' &gt; 75%. Метрика связи ненадежна.</span>
                     </div>
-                    <h2 className="text-lg font-black uppercase text-indigo-400 tracking-[0.3em]">ЛАБОРАТОРИЯ ФОРЕНЗИКИ</h2>
-                    <p className="text-[9px] text-slate-500 font-mono uppercase">Модуль Дешифровки Клинических Данных</p>
-                </div>
-
-                <div className="space-y-4">
-                    <div className={`relative transition-all duration-300 ${status === 'INVALID' ? 'animate-shake' : ''}`}>
-                        <input 
-                            type="text" 
-                            value={code}
-                            onChange={(e) => { setCode(e.target.value); setStatus('IDLE'); }}
-                            placeholder="ВСТАВИТЬ ХЕШ СЕССИИ" 
-                            className={`w-full bg-slate-950/80 border-2 rounded-2xl p-5 text-center font-mono text-xs uppercase outline-none transition-all placeholder-slate-700
-                                ${status === 'INVALID' ? 'border-red-500 text-red-400' : 'border-slate-800 text-indigo-300 focus:border-indigo-500'}`}
-                        />
-                        {status === 'ANALYZING' && (
-                            <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                                <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-                            </div>
-                        )}
+                )}
+                {flags.isSocialDesirabilityBiasDetected && (
+                    <div className="flex gap-2 items-center text-[9px] text-slate-300">
+                        <span>🎭</span> 
+                        <span><strong>Социальная Желательность:</strong> Слишком быстрые ответы. Риск "отыгрывания" роли.</span>
                     </div>
+                )}
+                {flags.isSlowProcessingDetected && (
+                    <div className="flex gap-2 items-center text-[9px] text-slate-300">
+                        <span>🐢</span> 
+                        <span><strong>Замедленная Обработка:</strong> Высокая базовая когнитивная нагрузка. Энтропия скорректирована.</span>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
 
-                    <button 
-                        onClick={handleSubmit} 
-                        disabled={status === 'ANALYZING' || !code}
-                        className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] shadow-lg active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {status === 'INVALID' ? 'ОШИБКА КОНТРОЛЬНОЙ СУММЫ' : 'ИНИЦИАЛИЗАЦИЯ ДЕКОДЕРА'}
-                    </button>
-                </div>
+const SomaticDissonancePanel = ({ result, t }: { result: AnalysisResult, t: Translations }) => {
+    if (!result.somaticDissonance || result.somaticDissonance.length === 0) return null;
 
-                <button onClick={onBack} className="w-full text-[9px] font-black uppercase text-slate-600 hover:text-slate-400 transition-colors tracking-widest">
-                    [ ПРЕРВАТЬ ПОСЛЕДОВАТЕЛЬНОСТЬ ]
-                </button>
+    return (
+        <div className="bg-amber-950/10 border border-amber-900/30 p-4 rounded-xl mb-4">
+            <div className="flex justify-between items-center mb-2">
+                <span className="text-[8px] font-black uppercase tracking-widest text-amber-500 flex items-center gap-2">
+                    <span className="text-xs">⚡</span> {t.clinical_decoder.somatic_dissonance_title}
+                </span>
+                <span className="text-[8px] bg-amber-900/40 text-amber-400 px-2 py-0.5 rounded font-mono">{result.somaticDissonance.length} КОНФЛИКТОВ</span>
+            </div>
+            <p className="text-[9px] text-slate-400 mb-2 leading-tight">
+                {t.clinical_decoder.somatic_dissonance_desc}
+            </p>
+            <div className="space-y-1">
+                {result.somaticDissonance.map((key) => (
+                    <div key={key} className="flex justify-between items-center border-b border-amber-900/20 pb-1">
+                        <span className="text-[9px] font-mono text-amber-300/80 uppercase">{key}</span>
+                        <span className="text-[8px] text-slate-500 italic">{t.beliefs[key]}</span>
+                    </div>
+                ))}
             </div>
         </div>
     );
 };
 
 export const ProTerminalView: React.FC<ProTerminalViewProps> = ({ t, onBack }) => {
+  const [partnerCode, setPartnerCode] = useState('');
   const [clientResult, setClientResult] = useState<AnalysisResult | null>(null);
-  const [dossier, setDossier] = useState<string | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [activeTab, setActiveTab] = useState<'report' | 'stats' | 'neuro' | 'tactics'>('report');
 
-  useEffect(() => {
-      const cachedCode = sessionStorage.getItem('genesis_last_analysis_code');
-      if (cachedCode && !clientResult) {
-          const result = CompatibilityEngine.decodeSmartCode(cachedCode);
-          if (result) setClientResult(result);
-      }
-  }, []);
+  const cd = t.clinical_decoder;
 
-  const interpretation = useMemo(() => clientResult ? ClinicalDecoder.decode(clientResult, t) : null, [clientResult, t]);
-
-  const handleDecrypt = (code: string) => {
-    const result = CompatibilityEngine.decodeSmartCode(code);
-    if (result) {
-        setClientResult(result);
-        sessionStorage.setItem('genesis_last_analysis_code', code);
+  const handleAnalyze = () => {
+    const decodedClient = CompatibilityEngine.decodeSmartCode(partnerCode);
+    if (decodedClient) {
+        setClientResult(decodedClient);
+        (window as any).Telegram?.WebApp?.HapticFeedback?.notificationOccurred?.('success');
+    } else {
+        (window as any).Telegram?.WebApp?.HapticFeedback?.notificationOccurred?.('error');
     }
   };
 
-  const copyToClipboard = () => {
-      if (dossier) {
-          navigator.clipboard.writeText(dossier);
-          PlatformBridge.haptic.notification('success');
+  const interpretation = useMemo(() => {
+      if (!clientResult) return null;
+      
+      const legacy = ClinicalDecoder.decode(clientResult, t);
+      const narrative = generateClinicalNarrative(clientResult);
+      
+      let priority = "";
+      let priorityLevel: 'low' | 'medium' | 'high' = 'low';
+      
+      if (clientResult.state.foundation < 30) {
+          priority = "🛑 АВАРИЙНЫЙ РЕЖИМ (КРИТИЧНО)";
+          priorityLevel = 'high';
+      } else if (clientResult.state.agency > 80 && clientResult.state.foundation < 40) {
+          priority = "⚠️ РИСК СРЫВА (МАНИАКАЛЬНАЯ ЗАЩИТА)";
+          priorityLevel = 'high';
+      } else if (clientResult.neuroSync < 40) {
+          priority = "🧊 ДИССОЦИАЦИЯ (ЗАМИРАНИЕ)";
+          priorityLevel = 'medium';
+      } else {
+          priority = "✅ ШТАТНЫЙ РЕЖИМ (СТАБИЛЬНО)";
+          priorityLevel = 'low';
       }
-  };
+
+      return {
+          ...legacy,
+          narrative: narrative.level2,
+          priority,
+          priorityLevel
+      };
+  }, [clientResult, t]);
 
   if (!clientResult || !interpretation) {
-      return <DecryptionCore onDecrypt={handleDecrypt} onBack={onBack} />;
-  }
-
-  const TAB_LABELS: Record<string, string> = {
-      report: 'ДОСЬЕ',
-      stats: 'МЕТРИКИ',
-      neuro: 'НЕЙРО',
-      tactics: 'ТАКТИКА'
-  };
-
-  return (
-    <section className="flex flex-col h-full bg-[#020617] text-slate-400 font-mono overflow-hidden select-none">
-        
-        {/* HEADER: SESSION CONTROL */}
-        <header className="p-4 sm:p-5 border-b border-white/5 flex justify-between items-center bg-slate-950/80 backdrop-blur-xl shrink-0 z-20">
-            <div className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                <div className="flex flex-col">
-                    <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">СЕССИЯ АКТИВНА</span>
-                    <span className="text-[7px] text-slate-600 font-black uppercase tracking-widest">ID: {clientResult.shareCode.substring(0, 8)}</span>
+      return (
+        <section className="space-y-6 animate-in py-4 flex flex-col h-full bg-white">
+            <div className="flex justify-between items-center px-1 pb-2 border-b border-indigo-100/50 shrink-0">
+                <button onClick={onBack} className="flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-xl text-[10px] font-black uppercase text-slate-600 active:scale-95 transition-all">
+                    ← {t.global.back}
+                </button>
+                <div className="flex flex-col items-end">
+                    <span className="text-[10px] font-mono text-indigo-600 font-black tracking-widest">КЛИНИЧЕСКИЙ ТЕРМИНАЛ</span>
+                    <span className="text-[7px] font-mono text-slate-400 uppercase">ОС Супервизора v5.2</span>
                 </div>
             </div>
-            <button 
-                onClick={() => { 
-                    PlatformBridge.haptic.impact('heavy'); 
-                    setClientResult(null); 
-                    sessionStorage.removeItem('genesis_last_analysis_code');
-                }} 
-                className="px-4 py-2 bg-red-950/20 text-red-500 border border-red-500/20 rounded-xl text-[8px] font-black uppercase tracking-widest hover:bg-red-950/40 transition-all active:scale-95"
-            >
-                ИЗВЛЕЧЬ
-            </button>
-        </header>
-
-        {/* NAVIGATION DECK */}
-        <nav className="p-2 bg-slate-900 shrink-0 overflow-x-auto no-scrollbar border-b border-white/5">
-            <div className="flex gap-1 min-w-max">
-                {(['report', 'stats', 'neuro', 'tactics'] as const).map(tab => (
-                    <button 
-                        key={tab} 
-                        onClick={() => { setActiveTab(tab); PlatformBridge.haptic.selection(); }} 
-                        className={`px-6 py-3 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] transition-all flex items-center gap-2
-                            ${activeTab === tab 
-                                ? 'bg-indigo-600 text-white shadow-[0_0_20px_rgba(99,102,241,0.3)]' 
-                                : 'text-slate-500 hover:text-slate-300'}`}
-                    >
-                        <span>{tab === 'report' ? '📂' : tab === 'stats' ? '📊' : tab === 'neuro' ? '🧠' : '⚡'}</span>
-                        {TAB_LABELS[tab]}
-                    </button>
-                ))}
-            </div>
-        </nav>
-
-        {/* WORKBENCH AREA */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-5 space-y-8 pb-32">
-            
-            {activeTab === 'report' && (
-                <div className="space-y-6 animate-in">
-                    {/* PRIMARY DIAGNOSIS */}
-                    <div className="bg-gradient-to-br from-slate-900 to-slate-950 border border-indigo-500/20 p-6 rounded-[2.5rem] shadow-2xl relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-6 opacity-5 text-6xl font-black">?</div>
-                        <div className="relative z-10 space-y-4">
-                            <span className="text-[8px] font-black text-indigo-400 uppercase tracking-[0.3em]">Ядерная Конфигурация</span>
-                            <h2 className="text-xl font-black text-white italic uppercase tracking-tight leading-none break-words">
-                                {interpretation.systemConfiguration.title}
-                            </h2>
-                            <div className="h-px bg-indigo-500/20 w-full"></div>
-                            <p className="text-[11px] text-slate-300 leading-relaxed font-medium italic">
-                                "{interpretation.systemConfiguration.description}"
-                            </p>
-                            
-                            <div className="flex gap-2 pt-2">
-                                <span className={`text-[8px] px-2 py-1 rounded font-black uppercase tracking-widest border
-                                    ${interpretation.priorityLevel === 'high' ? 'bg-red-950/30 text-red-400 border-red-500/20' : 'bg-emerald-950/30 text-emerald-400 border-emerald-500/20'}`}>
-                                    {interpretation.priority}
-                                </span>
-                            </div>
-                        </div>
+            <div className="space-y-4 animate-in">
+                <div className="p-6 bg-slate-50 rounded-[2rem] border border-slate-100 text-center space-y-4">
+                    <div className="w-16 h-16 bg-white rounded-2xl mx-auto flex items-center justify-center text-2xl shadow-sm">
+                        🔐
                     </div>
-
-                    {/* VITAL GRID */}
-                    <div className="grid grid-cols-2 gap-3">
-                        <MonitorCard 
-                            label="Энтропийная Нагрузка" 
-                            value={`${interpretation.extra.homeostasisCost}%`} 
-                            sub="Потеря Энергии" 
-                            color="text-amber-400" 
-                        />
-                        <MonitorCard 
-                            label="Сопротивление" 
-                            value={`${interpretation.extra.prognosis.allianceRisk}%`} 
-                            sub="Риск Альянса" 
-                            color={interpretation.extra.prognosis.allianceRisk > 60 ? 'text-red-400' : 'text-emerald-400'} 
-                            warning={interpretation.extra.prognosis.allianceRisk > 60}
-                        />
-                    </div>
-
-                    {/* TRANSFERENCE PREDICTION */}
-                    <div className="p-5 rounded-2xl border border-indigo-500/20 bg-indigo-950/10 space-y-2">
-                        <span className="text-[7px] font-black text-indigo-300 uppercase tracking-widest">Прогноз Переноса (Art. 27.2)</span>
-                        <p className="text-[10px] text-indigo-100 font-bold leading-relaxed border-l-2 border-indigo-500 pl-3">
-                            {interpretation.extra.transference}
+                    <div>
+                        <h3 className="text-sm font-black uppercase text-slate-900">Доступ Ограничен</h3>
+                        <p className="text-[10px] text-slate-500 font-medium mt-1 max-w-[200px] mx-auto">
+                            Введите ID Клиента или Код Доступа для расшифровки клинического профиля.
                         </p>
                     </div>
                 </div>
-            )}
+                <div className="flex gap-2 p-2 bg-slate-50 rounded-2xl border border-slate-100 shadow-inner">
+                    <input 
+                        type="text" 
+                        placeholder="ВСТАВИТЬ КОД (VEHFX...)"
+                        className="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-3 font-mono text-xs uppercase text-indigo-600 outline-none focus:border-indigo-500 transition-colors placeholder-indigo-900/30 resize-none leading-relaxed"
+                        value={partnerCode}
+                        onChange={e => setPartnerCode(e.target.value)}
+                    />
+                    <button 
+                        onClick={handleAnalyze} 
+                        className="bg-indigo-600 text-white px-6 rounded-xl font-black text-[10px] uppercase shadow-lg shadow-indigo-200 active:scale-95 transition-all"
+                    >
+                        РАСШИФРОВАТЬ
+                    </button>
+                </div>
+            </div>
+        </section>
+      );
+  }
 
-            {activeTab === 'stats' && (
-                <div className="space-y-6 animate-in">
-                    <div className="bg-slate-900/40 border border-white/5 p-6 rounded-[2.5rem] space-y-6">
-                        <div className="flex justify-between items-center">
-                            <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Скан Когнитивного Трения</span>
-                            <span className="text-[10px] font-mono text-slate-400">{interpretation.stats?.standardDeviation}ms σ</span>
-                        </div>
-                        
-                        {/* Z-SCORE HISTOGRAM */}
-                        <div className="flex gap-1 h-32 items-end px-2">
-                            {interpretation.stats?.zScoreDistribution.map((z, i) => {
-                                const height = Math.min(100, Math.abs(z * 30));
-                                const isSpike = z > 1.8;
-                                return (
-                                    <div key={i} className="flex-1 flex flex-col justify-end group relative">
-                                        <div 
-                                            className={`w-full rounded-t-sm transition-all duration-500 ${isSpike ? 'bg-red-500 shadow-[0_0_10px_#ef4444]' : 'bg-indigo-500/40'}`} 
-                                            style={{ height: `${height}%` }}
-                                        ></div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                        
-                        <div className="flex justify-between text-[7px] text-slate-600 font-mono uppercase tracking-widest">
-                            <span>НАЧАЛО</span>
-                            <span>КОНЕЦ</span>
-                        </div>
+  return (
+    <section className="space-y-6 animate-in py-4 flex flex-col h-full bg-slate-950">
+        <div className="flex justify-between items-center px-1 pb-2 border-b border-slate-800 shrink-0">
+            <button onClick={onBack} className="flex items-center gap-2 px-4 py-2 bg-slate-800 rounded-xl text-[10px] font-black uppercase text-slate-300 active:scale-95 transition-all">
+                ← {t.global.back}
+            </button>
+            <div className="flex flex-col items-end">
+                 <span className="text-[10px] font-mono text-indigo-400 font-black tracking-widest">КЛИНИЧЕСКИЙ ДЕКОДЕР</span>
+                 <span className="text-[7px] font-mono text-slate-500 uppercase">Слой Самоанализа</span>
+            </div>
+        </div>
+
+        <div className="bg-slate-950 text-slate-400 p-5 rounded-[2rem] space-y-6 border border-slate-800 shadow-2xl relative animate-in flex-1 overflow-y-auto custom-scrollbar font-mono">
+            <div className="border-b border-slate-800 pb-4 space-y-4">
+                <div className="flex justify-between items-center">
+                    <div className="space-y-0.5">
+                        <span className="text-[8px] text-emerald-500 font-black uppercase tracking-widest block">ID СЕССИИ</span>
+                        <span className="text-[10px] text-emerald-500 font-mono font-bold tracking-wider">{clientResult.shareCode.substring(0, 8)}</span>
                     </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="p-4 bg-black/30 rounded-xl border border-white/5 space-y-1">
-                            <span className="text-[7px] text-slate-500 uppercase">Асимметрия</span>
-                            <span className="text-xl font-mono text-white">{interpretation.stats?.skewness}</span>
-                        </div>
-                        <div className="p-4 bg-black/30 rounded-xl border border-white/5 space-y-1">
-                            <span className="text-[7px] text-slate-500 uppercase">Дисперсия (σ²)</span>
-                            <span className="text-xl font-mono text-white">{interpretation.stats?.variance}</span>
-                        </div>
+                    <div className="flex gap-1">
+                        {interpretation.priorityLevel === 'high' && <span className="bg-red-950/50 text-red-400 border border-red-900/50 px-2 py-0.5 rounded text-[7px] font-black uppercase tracking-wider">ВЫСОКИЙ РИСК</span>}
+                        {clientResult.neuroSync < 50 && <span className="bg-indigo-950/50 text-indigo-400 border border-indigo-900/50 px-2 py-0.5 rounded text-[7px] font-black uppercase tracking-wider">ДИССОЦИАЦИЯ</span>}
                     </div>
                 </div>
-            )}
-
-            {activeTab === 'neuro' && (
-                <div className="space-y-6 animate-in">
-                    {/* ALEXITHYMIA GAUGE */}
-                    <div className={`p-6 rounded-[2.5rem] border relative overflow-hidden flex items-center gap-6 ${interpretation.neuro?.alexithymiaIndex && interpretation.neuro.alexithymiaIndex > 60 ? 'bg-red-950/20 border-red-500/30' : 'bg-slate-900 border-white/5'}`}>
-                        <div className="relative w-24 h-24 flex items-center justify-center shrink-0">
-                            <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
-                                <path className="text-slate-800" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" />
-                                <path 
-                                    className={`${interpretation.neuro?.alexithymiaIndex && interpretation.neuro.alexithymiaIndex > 60 ? 'text-red-500' : 'text-emerald-500'}`} 
-                                    strokeDasharray={`${interpretation.neuro?.alexithymiaIndex}, 100`} 
-                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
-                                    fill="none" stroke="currentColor" strokeWidth="3" 
-                                />
-                            </svg>
-                            <span className="absolute text-lg font-black text-white">{interpretation.neuro?.alexithymiaIndex}%</span>
-                        </div>
-                        <div>
-                            <span className="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em] block mb-1">Индекс Алекситимии</span>
-                            <h3 className="text-sm font-bold text-slate-200 uppercase leading-tight">
-                                {interpretation.neuro?.alexithymiaIndex && interpretation.neuro.alexithymiaIndex > 60 ? 'ВЫСОКАЯ ДИССОЦИАЦИЯ' : 'НОМИНАЛЬНАЯ СВЯЗЬ'}
-                            </h3>
-                            <p className="text-[8px] text-slate-500 mt-2 leading-relaxed">
-                                Процент "Нейтральных" ответов в телесном чек-ине. Высокий уровень блокирует аффект.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="space-y-3">
-                        <h4 className="text-[9px] font-black text-slate-500 uppercase ml-2 tracking-widest">Потенциал Самовосстановления</h4>
-                        <AutopoiesisNucleus metrics={interpretation.extra.autopoiesis} t={t} className="h-64" />
+                <ValidityPanel result={clientResult} />
+                <div className={`p-3 rounded-xl border-l-4 shadow-lg flex items-center gap-3 ${
+                    interpretation.priorityLevel === 'high' ? 'bg-red-950/20 border-red-500/50 text-red-200' :
+                    interpretation.priorityLevel === 'medium' ? 'bg-amber-950/20 border-amber-500/50 text-amber-200' :
+                    'bg-emerald-950/20 border-emerald-500/50 text-emerald-200'
+                }`}>
+                    <span className="text-xl">{interpretation.priorityLevel === 'high' ? '🛑' : interpretation.priorityLevel === 'medium' ? '⚠️' : '✅'}</span>
+                    <div>
+                        <span className="text-[7px] font-black uppercase tracking-widest opacity-60 block">ПРИОРИТЕТ</span>
+                        <p className="text-[10px] font-bold leading-tight">{interpretation.priority}</p>
                     </div>
                 </div>
-            )}
-
-            {activeTab === 'tactics' && (
-                <div className="space-y-8 animate-in">
-                    
-                    {/* DIRECTIVES LIST */}
-                    <div className="space-y-3">
-                        <div className="flex items-center gap-2 px-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
-                            <h4 className="text-[9px] font-black text-indigo-400 uppercase tracking-[0.3em]">Протокол Интервенций</h4>
-                        </div>
-                        {interpretation.extra.directives.map((d, i) => (
-                            <div key={i} className="bg-slate-900 border-l-2 border-indigo-500 p-4 rounded-r-xl shadow-sm">
-                                <p className="text-[10px] text-slate-300 font-bold leading-relaxed">{d}</p>
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* DOSSIER GENERATOR */}
-                    {!dossier ? (
-                        <button 
-                            onClick={async () => {
-                                setIsProcessing(true);
-                                PlatformBridge.haptic.impact('medium');
-                                await new Promise(r => setTimeout(r, 2000)); // Cinematic delay
-                                const data = await SupervisorService.generateClinicalSupervision(clientResult, t);
-                                setDossier(data.report);
-                                setIsProcessing(false);
-                                PlatformBridge.haptic.notification('success');
-                            }} 
-                            disabled={isProcessing}
-                            className="w-full py-6 bg-emerald-600/10 border border-emerald-500/30 text-emerald-400 rounded-[2rem] font-black text-[10px] uppercase tracking-[0.3em] shadow-[0_0_30px_rgba(16,185,129,0.1)] active:scale-95 transition-all flex flex-col items-center gap-2 hover:bg-emerald-600/20"
-                        >
-                            {isProcessing ? (
-                                <span className="animate-pulse">КОМПИЛЯЦИЯ КЛИНИЧЕСКОГО АНАЛИЗА...</span>
-                            ) : (
-                                <>
-                                    <span className="text-xl">🖨️</span>
-                                    <span>СГЕНЕРИРОВАТЬ ОТЧЕТ (V2.0)</span>
-                                </>
-                            )}
-                        </button>
-                    ) : (
-                        <div className="space-y-4 animate-in">
-                            <div className="flex justify-between items-center px-2">
-                                <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest">ОТЧЕТ ГОТОВ</span>
-                                <button onClick={copyToClipboard} className="text-[8px] font-black uppercase text-slate-400 bg-slate-900 px-3 py-1.5 rounded hover:text-white transition-colors">
-                                    КОПИРОВАТЬ
-                                </button>
-                            </div>
-                            <div className="bg-black/80 border border-emerald-500/20 p-6 rounded-[2rem] shadow-2xl relative overflow-hidden">
-                                <div className="absolute top-0 right-0 p-4 opacity-10 text-[80px] pointer-events-none">📝</div>
-                                <pre className="whitespace-pre-wrap text-[9px] text-emerald-100/80 leading-relaxed font-mono overflow-x-hidden h-64 overflow-y-auto custom-scrollbar">
-                                    {dossier}
-                                </pre>
-                            </div>
-                        </div>
-                    )}
+                <div className="grid grid-cols-4 gap-2">
+                    <VitalMonitor label="ОПОРА" value={Math.round(clientResult.state.foundation)} color="text-slate-200" />
+                    <VitalMonitor label="ВОЛЯ" value={Math.round(clientResult.state.agency)} color="text-blue-400" />
+                    <VitalMonitor label="РЕСУРС" value={Math.round(clientResult.state.resource)} color="text-amber-400" />
+                    <VitalMonitor label="ХАОС" value={Math.round(clientResult.state.entropy)} color={clientResult.state.entropy > 40 && clientResult.flags?.entropyType !== 'CREATIVE' ? 'text-red-400' : 'text-emerald-400'} />
                 </div>
-            )}
+            </div>
+            <SomaticDissonancePanel result={clientResult} t={t} />
+            <div>
+                <h4 className="text-[9px] font-black uppercase text-indigo-400 tracking-[0.2em] pl-1 mb-2">ДУГА СЕССИИ (FLOW ARC)</h4>
+                <SessionArc steps={interpretation.narrative.sessionFlow} />
+            </div>
+            <div className="space-y-3">
+                <h4 className="text-[9px] font-black uppercase text-slate-600 tracking-[0.2em] pl-1">ДОСЬЕ СУПЕРВИЗОРА</h4>
+                <div className="grid grid-cols-1 gap-3">
+                    <SupervisionCard title="СОПРОТИВЛЕНИЕ" type="alert">
+                        <p className="text-[10px] text-slate-300 leading-relaxed">{interpretation.narrative.resistanceProfile}</p>
+                    </SupervisionCard>
+                    <SupervisionCard title="АЛЬЯНС" type="info">
+                        <p className="text-[10px] text-indigo-200 leading-relaxed">{interpretation.narrative.therapeuticAlliance}</p>
+                    </SupervisionCard>
+                    <SupervisionCard title="КОНТРАКТ" type="secret">
+                        <p className="text-[10px] text-slate-300 italic leading-relaxed">"{interpretation.narrative.shadowContract}"</p>
+                    </SupervisionCard>
+                </div>
+            </div>
+            <div className="space-y-4 pt-4 border-t border-slate-800">
+                <NarrativeSection title="ГЛУБИННЫЙ АНАЛИЗ" content={interpretation.narrative.deepAnalysis} highlight />
+                <div className="bg-emerald-950/20 p-4 rounded-xl border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.05)]">
+                     <h4 className="text-[9px] font-black uppercase text-emerald-500 tracking-widest mb-2">ВЕРДИКТ И ПРОТОКОЛ</h4>
+                     <div className="whitespace-pre-wrap text-[10px] text-emerald-100/90 leading-relaxed font-mono">
+                        {interpretation.narrative.verdictAndRecommendations}
+                    </div>
+                </div>
+            </div>
+            <div className="pt-6 border-t border-slate-800 text-center space-y-4">
+                 <p className="text-[8px] text-slate-600 uppercase max-w-[220px] mx-auto border border-slate-800 p-2 rounded leading-relaxed">
+                    {cd.disclaimer}
+                 </p>
+                 <button 
+                    onClick={() => setClientResult(null)} 
+                    className="text-[9px] font-black text-red-400 uppercase tracking-widest hover:text-red-300 transition-colors bg-red-950/20 px-4 py-3 rounded-lg border border-red-900/30 w-full"
+                 >
+                    [ ЗАКРЫТЬ СЕССИЮ ]
+                 </button>
+            </div>
         </div>
     </section>
   );

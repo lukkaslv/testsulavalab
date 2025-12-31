@@ -32,11 +32,12 @@ const CompactContextControl = () => {
     const { sessionContext, setSessionContext, history } = useAppContext();
     const isLocked = history.length > 0;
     
+    // Localized labels for UI compactness (Art. 12)
     const contexts: Array<{ key: LifeContext, icon: string, label: string }> = [
-        { key: 'NORMAL', icon: '🍃', label: 'NORM' },
-        { key: 'HIGH_LOAD', icon: '🔥', label: 'LOAD' },
-        { key: 'CRISIS', icon: '🛡️', label: 'CRIT' },
-        { key: 'TRANSITION', icon: '🔄', label: 'FLOW' }
+        { key: 'NORMAL', icon: '🍃', label: 'НОРМА' },
+        { key: 'HIGH_LOAD', icon: '🔥', label: 'НАГР' },
+        { key: 'CRISIS', icon: '🛡️', label: 'КРИТ' },
+        { key: 'TRANSITION', icon: '🔄', label: 'СДВИГ' }
     ];
 
     return (
@@ -154,7 +155,7 @@ export const DashboardView = memo<DashboardViewProps>((props) => {
                         {/* Title Block */}
                         <div className="space-y-0.5">
                             <span className={`text-[9px] font-black uppercase tracking-[0.3em] text-white/50`}>
-                                {isTestComplete ? 'ANALYSIS_COMPLETE' : 'SYSTEM_READY'}
+                                {isTestComplete ? 'АНАЛИЗ ЗАВЕРШЕН' : 'СИСТЕМА ГОТОВА'}
                             </span>
                             <div className="text-2xl font-black italic uppercase tracking-tighter text-white leading-none">
                                {isTestComplete ? "РЕЗУЛЬТАТ" : completedNodeIds.length > 0 ? t.ui.resume_session_btn : "ЗАПУСК ЯДРА"}

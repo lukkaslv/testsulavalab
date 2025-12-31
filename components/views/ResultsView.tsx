@@ -1,5 +1,5 @@
 
-import { useState, memo, useMemo } from 'react';
+import { useState, memo, useMemo, useEffect } from 'react';
 import { AnalysisResult, Translations } from '../../types';
 import { PlatformBridge } from '../../utils/helpers';
 import { BioSignature } from '../BioSignature';
@@ -25,7 +25,7 @@ import { InterferenceMoire } from '../InterferenceMoire';
 import { StrangeAttractor } from '../StrangeAttractor';
 import { ReliefMap } from '../ReliefMap';
 import { TensegrityStructure } from '../TensegrityStructure';
-import { SomaticTopography } from '../SomaticTopography'; // NEW
+import { SomaticTopography } from '../SomaticTopography';
 import { SynthesisService } from '../../services/synthesisService';
 import { RefractionEngine } from '../../services/refractionEngine';
 import { StabilityEngine } from '../../services/stabilityEngine';
@@ -71,6 +71,18 @@ export const ResultsView = memo<ResultsViewProps>(({
   const clinical = useMemo(() => ClinicalDecoder.decode(result, t), [result, t]);
   const autopoiesis = useMemo(() => calculateAutopoiesis(result), [result]);
 
+  // SMART FOCUS LOGIC (Art. 6 Feedback Loops)
+  // Determines which module is most critical for the user to see based on their specific imbalance.
+  const recommendedMode = useMemo((): Mode | null => {
+      const { state, neuroSync } = result;
+      if (state.foundation < 35) return 'tensegrity'; // Risk of collapse
+      if (neuroSync < 50) return 'soma'; // Dissociation
+      if (state.entropy > 65) return 'attractor'; // Chaos
+      if (state.agency > 80 && state.foundation < 45) return 'moire'; // Conflict
+      if (shadowContract.gain.includes("Иллюзия") || shadowContract.gain.includes("Сохранение")) return 'shadow';
+      return null;
+  }, [result, shadowContract]);
+
   if (!disclaimerAccepted) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] space-y-8 animate-in px-6 text-center">
@@ -86,11 +98,25 @@ export const ResultsView = memo<ResultsViewProps>(({
     );
   }
 
+  // Clinical Narrative Ordering (Surface -> Depth)
   const modeLabels: Record<string, string> = {
-      blueprint: 'КАРТА', soma: 'ТЕЛО', ekg: 'ЭКГ', tensegrity: 'ТЕНС', relief: 'РЕЛЬЕФ', moire: 'ВОЛНА',
-      attractor: 'ХАОС', hysteresis: 'ГИСТ', helix: 'ДНК', sim: 'СИМ', topology: 'ТОПО',
-      lattice: 'РЕШЕТКА', emg: 'ПАТТЕРН'
+      blueprint: 'КАРТА', 
+      soma: 'ТЕЛО', 
+      ekg: 'ЭКГ', 
+      hysteresis: 'ГИСТ', 
+      tensegrity: 'ТЕНС', 
+      relief: 'РЕЛЬЕФ', 
+      shadow: 'ТЕНЬ', 
+      moire: 'ВОЛНА',
+      attractor: 'ХАОС', 
+      helix: 'ДНК', 
+      sim: 'СИМ', 
+      topology: 'ТОПО',
+      dossier: 'ДОСЬЕ'
   };
+
+  // Ordered keys for the menu
+  const menuOrder = ['blueprint', 'soma', 'ekg', 'tensegrity', 'relief', 'shadow', 'moire', 'attractor', 'hysteresis', 'helix', 'sim', 'dossier'];
 
   return (
     <div className="space-y-8 pb-32 animate-in pt-2 text-slate-100 relative">
@@ -107,25 +133,44 @@ export const ResultsView = memo<ResultsViewProps>(({
           activeMode === 'relief' ? 'bg-[#020617] border-emerald-500/20 shadow-[0_0_40px_rgba(16,185,129,0.1)]' :
           activeMode === 'tensegrity' ? 'bg-[#020617] border-indigo-500/20 shadow-[0_0_40px_rgba(99,102,241,0.1)]' :
           activeMode === 'topology' ? 'bg-[#020617] border-emerald-500/10' :
+          activeMode === 'shadow' ? 'bg-[#2e1065] border-purple-500/30' :
           'bg-slate-950 border-white/5'}`}>
         
         <div className="relative z-10 space-y-6">
             <div className="flex justify-between items-center">
               <span className={`text-[10px] font-black uppercase tracking-[0.4em] px-4 py-2 rounded-full border transition-colors 
                 ${activeMode === 'emg' ? 'text-indigo-300 border-indigo-500/40 bg-indigo-950/50' : 
+                  activeMode === 'shadow' ? 'text-purple-300 border-purple-500/40 bg-purple-950/50' :
                   'text-indigo-400 border-indigo-500/30 bg-indigo-950/40'}`}>
                 {modeLabels[activeMode] || activeMode.toUpperCase()}
               </span>
               
               <div className="flex bg-black/40 p-1 rounded-xl border border-white/5 overflow-x-auto no-scrollbar max-w-[280px]">
-                {Object.keys(modeLabels).map(key => (
-                    <button key={key} onClick={() => { setActiveMode(key as Mode); PlatformBridge.haptic.selection(); }} className={`px-2 py-1.5 rounded-lg text-[7px] font-black uppercase tracking-widest transition-all shrink-0 ${activeMode === key ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500'}`}>
-                        {modeLabels[key]}
-                    </button>
-                ))}
+                {menuOrder.map(key => {
+                    const isRecommended = recommendedMode === key;
+                    const isActive = activeMode === key;
+                    
+                    return (
+                        <button 
+                            key={key} 
+                            onClick={() => { setActiveMode(key as Mode); PlatformBridge.haptic.selection(); }} 
+                            className={`
+                                relative px-2 py-1.5 rounded-lg text-[7px] font-black uppercase tracking-widest transition-all shrink-0 
+                                ${isActive ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}
+                                ${isRecommended && !isActive ? 'border border-indigo-500/50 text-indigo-400' : ''}
+                            `}
+                        >
+                            {modeLabels[key]}
+                            {isRecommended && !isActive && (
+                                <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-indigo-500 rounded-full animate-ping"></span>
+                            )}
+                        </button>
+                    );
+                })}
               </div>
             </div>
             
+            {/* Contextual Headers for Modules */}
             {activeMode === 'soma' && (
               <div className="space-y-2 animate-in">
                 <h1 className="text-3xl font-black italic uppercase text-emerald-400 leading-none tracking-tighter">Соматика</h1>
@@ -198,15 +243,6 @@ export const ResultsView = memo<ResultsViewProps>(({
               </div>
             )}
 
-            {activeMode === 'emg' && (
-              <div className="space-y-2 animate-in">
-                <h1 className="text-3xl font-black italic uppercase text-indigo-300 leading-none tracking-tighter">Матрица Эмерджентности</h1>
-                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-                   Найдено состояний: {emergentPatterns.length} // Ст. 7.1
-                </p>
-              </div>
-            )}
-
             {activeMode === 'sim' && (
               <div className="space-y-2 animate-in">
                 <h1 className="text-3xl font-black italic uppercase text-indigo-300 leading-none tracking-tighter">Сценарная Симуляция</h1>
@@ -216,16 +252,25 @@ export const ResultsView = memo<ResultsViewProps>(({
               </div>
             )}
 
-            {activeMode === 'topology' && (
+            {activeMode === 'shadow' && (
               <div className="space-y-2 animate-in">
-                <h1 className="text-3xl font-black italic uppercase text-emerald-400 leading-none tracking-tighter">{t.topology.title}</h1>
-                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-                   Анализ Пространственного Распределения // Ст. 18.1
+                <h1 className="text-3xl font-black italic uppercase text-purple-400 leading-none tracking-tighter">Теневой Протокол</h1>
+                <p className="text-[10px] text-purple-300/60 font-bold uppercase tracking-widest">
+                   Анализ Вторичных Выгод (Forensic) // Ст. 3.2
                 </p>
               </div>
             )}
 
-            {activeMode !== 'dossier' && !['soma', 'emg', 'sim', 'paths', 'lattice', 'field', 'nucleus', 'sovereign', 'void', 'shadow', 'well', 'prism', 'topology', 'helix', 'ekg', 'hysteresis', 'moire', 'attractor', 'relief', 'tensegrity'].includes(activeMode) && (
+            {activeMode === 'dossier' && (
+              <div className="space-y-2 animate-in">
+                <h1 className="text-3xl font-black italic uppercase text-emerald-400 leading-none tracking-tighter">Клиническое Досье</h1>
+                <p className="text-[10px] text-emerald-300/60 font-bold uppercase tracking-widest">
+                   Синтез структуры (Supervisor Layer)
+                </p>
+              </div>
+            )}
+
+            {activeMode === 'blueprint' && (
               <div className="space-y-2">
                 <h1 className="text-5xl font-black italic uppercase text-white leading-none tracking-tighter">{arch.title}</h1>
                 <p className="text-sm text-slate-400 font-medium leading-relaxed pt-3 border-l-2 border-indigo-500/5 pl-5 italic opacity-80">
@@ -247,6 +292,7 @@ export const ResultsView = memo<ResultsViewProps>(({
             activeMode === 'relief' ? 'bg-[#020617] border-emerald-500/20' :
             activeMode === 'tensegrity' ? 'bg-[#020617] border-indigo-500/20' :
             activeMode === 'soma' ? 'bg-[#020617] border-emerald-500/20' :
+            activeMode === 'shadow' ? 'bg-[#1e1b4b] border-purple-500/20' :
             'bg-[#020617] border-slate-800'}`}>
             
             {activeMode === 'blueprint' && (

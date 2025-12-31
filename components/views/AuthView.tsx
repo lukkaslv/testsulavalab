@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Translations, SubscriptionTier } from '../../types';
 import { PlatformBridge } from '../../utils/helpers';
@@ -313,11 +312,73 @@ const ClinicalAirlock = ({ onAuth, onBack }: { onAuth: (k: string) => void, onBa
     );
 };
 
-export const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
+const ConsentBlock = ({
+  content,
+  isExpanded,
+  onToggle,
+}: {
+  content: any;
+  isExpanded: boolean;
+  onToggle: () => void;
+}) => (
+  <div className="font-mono text-xs text-slate-300 bg-slate-900/40 border border-slate-700 rounded-xl overflow-hidden">
+    <button
+      onClick={onToggle}
+      className="w-full flex justify-between items-center p-4 text-left group"
+      aria-expanded={isExpanded}
+      aria-controls="consent-details"
+    >
+      <h3 className="font-bold text-white leading-tight group-hover:text-indigo-400 transition-colors">
+        {content.title}
+      </h3>
+      <span className="text-[9px] font-black text-slate-500 tracking-widest group-hover:text-white transition-colors">
+        {isExpanded ? 'СВЕРНУТЬ ▲' : 'ДЕТАЛИ ▼'}
+      </span>
+    </button>
+    <div
+      id="consent-details"
+      className={`transition-all duration-500 ease-in-out grid ${
+        isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+      }`}
+    >
+      <div className="overflow-hidden">
+        <div className="space-y-3 p-4 pt-2 border-t border-slate-700/50">
+          <div className="space-y-2">
+            <p className="font-bold text-slate-200">{content.measures_title}</p>
+            <ul className="pl-4 text-slate-400">
+              {content.measures.map((item: string, i: number) => (
+                <li key={i}>• {item}</li>
+              ))}
+            </ul>
+          </div>
+          <div className="space-y-2">
+            <p className="font-bold text-slate-200">{content.usage_title}</p>
+            <ul className="pl-4 text-slate-400">
+              {content.usage.map((item: string, i: number) => (
+                <li key={i}>• {item}</li>
+              ))}
+            </ul>
+          </div>
+          <div className="space-y-2">
+            <p className="font-bold text-slate-200">{content.data_title}</p>
+            <ul className="pl-4 text-slate-400">
+              {content.data.map((item: string, i: number) => (
+                <li key={i}>• {item}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t }) => {
   const [mode, setMode] = useState<'CLIENT' | 'PRO'>('CLIENT');
   const [selectedAccess, setSelectedAccess] = useState<'GUEST' | 'SPECIALIST'>('GUEST');
   const [showMatrix, setShowMatrix] = useState(false);
   const [agreed, setAgreed] = useState(false);
+  const [isConsentExpanded, setIsConsentExpanded] = useState(false);
   
   const handleClientStart = () => {
       if (!agreed) {
@@ -422,18 +483,23 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
                     </div>
                 </button>
 
-                {/* CONSENT */}
-                <label className="flex items-start gap-4 p-2 cursor-pointer group">
-                    <div className={`mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${agreed ? 'bg-emerald-600 border-emerald-600' : 'border-slate-700 bg-slate-900 group-hover:border-slate-500'}`}>
+                {/* CONSENT (Art. 15) */}
+                <ConsentBlock 
+                    content={t.informed_consent} 
+                    isExpanded={isConsentExpanded}
+                    onToggle={() => {
+                        PlatformBridge.haptic.selection();
+                        setIsConsentExpanded(!isConsentExpanded);
+                    }}
+                />
+                <label className="flex items-center gap-4 p-2 cursor-pointer group">
+                    <div className={`w-5 h-5 shrink-0 rounded border-2 flex items-center justify-center transition-all ${agreed ? 'bg-emerald-600 border-emerald-600' : 'border-slate-700 bg-slate-900 group-hover:border-slate-500'}`}>
                         {agreed && <span className="text-white text-[10px] font-black">✓</span>}
                     </div>
                     <input type="checkbox" className="hidden" checked={agreed} onChange={() => { PlatformBridge.haptic.selection(); setAgreed(!agreed); }} />
-                    <div className="space-y-1">
-                        <p className="text-[10px] font-bold text-slate-200 uppercase tracking-wide">Я принимаю условия</p>
-                        <p className="text-[9px] text-slate-500 leading-tight">
-                            Я понимаю, что это не медицинский диагноз, а инструмент для самоанализа. Данные хранятся локально.
-                        </p>
-                    </div>
+                    <span className="text-xs text-slate-300 font-medium leading-tight">
+                        {t.informed_consent.checkbox}
+                    </span>
                 </label>
 
                 {/* ACTION BUTTON */}

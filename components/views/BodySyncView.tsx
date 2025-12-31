@@ -19,82 +19,69 @@ const EtherBody = ({ highlightZone, onZoneSelect }: { highlightZone: string | nu
         <svg viewBox="0 0 200 400" className="w-full h-full drop-shadow-2xl" preserveAspectRatio="xMidYMid meet">
             <defs>
                 <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-                    <feGaussianBlur stdDeviation="15" result="blur" />
+                    <feGaussianBlur stdDeviation="10" result="blur" />
                     <feComposite in="SourceGraphic" in2="blur" operator="over" />
                 </filter>
             </defs>
 
-            {/* Base Body - Interactive Click Zones */}
-            <g className="opacity-50">
+            {/* Base Body - Interactive Click Zones (Expanded for easier touch) */}
+            <g className="opacity-60">
                  {/* Head */}
                  <path 
                     d={nerves.s0} 
-                    fill="transparent" 
-                    stroke="rgba(255,255,255,0.1)" strokeWidth="1"
-                    className="cursor-pointer hover:stroke-white hover:fill-white/5 transition-all"
+                    fill={highlightZone === 's0' ? '#6366f1' : 'transparent'} 
+                    stroke="rgba(255,255,255,0.3)" strokeWidth="1"
+                    className="cursor-pointer transition-all duration-300"
                     onClick={() => onZoneSelect('s0')}
                  />
                  {/* Throat */}
                  <path 
                     d={nerves.s1} 
-                    fill="transparent" 
-                    stroke="rgba(255,255,255,0.1)" strokeWidth="1"
-                    className="cursor-pointer hover:stroke-white hover:fill-white/5 transition-all"
+                    fill={highlightZone === 's1' ? '#f59e0b' : 'transparent'} 
+                    stroke="rgba(255,255,255,0.3)" strokeWidth="1"
+                    className="cursor-pointer transition-all duration-300"
                     onClick={() => onZoneSelect('s1')}
                  />
                  {/* Chest */}
                  <path 
                     d={nerves.s2} 
-                    fill="transparent" 
-                    stroke="rgba(255,255,255,0.1)" strokeWidth="1"
-                    className="cursor-pointer hover:stroke-white hover:fill-white/5 transition-all"
+                    fill={highlightZone === 's2' ? '#10b981' : 'transparent'} 
+                    stroke="rgba(255,255,255,0.3)" strokeWidth="1"
+                    className="cursor-pointer transition-all duration-300"
                     onClick={() => onZoneSelect('s2')}
                  />
                  {/* Plexus */}
                  <path 
                     d={nerves.s3} 
-                    fill="transparent" 
-                    stroke="rgba(255,255,255,0.1)" strokeWidth="1"
-                    className="cursor-pointer hover:stroke-white hover:fill-white/5 transition-all"
+                    fill={highlightZone === 's3' ? '#6366f1' : 'transparent'} 
+                    stroke="rgba(255,255,255,0.3)" strokeWidth="1"
+                    className="cursor-pointer transition-all duration-300"
                     onClick={() => onZoneSelect('s3')}
                  />
                  {/* Belly */}
                  <path 
                     d={nerves.s4} 
-                    fill="transparent" 
-                    stroke="rgba(255,255,255,0.1)" strokeWidth="1"
-                    className="cursor-pointer hover:stroke-white hover:fill-white/5 transition-all"
+                    fill={highlightZone === 's4' ? '#ef4444' : 'transparent'} 
+                    stroke="rgba(255,255,255,0.3)" strokeWidth="1"
+                    className="cursor-pointer transition-all duration-300"
                     onClick={() => onZoneSelect('s4')}
                  />
             </g>
 
-            {/* Connecting Lines (Visual only) */}
+            {/* Connecting Lines (Structure) */}
             <path d="M100,30 L100,350 M100,70 L70,90 M100,70 L130,90 M100,120 L50,140 M100,120 L150,140 M100,240 L60,320 M100,240 L140,320" 
-                  stroke="rgba(255,255,255,0.05)" strokeWidth="1" fill="none" pointerEvents="none" />
+                  stroke="rgba(255,255,255,0.1)" strokeWidth="1" fill="none" pointerEvents="none" />
             
-            {/* Active Highlight */}
+            {/* Active Highlight (Glow Effect) */}
             {highlightZone && nerves[highlightZone as keyof typeof nerves] && (
                 <g filter="url(#glow)" pointerEvents="none">
                     <path 
                         d={nerves[highlightZone as keyof typeof nerves]} 
-                        fill={glowColor} 
-                        fillOpacity="0.4"
+                        fill="transparent" 
                         stroke={glowColor} 
-                        strokeWidth="2"
+                        strokeWidth="3"
                         className="animate-pulse" 
                     />
-                    <path d={`M100,${highlightZone === 's0' ? 50 : 200} L100,200`} stroke={glowColor} strokeWidth="1" strokeDasharray="4 4" className="opacity-50" />
-                </g>
-            )}
-
-            {/* Tap Targets Hints (Subtle dots) */}
-            {!highlightZone && (
-                <g fill="white" fillOpacity="0.2" pointerEvents="none">
-                    <circle cx="100" cy="50" r="2" />
-                    <circle cx="100" cy="80" r="2" />
-                    <circle cx="100" cy="130" r="2" />
-                    <circle cx="100" cy="200" r="2" />
-                    <circle cx="100" cy="280" r="2" />
                 </g>
             )}
         </svg>
@@ -115,7 +102,7 @@ export const BodySyncView = memo<BodySyncViewProps>(({ t, onSync }) => {
       setIsSealing(true);
       const timer = setTimeout(() => {
           onSync(selectedZone);
-      }, 1200); // Allow animation to play
+      }, 800); // Faster feedback loop
       return () => clearTimeout(timer);
     }
   }, [selectedZone, onSync]);
@@ -133,75 +120,69 @@ export const BodySyncView = memo<BodySyncViewProps>(({ t, onSync }) => {
   };
 
   const zones = [
-      { key: 's0', label: 'ГОЛОВА', sub: 'Мысли / Тишина', activeColor: 'bg-slate-700' },
-      { key: 's1', label: 'ГОРЛО', sub: 'Ком / Слова', activeColor: 'bg-amber-600' },
-      { key: 's2', label: 'ГРУДЬ', sub: 'Чувство / Сжатие', activeColor: 'bg-emerald-600' },
-      { key: 's3', label: 'СПЛЕТЕНИЕ', sub: 'Тревога / Воля', activeColor: 'bg-indigo-600' },
-      { key: 's4', label: 'ЖИВОТ', sub: 'Страх / Холод', activeColor: 'bg-red-600' },
+      { key: 's0', label: 'ГОЛОВА', sub: 'Мысли / Тишина', activeColor: 'bg-slate-700', activeText: 'text-slate-200' },
+      { key: 's1', label: 'ГОРЛО', sub: 'Ком / Несказанное', activeColor: 'bg-amber-600', activeText: 'text-amber-100' },
+      { key: 's2', label: 'ГРУДЬ', sub: 'Сжатие / Тепло', activeColor: 'bg-emerald-600', activeText: 'text-emerald-100' },
+      { key: 's3', label: 'СПЛЕТЕНИЕ', sub: 'Воля / Тревога', activeColor: 'bg-indigo-600', activeText: 'text-indigo-100' },
+      { key: 's4', label: 'ЖИВОТ', sub: 'Страх / Холод', activeColor: 'bg-red-600', activeText: 'text-red-100' },
   ];
 
   return (
-     <div className="h-full flex flex-col bg-[#020617] text-white overflow-hidden relative">
-        {/* Background Atmosphere */}
+     <div className="h-full flex flex-col bg-[#020617] text-white overflow-hidden relative select-none">
+        {/* Atmosphere */}
         <div className="absolute inset-0 bg-gradient-to-b from-[#020617] via-[#0f172a] to-[#020617] z-0"></div>
-        <div className="absolute inset-0 opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')] pointer-events-none mix-blend-overlay z-0"></div>
-
-        {/* TOP: Question & Status */}
+        
+        {/* Header */}
         <div className="relative z-10 pt-6 px-6 text-center space-y-1 shrink-0">
-           <div className="flex items-center justify-center gap-2 mb-1">
-               <span className={`w-2 h-2 rounded-full ${isSealing ? 'bg-emerald-500 animate-ping' : 'bg-indigo-500 animate-pulse'}`}></span>
-               <span className="text-[9px] font-black uppercase tracking-[0.3em] text-indigo-400">SOMATIC_LINK</span>
-           </div>
-           <h3 className="text-lg font-black uppercase text-slate-100 tracking-tight leading-none">
+           <h3 className="text-xl font-black uppercase text-slate-100 tracking-tight leading-none drop-shadow-md">
                {isSealing ? t.sync.scan_complete : t.sync.title}
            </h3>
-           <p className="text-[9px] font-medium text-slate-400 max-w-[200px] mx-auto leading-relaxed opacity-80">
-               {t.sync.desc}
+           <p className="text-[10px] font-medium text-slate-400 max-w-[240px] mx-auto leading-relaxed opacity-80 animate-in">
+               {t.sync.desc || "Где в теле отозвался этот вопрос?"}
            </p>
         </div>
 
-        {/* CENTER: Visualizer (Interactable) */}
-        <div className="flex-1 relative z-10 min-h-0 flex items-center justify-center">
-            <div className={`w-full max-w-[260px] h-[320px] transition-all duration-700 ${isSealing ? 'scale-110 opacity-50 blur-sm' : 'scale-100 opacity-100'}`}>
+        {/* Body Visualizer */}
+        <div className="flex-1 relative z-10 min-h-0 flex items-center justify-center -my-4">
+            <div className={`w-full max-w-[280px] h-[360px] transition-all duration-500 ${isSealing ? 'scale-105 opacity-80 blur-[2px]' : 'scale-100 opacity-100'}`}>
                 <EtherBody highlightZone={selectedZone} onZoneSelect={handleZoneSelect} />
-                {!isSealing && <p className="text-[8px] text-slate-600 text-center mt-2 uppercase tracking-widest animate-pulse">Нажмите на зону тела</p>}
             </div>
             
-            {/* Success Overlay */}
+            {/* Success Overlay Pulse */}
             {isSealing && (
-                <div className="absolute inset-0 flex items-center justify-center z-20 animate-in">
-                    <div className="w-20 h-20 rounded-full border-2 border-white/20 flex items-center justify-center bg-white/5 backdrop-blur-md">
-                        <span className="text-2xl animate-pulse">📡</span>
+                <div className="absolute inset-0 flex items-center justify-center z-20 animate-in pointer-events-none">
+                    <div className="w-24 h-24 rounded-full border border-white/20 flex items-center justify-center bg-white/5 backdrop-blur-md shadow-[0_0_50px_rgba(255,255,255,0.1)]">
+                        <span className="text-3xl animate-ping opacity-50">📡</span>
                     </div>
                 </div>
             )}
         </div>
 
-        {/* BOTTOM: Haptic Control Deck (Uplifted) */}
-        <div className="relative z-20 bg-gradient-to-t from-[#020617] via-[#020617]/95 to-transparent px-4 pb-10 pt-4 space-y-2 shrink-0">
+        {/* Control Grid - Optimization: Clearer Labels, Better Hit Areas */}
+        <div className="relative z-20 bg-gradient-to-t from-[#020617] via-[#020617] to-transparent px-4 pb-8 pt-6 space-y-2 shrink-0">
             <div className="grid grid-cols-2 gap-2 max-w-md mx-auto">
-                {/* HEAD (Full Width) */}
+                {/* HEAD (Full Width for easy default access) */}
                 <button 
                     onClick={() => handleZoneSelect(zones[0].key)}
                     disabled={isSealing}
-                    className={`col-span-2 p-3.5 rounded-xl border border-white/5 transition-all active:scale-[0.98] flex justify-between items-center group
-                        ${selectedZone === zones[0].key ? 'bg-slate-700 border-slate-500 shadow-[0_0_15px_rgba(51,65,85,0.5)]' : 'bg-slate-900/80 hover:bg-slate-800'}`}
+                    className={`col-span-2 p-4 rounded-2xl border transition-all active:scale-[0.98] flex justify-between items-center group shadow-md
+                        ${selectedZone === zones[0].key ? `${zones[0].activeColor} border-white/20 text-white` : 'bg-slate-900 border-white/5 hover:bg-slate-800'}`}
                 >
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-300">{zones[0].label}</span>
-                    <span className="text-[8px] font-mono text-slate-500 uppercase">{zones[0].sub}</span>
+                    <span className="text-xs font-black uppercase tracking-widest">{zones[0].label}</span>
+                    <span className={`text-[9px] font-mono uppercase ${selectedZone === zones[0].key ? 'opacity-100' : 'text-slate-500'}`}>{zones[0].sub}</span>
                 </button>
 
-                {/* OTHER ZONES (Grid) */}
+                {/* OTHER ZONES */}
                 {zones.slice(1).map((zone) => (
                     <button 
                         key={zone.key}
                         onClick={() => handleZoneSelect(zone.key)}
                         disabled={isSealing}
-                        className={`p-3.5 rounded-xl border border-white/5 transition-all active:scale-[0.98] flex flex-col items-start gap-0.5 group
-                            ${selectedZone === zone.key ? `${zone.activeColor} border-white/20 shadow-lg text-white` : 'bg-slate-900/80 hover:bg-slate-800 text-slate-400'}`}
+                        className={`p-3.5 rounded-2xl border transition-all active:scale-[0.98] flex flex-col items-start gap-1 group shadow-sm
+                            ${selectedZone === zone.key ? `${zone.activeColor} border-white/20 ${zone.activeText}` : 'bg-slate-900 border-white/5 hover:bg-slate-800'}`}
                     >
-                        <span className={`text-[10px] font-black uppercase tracking-widest ${selectedZone === zone.key ? 'text-white' : 'text-slate-300'}`}>{zone.label}</span>
-                        <span className={`text-[7px] font-mono uppercase ${selectedZone === zone.key ? 'text-white/80' : 'text-slate-600'}`}>{zone.sub}</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest">{zone.label}</span>
+                        <span className={`text-[8px] font-mono uppercase leading-tight ${selectedZone === zone.key ? 'opacity-90' : 'text-slate-500'}`}>{zone.sub}</span>
                     </button>
                 ))}
             </div>

@@ -331,6 +331,12 @@ export interface NetworkAuditReport {
   isSovereign: boolean;
 }
 
+export interface StochasticAnalysisReport {
+    signalPath: number[];
+    noisePath: number[];
+    signalToNoiseRatio: number;
+}
+
 export interface IntegrityReport {
   overallScore: number;
   status: 'healthy' | 'warning' | 'error' | 'lockdown';
@@ -344,6 +350,7 @@ export interface IntegrityReport {
   narrative: string;
   networkAudit: NetworkAuditReport;
   isEnvironmentSafe: boolean;
+  stochasticAnalysis: StochasticAnalysisReport;
 }
 
 export interface JourneyAnomaly {
