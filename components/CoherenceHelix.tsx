@@ -1,7 +1,6 @@
 
 import React, { useRef, useEffect, memo, useState } from 'react';
 import { GameHistoryItem, Translations, BeliefKey } from '../types';
-import { WEIGHTS } from '../services/psychologyService';
 import { PlatformBridge } from '../utils/helpers';
 
 interface CoherenceHelixProps {
@@ -52,7 +51,6 @@ export const CoherenceHelix: React.FC<CoherenceHelixProps> = memo(({ history, t,
             // Mapping Logic
             const zScore = (item.latency - mean) / stdDev;
             const isDissonant = item.sensation === 's1' || item.sensation === 's4';
-            const w = (WEIGHTS as any)[item.beliefKey] || WEIGHTS.default;
             
             // Y Position
             const y = 50 + (i * spacing) + scrollOffset;
@@ -131,15 +129,9 @@ export const CoherenceHelix: React.FC<CoherenceHelixProps> = memo(({ history, t,
   const handleInteraction = (e: React.MouseEvent<HTMLCanvasElement>) => {
       const rect = canvasRef.current?.getBoundingClientRect();
       if (!rect) return;
-      const y = (e.clientY - rect.top) * (canvasRef.current!.height / rect.height);
+      const y = (e.clientX - rect.left) * (canvasRef.current!.height / rect.height);
       const h = canvasRef.current!.height;
       const spacing = h / (Math.min(history.length, 20) + 2);
-      
-      // Approx hit test based on Y rows
-      // This assumes simple scroll logic in render, which is simplified here. 
-      // For accurate hit test with scroll, we need to replicate the y calculation.
-      // Keeping it simple for the visualizer: just toggle random for effect or implement precise later.
-      // Let's rely on simple Index mapping for now.
       
       const index = Math.floor((y - 50) / spacing);
       if (index >= 0 && index < history.length) {

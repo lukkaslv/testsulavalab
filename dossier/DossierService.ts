@@ -1,7 +1,5 @@
 
-import { AnalysisResult, Translations, GameHistoryItem, DomainType, BeliefKey } from "../types";
-import { ClinicalDecoder } from "../services/clinicalDecoder";
-import { WEIGHTS } from "../services/psychologyService";
+import { AnalysisResult, Translations } from "../types";
 import { BifurcationEngine } from "../services/bifurcationEngine";
 import { LatticeEngine } from "../services/latticeEngine";
 
@@ -11,8 +9,7 @@ import { LatticeEngine } from "../services/latticeEngine";
  */
 export const DossierService = {
   generateDossier(result: AnalysisResult, t: Translations): string {
-    const interpretation = ClinicalDecoder.decode(result, t);
-    const { history, state, neuroSync, archetypeKey, shareCode, domainProfile, forecast } = result;
+    const { history, shareCode, forecast } = result;
     const bifurcations = BifurcationEngine.detect(history);
     const lattice = LatticeEngine.calculate(result);
 

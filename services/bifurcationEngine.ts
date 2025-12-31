@@ -1,6 +1,6 @@
 
 import { GameHistoryItem, ArchetypeKey, BeliefKey } from '../types';
-import { WEIGHTS, calculateRawMetrics } from './psychologyService';
+import { calculateRawMetrics } from './psychologyService';
 import { DiagnosticEngine } from './diagnosticEngine';
 
 export interface BifurcationPoint {

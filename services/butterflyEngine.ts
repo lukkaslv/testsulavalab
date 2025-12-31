@@ -1,16 +1,9 @@
 
-import { GameHistoryItem, BeliefKey, ArchetypeKey, AnalysisResult } from '../types';
-import { WEIGHTS, calculateRawMetrics } from './psychologyService';
+import { BifurcationNode, BeliefKey, AnalysisResult } from '../types';
+import { calculateRawMetrics } from './psychologyService';
 import { DiagnosticEngine } from './diagnosticEngine';
 
-export interface BifurcationNode {
-    id: string;
-    belief: BeliefKey;
-    actualArchetype: ArchetypeKey;
-    shadowArchetype: ArchetypeKey;
-    sensitivity: number; // Насколько этот узел был критичен для финала
-    delta: number; // Разрыв между путями
-}
+export { BifurcationNode };
 
 /**
  * Butterfly Engine v1.0
@@ -27,7 +20,7 @@ export const ButterflyEngine = {
         // Анализируем последние 10 узлов, где система наиболее чувствительна
         const criticalWindow = history.slice(-15);
 
-        criticalWindow.forEach((h, idx) => {
+        criticalWindow.forEach((h) => {
             // Моделируем "что если": меняем выбор на альтернативный
             const alternativeBelief = h.choicePosition === 0 ? 'money_is_tool' : 'family_loyalty';
             

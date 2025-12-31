@@ -77,7 +77,7 @@ export const AdaptiveQuestionEngine = {
       return null;
   },
 
-  selectNextQuestion(history: GameHistoryItem[], contradictions: Contradiction[], excludedId?: number): string | null {
+  selectNextQuestion(history: GameHistoryItem[], _contradictions: Contradiction[], excludedId?: number): string | null {
     const sanitizedHistory = history.filter(h => h && h.nodeId);
     const completedIds = new Set(sanitizedHistory.map(h => parseInt(h.nodeId, 10)));
     

@@ -40,6 +40,15 @@ export interface StructuralFracture {
     beliefKey: string;
 }
 
+export interface BifurcationNode {
+    id: string;
+    belief: BeliefKey;
+    actualArchetype: ArchetypeKey;
+    shadowArchetype: ArchetypeKey;
+    sensitivity: number;
+    delta: number;
+}
+
 export class DataCorruptionError extends Error {
   constructor(message: string) {
     super(message);
@@ -678,6 +687,7 @@ export interface Translations {
     synthesis: any;
     clinical_decoder: any;
     admin: any;
+    pro_headers: any;
 }
 
 export type NeuralCorrelation = any;

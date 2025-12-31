@@ -1,7 +1,7 @@
 
 import { AnalysisResult, ArchetypeKey, VerdictKey, GameHistoryItem, DomainType } from '../types';
 import { SecurityCore } from '../utils/crypto';
-import { ALL_BELIEFS, SYSTEM_METADATA } from '../constants';
+import { ALL_BELIEFS } from '../constants';
 
 const ARCHETYPE_INDEX_MAP: ArchetypeKey[] = [
   'THE_ARCHITECT', 'THE_DRIFTER', 'THE_BURNED_HERO',

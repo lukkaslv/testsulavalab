@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { AnalysisResult, Translations } from '../../types';
 import { CompatibilityEngine } from '../../services/compatibilityEngine';
 import { ClinicalDecoder } from '../../services/clinicalDecoder';
@@ -225,7 +225,7 @@ export const ProTerminalView: React.FC<ProTerminalViewProps> = ({ t, onBack }) =
                         
                         {/* Z-SCORE HISTOGRAM */}
                         <div className="flex gap-1 h-32 items-end px-2">
-                            {interpretation.stats?.zScoreDistribution.map((z, i) => {
+                            {interpretation.stats?.zScoreDistribution.map((z: number, i: number) => {
                                 const height = Math.min(100, Math.abs(z * 30));
                                 const isSpike = z > 1.8;
                                 return (
@@ -301,7 +301,7 @@ export const ProTerminalView: React.FC<ProTerminalViewProps> = ({ t, onBack }) =
                             <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
                             <h4 className="text-[9px] font-black text-indigo-400 uppercase tracking-[0.3em]">Протокол Интервенций</h4>
                         </div>
-                        {interpretation.extra.directives.map((d, i) => (
+                        {interpretation.extra.directives.map((d: string, i: number) => (
                             <div key={i} className="bg-slate-900 border-l-2 border-indigo-500 p-4 rounded-r-xl shadow-sm">
                                 <p className="text-[10px] text-slate-300 font-bold leading-relaxed">{d}</p>
                             </div>

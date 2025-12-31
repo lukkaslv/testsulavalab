@@ -1,6 +1,6 @@
 
-import { AnalysisResult, ClinicalInterpretation, Translations, BeliefKey, InterventionMode, TherapyStep, SystemicMetrics, ShadowPattern, AutopoiesisMetrics, StatisticalMarkers, NeuropsychMarkers } from '../types';
-import { WEIGHTS, calculateEntropyFlux, calculateAutopoiesis } from './psychologyService';
+import { AnalysisResult, ClinicalInterpretation, Translations, InterventionMode, SystemicMetrics, StatisticalMarkers, NeuropsychMarkers } from '../types';
+import { calculateEntropyFlux, calculateAutopoiesis } from './psychologyService';
 
 const calculateStats = (history: any[]): StatisticalMarkers => {
     const latencies = history.map(h => h.latency).filter(l => l > 300);
@@ -26,7 +26,7 @@ const calculateStats = (history: any[]): StatisticalMarkers => {
 };
 
 const calculateNeuro = (result: AnalysisResult): NeuropsychMarkers => {
-    const { history, neuroSync, state } = result;
+    const { history, state } = result;
     const neutralSomaCount = history.filter(h => h.sensation === 's0').length;
     const alexithymiaIndex = Math.round((neutralSomaCount / (history.length || 1)) * 100);
 
@@ -42,7 +42,7 @@ const calculateNeuro = (result: AnalysisResult): NeuropsychMarkers => {
 
 export const ClinicalDecoder = {
   decode(result: AnalysisResult, t: Translations): ClinicalInterpretation {
-    const { state, neuroSync, activePatterns, archetypeKey, domainProfile, archetypeSpectrum, history } = result;
+    const { state, neuroSync, activePatterns, archetypeKey, domainProfile, history } = result;
     const f = state.foundation, a = state.agency, e = state.entropy;
 
     const stats = calculateStats(history || []);
@@ -132,7 +132,7 @@ export const ClinicalDecoder = {
     };
   },
 
-  generatePrepQuestions(result: AnalysisResult, t: Translations): string[] {
+  generatePrepQuestions(result: AnalysisResult, _t: Translations): string[] {
       const q = [];
       if (result.state.foundation < 35) q.push("Что в вашей жизни сейчас является 'незыблемым'?");
       if (result.neuroSync < 50) q.push("Когда вы говорите 'я хочу', какая часть тела сжимается?");

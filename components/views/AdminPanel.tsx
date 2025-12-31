@@ -1,5 +1,5 @@
 
-import React, { useState, memo, useMemo, useEffect } from 'react';
+import { useState, memo, useMemo, useEffect } from 'react';
 import { Translations, GameHistoryItem, LicenseRecord, IntegrityReport, BeliefKey } from '../../types';
 import { PlatformBridge } from '../../utils/helpers';
 import { SecurityCore } from '../../utils/crypto';
@@ -176,7 +176,7 @@ export const AdminPanel = memo<AdminPanelProps>(({ t, onExit, history, onSetView
           issuedAt: Date.now(), expiresAt: Date.now() + 2592000000, status: 'ACTIVE'
       };
       StorageService.saveLicenseRecord(record);
-      setRegistry(prev => [record, ...prev]);
+      setRegistry((prev: LicenseRecord[]) => [record, ...prev]);
       setLastKey(key);
       setClientName('');
       PlatformBridge.haptic.notification('success');
@@ -326,4 +326,4 @@ export const AdminPanel = memo<AdminPanelProps>(({ t, onExit, history, onSetView
 });
 
 // Helper shim for re-used toggle component
-const HysteresisToggle = HapticToggle; 
+const HysteresisToggle = HapticToggle;

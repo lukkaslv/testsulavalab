@@ -1,10 +1,10 @@
 
 import React, { useRef, useEffect, memo } from 'react';
-import { AutopoiesisMetrics, Translations, DomainType } from '../types';
+import { AutopoiesisMetrics, DomainType } from '../types';
 
 interface AutopoiesisNucleusProps {
     metrics: AutopoiesisMetrics;
-    t: Translations;
+    t?: any; // Marked optional and unused
     className?: string;
 }
 
@@ -16,7 +16,7 @@ const DOMAIN_COLORS: Record<DomainType, string> = {
     legacy: '#ec4899'
 };
 
-export const AutopoiesisNucleus: React.FC<AutopoiesisNucleusProps> = memo(({ metrics, t, className }) => {
+export const AutopoiesisNucleus: React.FC<AutopoiesisNucleusProps> = memo(({ metrics, className }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {
