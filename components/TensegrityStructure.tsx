@@ -55,7 +55,7 @@ export const TensegrityStructure: React.FC<TensegrityStructureProps> = memo(({ r
 
     // 1. Domain Nodes (Outer Ring)
     const radius = 80 + (f / 100) * 60; // Foundation dictates Volume (Space occupied)
-    DOMAINS.forEach((d, i) => {
+    DOMAINS.forEach((_, i) => { // Removed d, using _
         const angle = (i * Math.PI * 2) / 5 - Math.PI / 2;
         points.push({
             x: cx + Math.cos(angle) * radius,

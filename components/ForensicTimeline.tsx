@@ -1,6 +1,6 @@
 
 import React, { memo, useMemo } from 'react';
-import { GameHistoryItem, AnalysisResult, Translations, DomainType } from '../types';
+import { AnalysisResult, Translations } from '../types';
 import { WEIGHTS } from '../services/psychologyService';
 import { BifurcationEngine } from '../services/bifurcationEngine';
 

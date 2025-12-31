@@ -1,6 +1,5 @@
 
 import React, { useState, useEffect } from 'react';
-import { Translations } from '../../types';
 import { PlatformBridge } from '../../utils/helpers';
 import { useAppContext } from '../../hooks/useAppContext';
 
@@ -9,7 +8,6 @@ interface DevSanctuaryViewProps {
 }
 
 export const DevSanctuaryView: React.FC<DevSanctuaryViewProps> = ({ onBack }) => {
-  const { t } = useAppContext();
   const [phase, setPhase] = useState<'intro' | 'breathing' | 'complete'>('intro');
   const [timer, setTimer] = useState(0);
 

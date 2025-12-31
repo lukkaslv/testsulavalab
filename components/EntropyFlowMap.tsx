@@ -1,10 +1,9 @@
 
 import React, { useRef, useEffect, memo } from 'react';
-import { DomainType, EntropyVector, Translations } from '../types';
+import { DomainType, EntropyVector } from '../types';
 
 interface EntropyFlowMapProps {
     flux: EntropyVector[];
-    t: Translations;
     className?: string;
 }
 
@@ -24,7 +23,7 @@ const DOMAIN_COLORS: Record<DomainType, string> = {
     legacy: '#ec4899'
 };
 
-export const EntropyFlowMap: React.FC<EntropyFlowMapProps> = memo(({ flux, t, className }) => {
+export const EntropyFlowMap: React.FC<EntropyFlowMapProps> = memo(({ flux, className }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {

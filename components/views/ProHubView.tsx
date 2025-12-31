@@ -5,7 +5,6 @@ import { PlatformBridge } from '../../utils/helpers';
 
 interface ProHubViewProps {
   t: Translations;
-  usageStats: { used: number; limit: number; isUnlimited: boolean; canStart: boolean; };
   onSetView: (view: any) => void;
   onLogout: () => void;
   licenseTier?: SubscriptionTier;
@@ -13,6 +12,7 @@ interface ProHubViewProps {
   onStartNode: (id: number, domain: any) => void;
   onSelectScan: (scan: AnalysisResult) => void;
   onCompareScans?: (scanA: AnalysisResult, scanB: AnalysisResult) => void;
+  usageStats?: { used: number; limit: number; isUnlimited: boolean; canStart: boolean; }; // Added but optional to fix type, unused in component
 }
 
 // --- SUB-COMPONENTS ---
@@ -195,10 +195,10 @@ const SessionCartridge = ({ scan, onClick }: { scan: AnalysisResult, onClick: ()
     );
 };
 
-export const ProHubView: React.FC<ProHubViewProps> = memo(({ t, usageStats, onSetView, onLogout, licenseTier, scanHistory, onSelectScan }) => {
+export const ProHubView: React.FC<ProHubViewProps> = memo(({ t, onSetView, onLogout, licenseTier, scanHistory, onSelectScan }) => {
     const ph = t.pro_hub;
     const [isUnlocked, setIsUnlocked] = useState(() => sessionStorage.getItem('pro_pin_verified') === 'true');
-    const [isOathSigned, setIsOathSigned] = useState(() => localStorage.getItem('genesis_oath_signed') === 'true');
+    const isOathSigned = localStorage.getItem('genesis_oath_signed') === 'true';
     const [filter, setFilter] = useState<'ALL' | 'CRITICAL' | 'TODAY'>('ALL');
     const [searchQuery, setSearchQuery] = useState('');
 

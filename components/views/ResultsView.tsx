@@ -1,3 +1,4 @@
+
 import React, { useState, memo, useMemo } from 'react';
 import { AnalysisResult, Translations } from '../../types';
 import { PlatformBridge } from '../../utils/helpers';
@@ -247,22 +248,22 @@ export const ResultsView = memo<ResultsViewProps>(({
             )}
             {activeMode === 'relief' && (
                 <div className="w-full h-full p-4 flex flex-col justify-center animate-in">
-                    <ReliefMap result={result} t={t} className="w-full h-full" />
+                    <ReliefMap result={result} className="w-full h-full" />
                 </div>
             )}
             {activeMode === 'attractor' && (
                 <div className="w-full h-full p-4 flex flex-col justify-center animate-in">
-                    <StrangeAttractor result={result} t={t} className="w-full h-full" />
+                    <StrangeAttractor result={result} className="w-full h-full" />
                 </div>
             )}
             {activeMode === 'moire' && (
                 <div className="w-full h-full p-4 flex flex-col justify-center animate-in">
-                    <InterferenceMoire result={result} t={t} className="w-full h-full" />
+                    <InterferenceMoire result={result} className="w-full h-full" />
                 </div>
             )}
             {activeMode === 'hysteresis' && (
                 <div className="w-full h-full p-4 flex flex-col justify-center animate-in">
-                    <HysteresisLoop history={result.history} t={t} className="w-full h-full" />
+                    <HysteresisLoop history={result.history} className="w-full h-full" />
                 </div>
             )}
             {activeMode === 'ekg' && (
@@ -292,7 +293,7 @@ export const ResultsView = memo<ResultsViewProps>(({
                 </div>
             )}
             {activeMode === 'lattice' && (
-                <ResonanceLattice lattice={lattice} pulse={result.sessionPulse} t={t} className="w-full h-full p-4 animate-in" />
+                <ResonanceLattice lattice={lattice} t={t} className="w-full h-full p-4 animate-in" />
             )}
             {activeMode === 'field' && (
                 <SystemicField metrics={clinical.extra.systemicMetrics} t={t} className="w-full h-full animate-in" interactive={true} />
@@ -304,13 +305,13 @@ export const ResultsView = memo<ResultsViewProps>(({
                 <SovereigntyVector metrics={sovereignty} t={t} className="w-full h-full animate-in" />
             )}
             {activeMode === 'void' && (
-                <TeleologicalAttractor metrics={teleology} t={t} className="w-full h-full animate-in" />
+                <TeleologicalAttractor metrics={teleology} className="w-full h-full animate-in" />
             )}
             {activeMode === 'shadow' && (
                 <ShadowReveal contract={shadowContract} t={t} className="w-full h-full animate-in" />
             )}
             {activeMode === 'well' && (
-                <StabilityWell metrics={stability} t={t} className="w-full h-full animate-in" />
+                <StabilityWell metrics={stability} className="w-full h-full animate-in" />
             )}
             {activeMode === 'prism' && (
                 <RefractionPrism vectors={refractionVectors} currentArchetype={result.archetypeKey} t={t} className="w-full h-full animate-in" />

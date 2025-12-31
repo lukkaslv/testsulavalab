@@ -30,7 +30,7 @@ export const SystemicField: React.FC<SystemicFieldProps> = memo(({ metrics, t, c
     let time = 0;
 
     const render = () => {
-        const { loyaltyIndex, ancestralPressure, excludedPatternKey } = metrics;
+        const { ancestralPressure, excludedPatternKey } = metrics;
         const w = canvas.width, h = canvas.height;
         const cx = w/2, cy = h/2, radius = 120;
 
@@ -39,7 +39,6 @@ export const SystemicField: React.FC<SystemicFieldProps> = memo(({ metrics, t, c
         // 1. Core Field (Ancestral Orbits)
         // If integration is happening, the field stabilizes (less jitter)
         const integrationFactor = acknowledgedNodes.length / 5; // 0.0 to 1.0
-        const currentStability = 1 + (integrationFactor * 2);
 
         ctx.setLineDash([5, 10]);
         ctx.strokeStyle = `rgba(99, 102, 241, ${0.1 + integrationFactor * 0.2})`;
@@ -163,7 +162,6 @@ export const SystemicField: React.FC<SystemicFieldProps> = memo(({ metrics, t, c
       const y = (e.clientY - rect.top) * (canvasRef.current!.height / rect.height);
       const cx = canvasRef.current!.width / 2;
       const cy = canvasRef.current!.height / 2;
-      const radius = 120 * 0.9; // Match render radius
 
       // Check Ancestors (0-3) - Approximated positions based on time is hard, 
       // so we check radial distance bands for simplicity in this version, 
@@ -182,13 +180,6 @@ export const SystemicField: React.FC<SystemicFieldProps> = memo(({ metrics, t, c
       }
       // Check Ancestors (Outer Circle)
       else if (dist > 90 && dist < 150) {
-          const angle = Math.atan2(dy, dx); // -PI to PI
-          // Map angle to 0-3 index approx
-          // This is a "feeling" simulation, so precise hitting isn't strictly required, 
-          // but let's make it responsive.
-          // Simplification: Just clicking the "Field" integrates the next available node.
-          // This ensures a guided experience.
-          
           const unacknowledged = [0, 1, 2, 3].filter(i => !acknowledgedNodes.includes(i));
           if (unacknowledged.length > 0) {
               targetIndex = unacknowledged[0];

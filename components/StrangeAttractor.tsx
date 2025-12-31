@@ -1,14 +1,13 @@
 
 import React, { useRef, useEffect, memo, useState } from 'react';
-import { AnalysisResult, Translations } from '../types';
+import { AnalysisResult } from '../types';
 
 interface StrangeAttractorProps {
   result: AnalysisResult;
-  t: Translations;
   className?: string;
 }
 
-export const StrangeAttractor: React.FC<StrangeAttractorProps> = memo(({ result, t, className }) => {
+export const StrangeAttractor: React.FC<StrangeAttractorProps> = memo(({ result, className }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [lyapunov, setLyapunov] = useState(0);
 

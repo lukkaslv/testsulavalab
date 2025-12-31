@@ -1,10 +1,9 @@
 
 import React, { useRef, useEffect, memo, useState } from 'react';
-import { AnalysisResult, Translations, DomainType } from '../types';
+import { AnalysisResult, DomainType } from '../types';
 
 interface ReliefMapProps {
   result: AnalysisResult;
-  t: Translations;
   className?: string;
 }
 
@@ -16,7 +15,7 @@ const DOMAIN_COORDS: Record<DomainType, {x: number, y: number}> = {
     legacy: { x: 0.8, y: 0.8 }
 };
 
-export const ReliefMap: React.FC<ReliefMapProps> = memo(({ result, t, className }) => {
+export const ReliefMap: React.FC<ReliefMapProps> = memo(({ result, className }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [ruggedness, setRuggedness] = useState(0);
 

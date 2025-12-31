@@ -1,15 +1,14 @@
 
 import React, { useRef, useEffect, memo, useState } from 'react';
-import { GameHistoryItem, Translations } from '../types';
+import { GameHistoryItem } from '../types';
 import { WEIGHTS } from '../services/psychologyService';
 
 interface HysteresisLoopProps {
   history: GameHistoryItem[];
-  t: Translations;
   className?: string;
 }
 
-export const HysteresisLoop: React.FC<HysteresisLoopProps> = memo(({ history, t, className }) => {
+export const HysteresisLoop: React.FC<HysteresisLoopProps> = memo(({ history, className }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [dissipationIndex, setDissipationIndex] = useState(0);
 

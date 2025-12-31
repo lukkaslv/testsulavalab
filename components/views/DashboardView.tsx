@@ -1,9 +1,7 @@
 
 import { memo, useMemo } from 'react';
 import { DomainType, Translations, AnalysisResult, ScanHistory, LifeContext } from '../../types';
-import { SYSTEM_METADATA, STORAGE_KEYS } from '../../constants';
 import { StorageService } from '../../services/storageService';
-import { PlatformBridge } from '../../utils/helpers';
 import { DomainNavigator } from '../DomainNavigator';
 import { useAppContext } from '../../hooks/useAppContext';
 

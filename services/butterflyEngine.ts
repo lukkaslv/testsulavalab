@@ -3,7 +3,7 @@ import { BifurcationNode, BeliefKey, AnalysisResult } from '../types';
 import { calculateRawMetrics } from './psychologyService';
 import { DiagnosticEngine } from './diagnosticEngine';
 
-export { BifurcationNode };
+export type { BifurcationNode };
 
 /**
  * Butterfly Engine v1.0

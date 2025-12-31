@@ -80,7 +80,7 @@ const FaderControl = ({ label, value, onChange }: { label: string, value: number
 
 // --- MAIN COMPONENTS ---
 
-const EvolutionarySandbox = ({ t, history }: { t: Translations, history: GameHistoryItem[] }) => {
+const EvolutionarySandbox = ({ history }: { history: GameHistoryItem[] }) => {
     const [selectedBelief, setSelectedBelief] = useState<BeliefKey>(ALL_BELIEFS[0]);
     const [localWeights, setLocalWeights] = useState(WEIGHTS[selectedBelief]);
     const [drift, setDrift] = useState<number>(0);
@@ -256,7 +256,7 @@ export const AdminPanel = memo<AdminPanelProps>(({ t, onExit, history, onSetView
         )}
 
         {/* TAB: LAB (Alpha) */}
-        {activeTab === 'lab' && <EvolutionarySandbox t={t} history={history} />}
+        {activeTab === 'lab' && <EvolutionarySandbox history={history} />}
 
         {/* TAB: REGISTRY */}
         {activeTab === 'registry' && (

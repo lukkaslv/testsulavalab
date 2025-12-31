@@ -1,12 +1,11 @@
 
 import React, { useRef, useEffect, memo, useState } from 'react';
-import { DomainType, LatticeMetrics, SessionPulseNode, ResonanceVector, Translations } from '../types';
+import { DomainType, LatticeMetrics, ResonanceVector, Translations } from '../types';
 import { PlatformBridge } from '../utils/helpers';
 
 interface ResonanceLatticeProps {
   lattice: LatticeMetrics;
   resonance?: ResonanceVector[];
-  pulse: SessionPulseNode[];
   t: Translations;
   className?: string;
   onBondSelect?: (from: DomainType, to: DomainType) => void;
@@ -28,7 +27,7 @@ const DOMAIN_COLORS: Record<DomainType, string> = {
     legacy: '#ec4899'      
 };
 
-export const ResonanceLattice: React.FC<ResonanceLatticeProps> = memo(({ lattice, resonance = [], pulse, t, className, onBondSelect }) => {
+export const ResonanceLattice: React.FC<ResonanceLatticeProps> = memo(({ lattice, resonance = [], t, className, onBondSelect }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const bondsRef = useRef<Array<{from: DomainType, to: DomainType, x1: number, y1: number, x2: number, y2: number, w: number}>>([]);
   const [hoveredBond, setHoveredBond] = useState<string | null>(null);

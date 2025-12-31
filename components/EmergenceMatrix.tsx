@@ -27,7 +27,7 @@ export const EmergenceMatrix: React.FC<EmergenceMatrixProps> = memo(({ patterns,
             </header>
 
             <div className="grid grid-cols-1 gap-4">
-                {patterns.map((p, i) => (
+                {patterns.map((p) => (
                     <div key={p.id} className="bg-slate-950/60 border border-white/5 p-6 rounded-[2.5rem] relative overflow-hidden group shadow-xl">
                         {/* Status Icon */}
                         <div className={`absolute top-0 right-0 px-4 py-1.5 text-[7px] font-black uppercase tracking-widest rounded-bl-xl

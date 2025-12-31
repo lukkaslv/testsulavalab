@@ -178,9 +178,8 @@ const AccessMatrixModal = ({
     );
 };
 
-const ClinicalAirlock = ({ t, onAuth, onBack }: { t: Translations, onAuth: (k: string) => void, onBack: () => void }) => {
+const ClinicalAirlock = ({ onAuth, onBack }: { onAuth: (k: string) => void, onBack: () => void }) => {
     const [key, setKey] = useState('');
-    const [status, setStatus] = useState('IDLE');
     const [isScanning, setIsScanning] = useState(false);
     const [isAdminOverride, setIsAdminOverride] = useState(false);
     const [showSubModal, setShowSubModal] = useState(false);
@@ -200,7 +199,6 @@ const ClinicalAirlock = ({ t, onAuth, onBack }: { t: Translations, onAuth: (k: s
     const handleSubmit = async () => {
         if (!key.trim()) return;
         setIsScanning(true);
-        setStatus('VERIFYING_CRYPTOGRAPHY...');
         
         if (!isAdminOverride) {
             PlatformBridge.haptic.notification('warning');
@@ -265,7 +263,7 @@ const ClinicalAirlock = ({ t, onAuth, onBack }: { t: Translations, onAuth: (k: s
                             <input 
                                 type="text" 
                                 value={key}
-                                onChange={e => { setKey(e.target.value); setStatus('IDLE'); }}
+                                onChange={e => { setKey(e.target.value); }}
                                 placeholder="ВВЕДИТЕ ХЕШ ЛИЦЕНЗИИ"
                                 className={`relative w-full bg-slate-950 border rounded-xl py-4 px-4 text-center font-mono text-xs uppercase tracking-widest placeholder-slate-800 focus:outline-none transition-all ${isAdminOverride ? 'border-red-500/50 text-red-400' : 'border-slate-800 text-indigo-300 focus:border-indigo-500/50'}`}
                                 autoFocus
@@ -357,7 +355,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t }) => {
   };
 
   if (mode === 'PRO') {
-      return <ClinicalAirlock t={t} onAuth={handleProAuth} onBack={() => setMode('CLIENT')} />;
+      return <ClinicalAirlock onAuth={handleProAuth} onBack={() => setMode('CLIENT')} />;
   }
 
   return (

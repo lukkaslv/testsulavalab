@@ -5,11 +5,10 @@ import { AttractorMetrics } from '../services/teleologyEngine';
 
 interface TeleologicalAttractorProps {
     metrics: AttractorMetrics;
-    t: Translations;
     className?: string;
 }
 
-export const TeleologicalAttractor: React.FC<TeleologicalAttractorProps> = memo(({ metrics, t, className }) => {
+export const TeleologicalAttractor: React.FC<TeleologicalAttractorProps> = memo(({ metrics, className }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {

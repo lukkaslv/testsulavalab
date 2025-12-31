@@ -1,7 +1,7 @@
 
 import React, { useState, memo, useMemo } from 'react';
 import { DomainType, Translations, AnalysisResult } from '../types';
-import { SimulationEngine, SimulationProjection } from '../services/simulationEngine';
+import { SimulationEngine } from '../services/simulationEngine';
 import { PlatformBridge } from '../utils/helpers';
 
 interface SystemicSimulatorProps {

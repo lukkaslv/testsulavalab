@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
-import { AnalysisResult, Translations, PhaseType, TaskKey } from '../../types';
+import { AnalysisResult, Translations, PhaseType } from '../../types';
 import { PlatformBridge } from '../../utils/helpers';
-import { StorageService, STORAGE_KEYS } from '../../services/storageService';
+import { StorageService } from '../../services/storageService';
 
 interface IntegrationProtocolViewProps {
   t: Translations;
@@ -64,7 +64,6 @@ interface DayCardProps {
 const DayCard: React.FC<DayCardProps> = ({ day, taskKey, targetMetric, t, isDone, onToggle }) => {
     // Correctly accessing the task translation
     const taskText = (t.roadmap.tasks as any)[taskKey] || "Task detail unavailable.";
-    const isLocked = day > 1 && !isDone; // Simple visual cue, strictly logic handles check
 
     return (
         <div 

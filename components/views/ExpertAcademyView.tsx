@@ -35,8 +35,7 @@ const PipelineNode = ({ label, desc, type, isLast = false }: { label: string, de
     );
 };
 
-const LogicPipeline = ({ t }: { t: Translations }) => {
-    const ax = t.academy_extra;
+const LogicPipeline = () => {
     return (
         <div className="space-y-6 animate-in">
             <div className="p-6 bg-slate-900/20 border border-white/5 rounded-[2.5rem]">
@@ -265,7 +264,7 @@ export const ExpertAcademyView: React.FC<{ t: Translations; onBack: () => void; 
 
       {/* CONTENT: SCROLLABLE VAULT */}
       <div className="flex-1 overflow-hidden overflow-y-auto no-scrollbar custom-scrollbar pb-20 relative">
-        {mode === 'LOGIC' && <LogicPipeline t={t} />}
+        {mode === 'LOGIC' && <LogicPipeline />}
         {mode === 'CODEX' && <WeightMatrix t={t} />}
         {mode === 'PROTO' && <ProtocolLibrary t={t} />}
         {mode === 'SEMANTICS' && <SemanticMap t={t} />}

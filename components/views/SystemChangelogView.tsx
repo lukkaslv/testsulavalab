@@ -1,8 +1,7 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Translations } from '../../types';
 import { SYSTEM_METADATA } from '../../constants';
-import { PlatformBridge } from '../../utils/helpers';
 
 interface SystemChangelogViewProps {
   t: Translations;

@@ -1,6 +1,6 @@
 
-import React, { useMemo } from 'react';
-import { NetworkAuditReport, Translations, IntegrityReport } from '../../types';
+import React from 'react';
+import { NetworkAuditReport, Translations } from '../../types';
 import { useAppContext } from '../../hooks/useAppContext';
 
 interface SecurityMonitorViewProps {
@@ -10,7 +10,7 @@ interface SecurityMonitorViewProps {
 }
 
 export const SecurityMonitorView: React.FC<SecurityMonitorViewProps> = ({ report, t, onBack }) => {
-  const { integrityReport, isPro } = useAppContext();
+  const { integrityReport } = useAppContext();
   const sm = t.security_monitor;
   
   const isLockdown = integrityReport?.status === 'lockdown';

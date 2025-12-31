@@ -1,15 +1,13 @@
 
 import React, { useRef, useEffect, memo } from 'react';
-import { Translations } from '../types';
 import { StabilityMetrics } from '../services/stabilityEngine';
 
 interface StabilityWellProps {
     metrics: StabilityMetrics;
-    t: Translations;
     className?: string;
 }
 
-export const StabilityWell: React.FC<StabilityWellProps> = memo(({ metrics, t, className }) => {
+export const StabilityWell: React.FC<StabilityWellProps> = memo(({ metrics, className }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {

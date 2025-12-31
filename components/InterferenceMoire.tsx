@@ -1,14 +1,13 @@
 
 import React, { useRef, useEffect, memo, useState } from 'react';
-import { AnalysisResult, Translations } from '../types';
+import { AnalysisResult } from '../types';
 
 interface InterferenceMoireProps {
   result: AnalysisResult;
-  t: Translations;
   className?: string;
 }
 
-export const InterferenceMoire: React.FC<InterferenceMoireProps> = memo(({ result, t, className }) => {
+export const InterferenceMoire: React.FC<InterferenceMoireProps> = memo(({ result, className }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [nullificationIndex, setNullificationIndex] = useState(0);
 
