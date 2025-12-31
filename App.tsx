@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useCallback } from 'react';
 import { Layout } from './components/Layout';
 import { MODULE_REGISTRY, DOMAIN_SETTINGS } from './constants';
@@ -126,8 +127,9 @@ const App: React.FC = () => {
   const renderView = () => {
     if (dataStatus === 'corrupted') return <DataCorruptionView t={t} onReset={() => handleReset(true)} />;
     
+    // UPDATED: Pass shareCode to CrisisView
     if (view === 'results' && result?.isCrisis) {
-        return <CrisisView t={t} onExit={() => handleReset(true)} />;
+        return <CrisisView t={t} onExit={() => handleReset(true)} shareCode={result.shareCode} />;
     }
 
     const backTo = previousView === 'admin' ? 'admin' : (isPro ? 'pro_hub' : 'dashboard');

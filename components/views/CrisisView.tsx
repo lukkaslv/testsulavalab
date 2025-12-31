@@ -6,6 +6,7 @@ import { PlatformBridge } from '../../utils/helpers';
 interface CrisisViewProps {
   t: Translations;
   onExit: () => void;
+  shareCode?: string;
 }
 
 const BreathingCircle = () => {
@@ -49,8 +50,15 @@ const HelplineCard = ({ flag, name, number, desc }: { flag: string; name: string
     </div>
 );
 
-export const CrisisView: React.FC<CrisisViewProps> = ({ t, onExit }) => {
+export const CrisisView: React.FC<CrisisViewProps> = ({ t, onExit, shareCode }) => {
   const cv = t.crisis_view;
+
+  const copyCode = () => {
+      if (shareCode) {
+          navigator.clipboard.writeText(shareCode);
+          PlatformBridge.haptic.notification('success');
+      }
+  };
 
   return (
     <div className="flex flex-col items-center justify-center h-full space-y-6 animate-in px-6 text-center bg-slate-950 text-slate-200 relative overflow-hidden">
@@ -88,12 +96,22 @@ export const CrisisView: React.FC<CrisisViewProps> = ({ t, onExit }) => {
         />
       </div>
 
+      {shareCode && (
+          <button 
+            onClick={copyCode}
+            className="w-full max-w-sm p-3 bg-slate-900/50 border border-teal-500/10 rounded-xl relative z-10 flex flex-col items-center gap-1 active:bg-slate-900 transition-colors group"
+          >
+              <span className="text-[7px] font-black text-slate-500 uppercase tracking-[0.2em] group-hover:text-teal-500 transition-colors">Токен для специалиста</span>
+              <span className="text-[10px] font-mono text-teal-400/70 tracking-widest">{shareCode}</span>
+          </button>
+      )}
+
       <button
         onClick={() => {
           PlatformBridge.haptic.notification('success');
           onExit();
         }}
-        className="w-full max-w-xs py-5 bg-teal-900/30 text-teal-400 border border-teal-500/30 rounded-[1.5rem] font-black uppercase text-[10px] tracking-[0.2em] shadow-lg active:scale-95 transition-all mt-4 hover:bg-teal-900/50"
+        className="w-full max-w-xs py-5 bg-teal-900/30 text-teal-400 border border-teal-500/30 rounded-[1.5rem] font-black uppercase text-[10px] tracking-[0.2em] shadow-lg active:scale-95 transition-all mt-2 hover:bg-teal-900/50"
       >
         {cv.exit_button_text}
       </button>

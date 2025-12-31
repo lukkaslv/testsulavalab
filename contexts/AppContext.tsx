@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { translations } from '@/translations';
 import { Translations, GameHistoryItem, ScanHistory, SubscriptionTier, DataCorruptionError, AppContextType, NetworkAuditReport, IntegrityReport, LifeContext } from '../types';
@@ -144,6 +145,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const lastView = sessionStorage.getItem('genesis_last_view');
         setView(VALID_VIEWS.includes(lastView || '') ? lastView! : 'pro_hub');
     } else if (sessionAuth === 'client') {
+        setIsPro(false); // Explicit reset for safety
+        setIsMaster(false);
         setView('dashboard');
     }
     isInitialized.current = true;
@@ -165,7 +168,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     if (pwd === "genesis_client" || demo) {
         localStorage.setItem(STORAGE_KEYS.SESSION, 'client');
-        setIsDemo(demo); setViewAndPersist('dashboard');
+        setIsDemo(demo); 
+        // CRITICAL FIX: Reset Pro flags to prevent route bleeding
+        setIsPro(false); 
+        setIsMaster(false);
+        setLicenseTier('FREE');
+        setViewAndPersist('dashboard');
         return true;
     }
     if (pwd === "genesis_lab_entry") {
@@ -190,6 +198,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (licenseCache) localStorage.setItem('genesis_license_cache', licenseCache);
       
       sessionStorage.clear();
+      
+      // CRITICAL FIX: Reset state flags
+      setIsPro(false);
+      setIsMaster(false);
+      setLicenseTier('FREE');
+      
       setView('auth'); 
   }, [sanitizeMemory]);
 
