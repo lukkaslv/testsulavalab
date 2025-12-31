@@ -195,7 +195,7 @@ export const StorageService = {
   },
 
   clear: () => {
-    const preservedKeys: string[] = [STORAGE_KEYS.LANG, STORAGE_KEYS.AUDIT_LOG, STORAGE_KEYS.CLINICAL_FEEDBACK, 'genesis_license_registry', 'genesis_security_violation'];
+    const preservedKeys: string[] = [STORAGE_KEYS.LANG, STORAGE_KEYS.AUDIT_LOG, STORAGE_KEYS.CLINICAL_FEEDBACK, 'genesis_license_registry', 'genesis_security_violation', 'genesis_oath_signed'];
     Object.values(STORAGE_KEYS).forEach(key => {
       if (!preservedKeys.includes(key as any)) {
         provider?.removeItem(key as any);

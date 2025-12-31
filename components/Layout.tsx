@@ -9,7 +9,7 @@ interface LayoutProps {
 }
 
 /**
- * Genesis OS Sovereign Layout v12.1
+ * Genesis OS Sovereign Layout v12.2
  * Соответствие: Ст. 4.3 (Эстетика), Ст. 12 (Языковой Суверенитет), Ст. 11.3 (Аудит)
  */
 export const Layout = memo<LayoutProps>(({ children }) => {
@@ -17,9 +17,11 @@ export const Layout = memo<LayoutProps>(({ children }) => {
   const mainRef = useRef<HTMLElement>(null);
   const [showNetworkStatus, setShowNetworkStatus] = useState(false);
 
+  // ИСПРАВЛЕНИЕ: Убрали 'children' из зависимостей. 
+  // Теперь скролл сбрасывается только при смене View, а не при каждом ререндере (например, при открытии аккордеона).
   useEffect(() => {
     if (mainRef.current) { mainRef.current.scrollTop = 0; }
-  }, [children, view]);
+  }, [view]);
   
   const canReset = history && history.length > 0;
 

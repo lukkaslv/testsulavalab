@@ -242,21 +242,26 @@ export const AdminPanel = memo<AdminPanelProps>(({ t, onExit, history, onSetView
                 </section>
 
                 <section className="grid grid-cols-2 gap-3">
-                    <button onClick={() => onSetView('system_simulation')} className="p-4 bg-slate-900/40 border border-white/5 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-indigo-900/20 hover:border-indigo-500/30 transition-all group active:scale-95">
+                    <button onClick={() => onSetView('pro_hub')} className="col-span-2 p-4 bg-indigo-900/20 border border-indigo-500/30 rounded-2xl flex items-center justify-center gap-3 hover:bg-indigo-900/40 transition-all group active:scale-95">
+                        <span className="text-xl group-hover:scale-110 transition-transform">💎</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-indigo-300">ЦЕНТР УПРАВЛЕНИЯ (HUB)</span>
+                    </button>
+
+                    <button onClick={() => onSetView('system_simulation')} className="p-4 bg-slate-900/40 border border-white/5 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-purple-900/20 hover:border-purple-500/30 transition-all group active:scale-95">
                         <span className="text-2xl group-hover:scale-110 transition-transform">🔮</span>
-                        <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 group-hover:text-indigo-300">СИМУЛЯЦИЯ ОРАКУЛА</span>
+                        <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 group-hover:text-purple-300">СИМУЛЯЦИЯ ОРАКУЛА</span>
                     </button>
                     <button onClick={() => onSetView('pro_terminal')} className="p-4 bg-slate-900/40 border border-white/5 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-emerald-900/20 hover:border-emerald-500/30 transition-all group active:scale-95">
                         <span className="text-2xl group-hover:scale-110 transition-transform">📟</span>
                         <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 group-hover:text-emerald-300">КЛИНИЧЕСКИЙ ТЕРМИНАЛ</span>
                     </button>
-                    <button onClick={() => onSetView('dev_sanctuary')} className="p-4 bg-slate-900/40 border border-white/5 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-teal-900/20 hover:border-teal-500/30 transition-all group active:scale-95">
-                        <span className="text-2xl group-hover:scale-110 transition-transform">🌊</span>
-                        <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 group-hover:text-teal-300">ДЕКОМПРЕССИЯ</span>
-                    </button>
                     <button onClick={() => onSetView('academy')} className="p-4 bg-slate-900/40 border border-white/5 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-amber-900/20 hover:border-amber-500/30 transition-all group active:scale-95">
                         <span className="text-2xl group-hover:scale-110 transition-transform">🎓</span>
                         <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 group-hover:text-amber-300">БАЗА ЗНАНИЙ</span>
+                    </button>
+                    <button onClick={() => onSetView('tech_standard')} className="p-4 bg-slate-900/40 border border-white/5 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-cyan-900/20 hover:border-cyan-500/30 transition-all group active:scale-95">
+                        <span className="text-2xl group-hover:scale-110 transition-transform">⚙️</span>
+                        <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 group-hover:text-cyan-300">СТАНДАРТ</span>
                     </button>
                 </section>
 

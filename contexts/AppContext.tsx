@@ -151,6 +151,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         localStorage.setItem(STORAGE_KEYS.SESSION, 'true');
         localStorage.setItem('genesis_tier', 'LAB');
         localStorage.setItem('genesis_master', 'true');
+        // Авто-верификация для Админа, чтобы не вводить PIN в Pro Hub
+        sessionStorage.setItem('pro_pin_verified', 'true');
         setLicenseTier('LAB'); setIsPro(true); setIsMaster(true);
         setViewAndPersist('admin'); 
         return true;
@@ -172,7 +174,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const handleLogout = useCallback(() => { 
       sanitizeMemory();
+      // Preserve OATH signature to prevent repetition
+      const oath = localStorage.getItem('genesis_oath_signed');
       localStorage.clear();
+      if (oath) localStorage.setItem('genesis_oath_signed', oath);
+      
       sessionStorage.clear();
       setView('auth'); 
   }, [sanitizeMemory]);
@@ -181,17 +187,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const action = () => {
       const isProSession = isPro;
       const tier = licenseTier;
+      // Preserve OATH signature
+      const oath = localStorage.getItem('genesis_oath_signed');
+      
       localStorage.clear();
       sessionStorage.clear();
+      
+      if (oath) localStorage.setItem('genesis_oath_signed', oath);
+      
       if (!force && isProSession) {
           localStorage.setItem(STORAGE_KEYS.SESSION, 'true');
           localStorage.setItem('genesis_tier', tier);
+          if (isMaster) localStorage.setItem('genesis_master', 'true');
       }
       window.location.reload();
     };
     if (force) action(); 
     else PlatformBridge.showConfirm(t.ui.reset_confirm, (confirmed) => confirmed && action());
-  }, [t, isPro, licenseTier]);
+  }, [t, isPro, licenseTier, isMaster]);
 
   const handleFullReset = useCallback(() => {
     PlatformBridge.haptic.notification('warning');
