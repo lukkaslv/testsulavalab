@@ -4,7 +4,7 @@ import { Translations, SubscriptionTier } from '../../types';
 import { PlatformBridge } from '../../utils/helpers';
 import { SecurityCore } from '../../utils/crypto';
 import { RemoteAccess } from '../../services/remoteAccess';
-import { SYSTEM_METADATA } from '../../constants';
+import { SYSTEM_METADATA, SYSTEM_LINKS, PRICING_CONFIG } from '../../constants';
 import { Logo } from '../Logo';
 
 interface AuthViewProps {
@@ -12,11 +12,178 @@ interface AuthViewProps {
   t: Translations;
 }
 
+// --- SUB-COMPONENTS ---
+
+const TierCard = ({ 
+    title, 
+    subtitle, 
+    features, 
+    isActive, 
+    onClick, 
+    color,
+    price
+}: { 
+    title: string, 
+    subtitle: string, 
+    features: string[], 
+    isActive: boolean, 
+    onClick: () => void, 
+    color: string,
+    price: string
+}) => (
+    <button 
+        onClick={onClick}
+        className={`relative p-5 rounded-2xl border transition-all duration-300 w-full text-left group overflow-hidden
+            ${isActive 
+                ? `bg-${color}-950/40 border-${color}-500 shadow-[0_0_30px_rgba(var(--color-${color}),0.15)]` 
+                : 'bg-slate-900/40 border-slate-800 hover:border-slate-700'
+            }`}
+    >
+        {/* Active Glow */}
+        {isActive && <div className={`absolute inset-0 bg-${color}-500/5 animate-pulse-slow`}></div>}
+        
+        <div className="relative z-10 flex justify-between items-start mb-3">
+            <div>
+                <h3 className={`text-[10px] font-black uppercase tracking-[0.2em] transition-colors ${isActive ? 'text-white' : 'text-slate-400'}`}>
+                    {title}
+                </h3>
+                <p className={`text-[8px] font-mono uppercase mt-1 ${isActive ? `text-${color}-400` : 'text-slate-600'}`}>
+                    {subtitle}
+                </p>
+            </div>
+            <div className="text-right">
+                <span className={`text-[12px] font-black ${isActive ? 'text-white' : 'text-slate-500'}`}>{price}</span>
+            </div>
+        </div>
+
+        <ul className="space-y-2">
+            {features.map((f, i) => (
+                <li key={i} className="flex items-center gap-2 text-[9px] font-medium text-slate-400">
+                    <span className={`w-1 h-1 rounded-full ${isActive ? `bg-${color}-500` : 'bg-slate-700'}`}></span>
+                    <span className={isActive ? 'text-slate-300' : 'text-slate-600'}>{f}</span>
+                </li>
+            ))}
+        </ul>
+    </button>
+);
+
+const SubscriptionModal = ({ onClose }: { onClose: () => void }) => {
+    const handleSubscribe = () => {
+        PlatformBridge.haptic.selection();
+        PlatformBridge.openLink(SYSTEM_LINKS.TRIBUTE_SUB);
+    };
+
+    return (
+        <div className="fixed inset-0 z-[110] bg-[#020617]/95 backdrop-blur-xl flex flex-col animate-in">
+            <header className="p-6 flex justify-between items-center border-b border-white/5">
+                <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-white">GENESIS OS PRO</h2>
+                <button onClick={onClose} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-colors">✕</button>
+            </header>
+            
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                <div className="text-center space-y-4 py-4">
+                    <div className="w-20 h-20 mx-auto bg-indigo-500/10 rounded-full flex items-center justify-center text-4xl border border-indigo-500/20 shadow-[0_0_40px_rgba(99,102,241,0.2)]">
+                        💎
+                    </div>
+                    <div className="space-y-2">
+                        <h1 className="text-2xl font-black text-white italic uppercase tracking-tight">КЛИНИЧЕСКИЙ ДОСТУП</h1>
+                        <p className="text-[10px] text-slate-400 uppercase tracking-widest font-mono max-w-[200px] mx-auto">
+                            Инструмент для глубинной работы и супервизии
+                        </p>
+                    </div>
+                </div>
+
+                <div className="bg-slate-900/50 rounded-2xl border border-white/10 p-1">
+                    {[
+                        { icon: '📂', title: 'Клиническое Досье', desc: 'Детальный разбор паттернов (20k+ слов).' },
+                        { icon: '🧬', title: 'Нейронный След', desc: 'Timeline сопротивления и бифуркаций.' },
+                        { icon: '🔭', title: 'Горизонт Событий', desc: 'Прогностическое моделирование и симуляция.' },
+                        { icon: '🛡️', title: 'Суверенитет Данных', desc: 'Локальное шифрование и анонимность.' }
+                    ].map((feat, i) => (
+                        <div key={i} className="flex gap-4 p-4 border-b border-white/5 last:border-0">
+                            <span className="text-xl">{feat.icon}</span>
+                            <div>
+                                <h3 className="text-[10px] font-black text-white uppercase tracking-wide">{feat.title}</h3>
+                                <p className="text-[9px] text-slate-500 leading-snug mt-0.5">{feat.desc}</p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="bg-gradient-to-br from-indigo-900/20 to-slate-900 p-6 rounded-2xl border border-indigo-500/30 text-center space-y-4">
+                    <div className="space-y-1">
+                        <span className="text-[9px] text-indigo-300 font-bold uppercase tracking-widest">СТОИМОСТЬ ЛИЦЕНЗИИ</span>
+                        <div className="text-3xl font-black text-white">{PRICING_CONFIG.PLANS.PRO} {PRICING_CONFIG.CURRENCY} <span className="text-sm text-slate-500">/ МЕС</span></div>
+                    </div>
+                    <button 
+                        onClick={handleSubscribe}
+                        className="w-full py-4 bg-white text-indigo-950 rounded-xl font-black uppercase text-[10px] tracking-[0.2em] shadow-xl hover:bg-indigo-50 transition-all active:scale-95 flex items-center justify-center gap-2"
+                    >
+                        <span>ОФОРМИТЬ ЧЕРЕЗ TRIBUTE</span>
+                        <span>→</span>
+                    </button>
+                    <p className="text-[7px] text-slate-500 uppercase tracking-widest opacity-60">
+                        Платеж обрабатывается ботом Tribute. Подписку можно отменить в любой момент.
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const AccessMatrixModal = ({ 
+    onClose, 
+    onSelect, 
+    currentSelection 
+}: { 
+    onClose: () => void, 
+    onSelect: (mode: 'GUEST' | 'SPECIALIST') => void,
+    currentSelection: 'GUEST' | 'SPECIALIST'
+}) => {
+    return (
+        <div className="fixed inset-0 z-[100] bg-[#020617]/90 backdrop-blur-xl flex flex-col animate-in">
+            <header className="p-6 flex justify-between items-center border-b border-white/5">
+                <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-white">МАТРИЦА ДОСТУПА</h2>
+                <button onClick={onClose} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-colors">✕</button>
+            </header>
+            
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                <TierCard 
+                    title="КЛИЕНТ" 
+                    subtitle="ПРОХОЖДЕНИЕ ТЕСТА" 
+                    price="СТАРТ"
+                    features={["Карта Личности (Blueprint)", "Базовые метрики (F, A, R, E)", "Без сохранения истории"]}
+                    isActive={currentSelection === 'GUEST'}
+                    onClick={() => { onSelect('GUEST'); PlatformBridge.haptic.selection(); onClose(); }}
+                    color="emerald"
+                />
+                
+                <TierCard 
+                    title="СПЕЦИАЛИСТ" 
+                    subtitle="Pro License" 
+                    price={`${PRICING_CONFIG.PLANS.PRO} ${PRICING_CONFIG.CURRENCY}/мес`}
+                    features={["Клиническое Досье (20k слов)", "Нейронный След (Timeline)", "Инструменты Терапии", "Сохранение сессий"]}
+                    isActive={currentSelection === 'SPECIALIST'}
+                    onClick={() => { onSelect('SPECIALIST'); PlatformBridge.haptic.selection(); onClose(); }}
+                    color="indigo"
+                />
+
+                <div className="mt-8 p-4 rounded-xl bg-slate-900 border border-white/5 text-center">
+                    <p className="text-[8px] text-slate-500 uppercase tracking-widest leading-relaxed">
+                        Согласно Статье 24 Конституции, базовый функционал всегда доступен бесплатно для самопознания.
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const ClinicalAirlock = ({ t, onAuth, onBack }: { t: Translations, onAuth: (k: string) => void, onBack: () => void }) => {
     const [key, setKey] = useState('');
     const [status, setStatus] = useState('IDLE');
     const [isScanning, setIsScanning] = useState(false);
     const [isAdminOverride, setIsAdminOverride] = useState(false);
+    const [showSubModal, setShowSubModal] = useState(false);
 
     // Art. 26: Reactive Admin Detection
     useEffect(() => {
@@ -55,6 +222,8 @@ const ClinicalAirlock = ({ t, onAuth, onBack }: { t: Translations, onAuth: (k: s
 
     return (
         <div className="absolute inset-0 bg-[#020617] flex flex-col z-50 animate-in transition-colors duration-700">
+            {showSubModal && <SubscriptionModal onClose={() => setShowSubModal(false)} />}
+
             {/* Clinical Grid Background */}
             <div className={`absolute inset-0 pointer-events-none transition-opacity duration-700 ${isAdminOverride ? 'opacity-20 bg-red-900/10' : 'opacity-100'}`} style={{
                 backgroundImage: `linear-gradient(${isAdminOverride ? 'rgba(220,38,38,0.1)' : 'rgba(99,102,241,0.03)'} 1px, transparent 1px), linear-gradient(90deg, ${isAdminOverride ? 'rgba(220,38,38,0.1)' : 'rgba(99,102,241,0.03)'} 1px, transparent 1px)`,
@@ -104,7 +273,7 @@ const ClinicalAirlock = ({ t, onAuth, onBack }: { t: Translations, onAuth: (k: s
                         </div>
 
                         <button 
-                            onClick={handleSubmit}
+                            onClick={handleSubmit} 
                             disabled={isScanning || !key}
                             className={`w-full py-4 rounded-xl font-black uppercase text-[9px] tracking-[0.3em] shadow-lg active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed
                                 ${isAdminOverride 
@@ -113,6 +282,15 @@ const ClinicalAirlock = ({ t, onAuth, onBack }: { t: Translations, onAuth: (k: s
                         >
                             {isScanning ? 'СОЕДИНЕНИЕ...' : isAdminOverride ? 'ЗАПУСК КОРНЕВОЙ ОБОЛОЧКИ' : 'АВТОРИЗАЦИЯ'}
                         </button>
+
+                        {!isAdminOverride && (
+                            <button 
+                                onClick={() => setShowSubModal(true)}
+                                className="w-full py-3 rounded-xl border border-indigo-500/20 bg-indigo-900/10 text-indigo-400 font-black uppercase text-[8px] tracking-[0.2em] hover:bg-indigo-900/20 transition-all active:scale-95"
+                            >
+                                НЕТ ЛИЦЕНЗИИ? ОФОРМИТЬ ДОСТУП
+                            </button>
+                        )}
                     </div>
 
                     {!isAdminOverride && (
@@ -134,6 +312,8 @@ const ClinicalAirlock = ({ t, onAuth, onBack }: { t: Translations, onAuth: (k: s
 
 export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t }) => {
   const [mode, setMode] = useState<'CLIENT' | 'PRO'>('CLIENT');
+  const [selectedAccess, setSelectedAccess] = useState<'GUEST' | 'SPECIALIST'>('GUEST');
+  const [showMatrix, setShowMatrix] = useState(false);
   const [agreed, setAgreed] = useState(false);
   
   const handleClientStart = () => {
@@ -142,7 +322,12 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t }) => {
           return;
       }
       PlatformBridge.haptic.notification('success');
-      onLogin("genesis_client", false);
+      
+      if (selectedAccess === 'SPECIALIST') {
+          setMode('PRO');
+      } else {
+          onLogin("genesis_client", false);
+      }
   };
 
   const handleProAuth = async (pwd: string) => {
@@ -178,46 +363,60 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t }) => {
   return (
     <div className="relative flex flex-col h-full bg-[#020617] text-white overflow-hidden select-none">
         
+        {showMatrix && (
+            <AccessMatrixModal 
+                onClose={() => setShowMatrix(false)} 
+                onSelect={setSelectedAccess} 
+                currentSelection={selectedAccess} 
+            />
+        )}
+
         {/* ATMOSPHERE */}
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(16,185,129,0.08)_0%,transparent_50%)] pointer-events-none"></div>
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] mix-blend-overlay pointer-events-none"></div>
 
         {/* HERO */}
-        <div className="flex-1 flex flex-col items-center justify-center space-y-8 relative z-10 p-6">
+        <div className="flex-1 flex flex-col items-center justify-center space-y-6 relative z-10 p-6 pt-10">
             <div className="relative group cursor-pointer" onClick={() => PlatformBridge.haptic.impact('light')}>
                 <div className="absolute inset-0 bg-emerald-500/10 blur-3xl rounded-full animate-pulse-slow"></div>
                 <Logo size="xl" className="relative z-10 drop-shadow-[0_0_50px_rgba(16,185,129,0.2)]" />
             </div>
             
-            <div className="text-center space-y-3">
-                <h1 className="text-4xl font-black italic tracking-tighter text-white leading-none">
+            <div className="text-center space-y-2">
+                <h1 className="text-3xl font-black italic tracking-tighter text-white leading-none">
                     GENESIS <span className="text-emerald-500">OS</span>
                 </h1>
-                <p className="text-[8px] font-black uppercase tracking-[0.4em] text-slate-500">
+                <p className="text-[7px] font-black uppercase tracking-[0.4em] text-slate-500">
                     Sovereign Psychometrics
                 </p>
             </div>
         </div>
 
-        {/* CLIENT INTERFACE */}
+        {/* AUTH INTERFACE */}
         <div className="bg-slate-950/80 backdrop-blur-xl border-t border-white/5 rounded-t-[2.5rem] p-6 pb-10 space-y-6 relative z-20 shadow-2xl">
             <div className="flex justify-center mb-2">
                 <div className="w-12 h-1 bg-slate-800 rounded-full"></div>
             </div>
 
             <div className="space-y-6 animate-in">
-                {/* PRIVACY BADGE */}
-                <div className="flex items-center gap-4 bg-slate-900/50 p-4 rounded-2xl border border-white/5">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 text-emerald-500">
-                        🛡️
+                
+                {/* MODE SELECTION BUTTON */}
+                <button 
+                    onClick={() => { setShowMatrix(true); PlatformBridge.haptic.selection(); }}
+                    className="w-full flex justify-between items-center p-4 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition-all group"
+                >
+                    <div className="flex flex-col text-left">
+                        <span className="text-[8px] font-black uppercase text-slate-500 tracking-widest">РЕЖИМ ДОСТУПА</span>
+                        <div className="flex items-center gap-2 mt-1">
+                            <span className={`text-xs font-black uppercase ${selectedAccess === 'GUEST' ? 'text-emerald-400' : 'text-indigo-400'}`}>
+                                {selectedAccess === 'GUEST' ? 'КЛИЕНТ (ТЕСТ)' : 'СПЕЦИАЛИСТ (PRO)'}
+                            </span>
+                        </div>
                     </div>
-                    <div className="flex-1">
-                        <h4 className="text-[9px] font-black uppercase tracking-widest text-slate-300">Приватность по Дизайну</h4>
-                        <p className="text-[9px] text-slate-500 leading-tight mt-1">
-                            Данные шифруются на устройстве (Local-First). Сервер не имеет доступа к ответам.
-                        </p>
+                    <div className="w-8 h-8 rounded-lg bg-black/40 flex items-center justify-center text-slate-400 group-hover:text-white transition-colors">
+                        ⚙️
                     </div>
-                </div>
+                </button>
 
                 {/* CONSENT */}
                 <label className="flex items-start gap-4 p-2 cursor-pointer group">
@@ -228,33 +427,24 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t }) => {
                     <div className="space-y-1">
                         <p className="text-[10px] font-bold text-slate-200 uppercase tracking-wide">Я принимаю условия</p>
                         <p className="text-[9px] text-slate-500 leading-tight">
-                            Я понимаю, что это не медицинский диагноз, а инструмент для самоанализа.
+                            Я понимаю, что это не медицинский диагноз, а инструмент для самоанализа. Данные хранятся локально.
                         </p>
                     </div>
                 </label>
 
-                {/* START BUTTON */}
+                {/* ACTION BUTTON */}
                 <button 
                     onClick={handleClientStart}
                     disabled={!agreed}
                     className={`w-full py-5 rounded-2xl font-black uppercase text-xs tracking-[0.2em] shadow-xl transition-all active:scale-[0.98] border-b-4 
                         ${agreed 
-                            ? 'bg-emerald-600 text-white border-emerald-800 shadow-emerald-900/20' 
+                            ? selectedAccess === 'GUEST' 
+                                ? 'bg-emerald-600 text-white border-emerald-800 shadow-emerald-900/20' 
+                                : 'bg-indigo-600 text-white border-indigo-800 shadow-indigo-900/20'
                             : 'bg-slate-800 text-slate-600 border-slate-900 cursor-not-allowed'}`}
                 >
-                    ИНИЦИАЛИЗАЦИЯ
+                    {selectedAccess === 'GUEST' ? 'НАЧАТЬ СЕССИЮ' : 'ВВЕСТИ КЛЮЧ'}
                 </button>
-
-                {/* PRO TOGGLE */}
-                <div className="pt-4 flex justify-center">
-                    <button 
-                        onClick={() => { PlatformBridge.haptic.impact('medium'); setMode('PRO'); }}
-                        className="text-[9px] font-black text-slate-600 uppercase tracking-widest flex items-center gap-2 hover:text-indigo-400 transition-colors py-2 px-4 rounded-lg active:bg-slate-900"
-                    >
-                        <span>Я СПЕЦИАЛИСТ</span>
-                        <span className="text-xs">➜</span>
-                    </button>
-                </div>
             </div>
         </div>
     </div>

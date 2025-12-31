@@ -24,6 +24,11 @@ export const SYSTEM_METADATA = {
     CORE_LOGIC_ANCHOR: 'E1M_EFF_V16_PRO'
 };
 
+export const SYSTEM_LINKS = {
+    TRIBUTE_SUB: 'https://t.me/tribute/app?startapp=sK2g', 
+    SUPPORT: 'https://t.me/genesis_support'
+};
+
 // БИЗНЕС-КОНФИГУРАЦИЯ
 export const SUBSCRIPTION_LIMITS: Record<SubscriptionTier, number> = {
     FREE: 1,
@@ -36,7 +41,7 @@ export const PRICING_CONFIG = {
     CURRENCY: '₽',
     PLANS: {
         FREE: 0,
-        PRO: 8990
+        PRO: 9000
     }
 };
 
