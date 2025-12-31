@@ -1,10 +1,9 @@
 
-import React, { useState, memo, useMemo } from 'react';
+import { useState, memo, useMemo } from 'react';
 import { AnalysisResult, Translations } from '../../types';
 import { PlatformBridge } from '../../utils/helpers';
 import { BioSignature } from '../BioSignature';
 import { RadarChart } from '../RadarChart';
-import { PsychoTomography } from '../PsychoTomography';
 import { KineticFluxMap } from '../KineticFluxMap';
 import { ClinicalSynthesisView } from './ClinicalSynthesisView';
 import { RefractionPrism } from '../RefractionPrism';
@@ -52,7 +51,7 @@ interface ResultsViewProps {
 type Mode = 'blueprint' | 'emg' | 'sim' | 'paths' | 'lattice' | 'field' | 'nucleus' | 'signature' | 'flux' | 'dossier' | 'prism' | 'well' | 'shadow' | 'void' | 'sovereign' | 'topology' | 'helix' | 'ekg' | 'hysteresis' | 'moire' | 'attractor' | 'relief' | 'tensegrity';
 
 export const ResultsView = memo<ResultsViewProps>(({ 
-  t, result, onShare, onBack, onSetView, isPro
+  t, result, onShare, onBack, onSetView
 }) => {
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
   const [activeMode, setActiveMode] = useState<Mode>('blueprint');

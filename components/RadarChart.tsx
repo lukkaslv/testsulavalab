@@ -21,7 +21,7 @@ export const RadarChart: React.FC<RadarChartProps> = memo(({ points, secondaryPo
   };
 
   const polyPoints = points.map(p => `${p.x},${p.y}`).join(' ');
-  const ghostPoints = secondaryPoints ? secondaryPoints.map(p => `${p.x},${p.y}`).join(' ') : null;
+  // Removed unused ghostPoints
   const shadowPolyPoints = shadowPoints ? shadowPoints.map(p => `${p.x},${p.y}`).join(' ') : null;
 
   const center = 50;
@@ -72,6 +72,18 @@ export const RadarChart: React.FC<RadarChartProps> = memo(({ points, secondaryPo
           strokeLinejoin="round"
           className="transition-all duration-700"
         />
+        
+        {/* Secondary Shape (Comparison) */}
+        {secondaryPoints && (
+            <polygon 
+                points={secondaryPoints.map(p => `${p.x},${p.y}`).join(' ')}
+                fill="none" 
+                stroke="#94a3b8" 
+                strokeWidth="1" 
+                strokeDasharray="2 2"
+                opacity="0.5"
+            />
+        )}
         
         {points.map((p, i) => {
             const angle = (Math.PI * 2 * i) / points.length - Math.PI / 2;

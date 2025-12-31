@@ -28,7 +28,7 @@ interface DashboardViewProps {
 }
 
 // Integrated Mini Context Switcher
-const CompactContextControl = ({ t }: { t: Translations }) => {
+const CompactContextControl = () => {
     const { sessionContext, setSessionContext, history } = useAppContext();
     const isLocked = history.length > 0;
     
@@ -145,7 +145,7 @@ export const DashboardView = memo<DashboardViewProps>((props) => {
                      <div className="relative z-10 flex flex-col space-y-4">
                         {/* Top Control Bar */}
                         <div className="flex justify-between items-start">
-                            <CompactContextControl t={t} />
+                            <CompactContextControl />
                             <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-lg shadow-lg bg-white/10 border border-white/10 backdrop-blur-sm`}>
                                 {isTestComplete ? '🏁' : '⚡'}
                             </div>

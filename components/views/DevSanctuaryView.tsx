@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { PlatformBridge } from '../../utils/helpers';
-import { useAppContext } from '../../hooks/useAppContext';
 
 interface DevSanctuaryViewProps {
   onBack: () => void;

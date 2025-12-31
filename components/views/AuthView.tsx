@@ -308,7 +308,7 @@ const ClinicalAirlock = ({ onAuth, onBack }: { onAuth: (k: string) => void, onBa
     );
 };
 
-export const AuthView: React.FC<AuthViewProps> = ({ onLogin, t }) => {
+export const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
   const [mode, setMode] = useState<'CLIENT' | 'PRO'>('CLIENT');
   const [selectedAccess, setSelectedAccess] = useState<'GUEST' | 'SPECIALIST'>('GUEST');
   const [showMatrix, setShowMatrix] = useState(false);

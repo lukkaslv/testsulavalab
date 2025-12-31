@@ -14,7 +14,7 @@ interface PsychoTomographyProps {
  * Genesis OS Neural MRI v12.1
  * Compliance: Art. 1.1 (Deterministic Visuals)
  */
-export const PsychoTomography: React.FC<PsychoTomographyProps> = memo(({ f, a, r, e, s, t, className, mode = 'scan' }) => {
+export const PsychoTomography: React.FC<PsychoTomographyProps> = memo(({ f, a, r, e, s, t, className }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [activeLayers, setActiveLayers] = useState({ foundation: true, agency: true, neuroSync: true, entropy: true });
 

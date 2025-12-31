@@ -26,6 +26,11 @@ const StatusBeacon = ({ status, score }: { status: string, score: number }) => {
                 : status === 'warning' ? 'bg-amber-500 shadow-amber-500/50' 
                 : 'bg-red-500 shadow-red-500/50';
     
+    // Перевод статусов
+    const statusLabel = status === 'healthy' ? 'НОРМА' 
+                      : status === 'warning' ? 'ВНИМАНИЕ' 
+                      : 'ОШИБКА';
+
     return (
         <div className="flex items-center gap-3 bg-slate-900/50 px-4 py-2 rounded-xl border border-white/5">
             <div className="relative">
@@ -33,8 +38,8 @@ const StatusBeacon = ({ status, score }: { status: string, score: number }) => {
                 <div className={`absolute inset-0 w-2.5 h-2.5 rounded-full ${color} animate-ping opacity-75`}></div>
             </div>
             <div className="flex flex-col">
-                <span className="text-[7px] font-black uppercase tracking-widest text-slate-500">INTEGRITY_LEVEL</span>
-                <span className="text-[10px] font-mono font-bold text-white">{score}% // {status.toUpperCase()}</span>
+                <span className="text-[7px] font-black uppercase tracking-widest text-slate-500">УРОВЕНЬ ЦЕЛОСТНОСТИ</span>
+                <span className="text-[10px] font-mono font-bold text-white">{score}% // {statusLabel}</span>
             </div>
         </div>
     );
@@ -50,7 +55,7 @@ const HapticToggle = ({ active, onToggle, label }: { active: boolean, onToggle: 
             <span className={`text-[9px] font-black uppercase tracking-widest block transition-colors ${active ? 'text-emerald-400' : 'text-slate-500'}`}>
                 {label}
             </span>
-            <span className="text-[7px] opacity-60 uppercase font-mono">{active ? 'ACTIVE' : 'DISABLED'}</span>
+            <span className="text-[7px] opacity-60 uppercase font-mono">{active ? 'АКТИВЕН' : 'ОТКЛЮЧЕН'}</span>
         </div>
         
         <div className={`w-12 h-6 rounded-full relative transition-colors duration-300 ${active ? 'bg-emerald-500/20' : 'bg-slate-800'}`}>
@@ -80,13 +85,13 @@ const FaderControl = ({ label, value, onChange }: { label: string, value: number
 
 // --- MAIN COMPONENTS ---
 
-const EvolutionarySandbox = ({ history }: { history: GameHistoryItem[] }) => {
+const EvolutionarySandbox = () => {
     const [selectedBelief, setSelectedBelief] = useState<BeliefKey>(ALL_BELIEFS[0]);
     const [localWeights, setLocalWeights] = useState(WEIGHTS[selectedBelief]);
     const [drift, setDrift] = useState<number>(0);
 
     const handleWeightChange = (metric: 'f'|'a'|'r'|'e', val: number) => {
-        setLocalWeights(prev => ({ ...prev, [metric]: val }));
+        setLocalWeights((prev: any) => ({ ...prev, [metric]: val }));
     };
 
     const runSimulation = () => {
@@ -99,8 +104,8 @@ const EvolutionarySandbox = ({ history }: { history: GameHistoryItem[] }) => {
     return (
         <div className="bg-slate-900/30 border border-indigo-500/20 p-5 rounded-[2rem] space-y-5 animate-in">
             <header className="flex justify-between items-center">
-                <h4 className="text-[9px] font-black uppercase text-indigo-400 tracking-[0.2em]">WEIGHT_RECALIBRATION</h4>
-                <div className="px-2 py-1 bg-indigo-500/10 rounded text-[7px] font-mono text-indigo-300">SANDBOX_MODE</div>
+                <h4 className="text-[9px] font-black uppercase text-indigo-400 tracking-[0.2em]">РЕКАЛИБРОВКА ВЕСОВ</h4>
+                <div className="px-2 py-1 bg-indigo-500/10 rounded text-[7px] font-mono text-indigo-300">РЕЖИМ ПЕСОЧНИЦЫ</div>
             </header>
 
             <div className="space-y-4">
@@ -118,22 +123,22 @@ const EvolutionarySandbox = ({ history }: { history: GameHistoryItem[] }) => {
                 </select>
 
                 <div className="grid grid-cols-2 gap-x-6 gap-y-4 bg-black/20 p-4 rounded-2xl border border-white/5">
-                    <FaderControl label="FOUNDATION" value={localWeights.f} onChange={v => handleWeightChange('f', v)} />
-                    <FaderControl label="AGENCY" value={localWeights.a} onChange={v => handleWeightChange('a', v)} />
-                    <FaderControl label="RESOURCE" value={localWeights.r} onChange={v => handleWeightChange('r', v)} />
-                    <FaderControl label="ENTROPY" value={localWeights.e} onChange={v => handleWeightChange('e', v)} />
+                    <FaderControl label="ФУНДАМЕНТ (F)" value={localWeights.f} onChange={v => handleWeightChange('f', v)} />
+                    <FaderControl label="ВОЛЯ (A)" value={localWeights.a} onChange={v => handleWeightChange('a', v)} />
+                    <FaderControl label="РЕСУРС (R)" value={localWeights.r} onChange={v => handleWeightChange('r', v)} />
+                    <FaderControl label="ЭНТРОПИЯ (E)" value={localWeights.e} onChange={v => handleWeightChange('e', v)} />
                 </div>
 
                 <button 
                     onClick={runSimulation}
                     className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-black uppercase text-[9px] tracking-[0.2em] shadow-lg active:scale-95 transition-all"
                 >
-                    APPLY & SIMULATE
+                    ПРИМЕНИТЬ И СИМУЛИРОВАТЬ
                 </button>
 
                 {drift !== 0 && (
                     <div className="flex justify-between items-center px-2 pt-2 border-t border-white/5">
-                        <span className="text-[8px] text-slate-500 uppercase tracking-widest">SYSTEM_DRIFT</span>
+                        <span className="text-[8px] text-slate-500 uppercase tracking-widest">СИСТЕМНЫЙ ДРЕЙФ</span>
                         <span className={`text-[9px] font-mono font-black ${drift > 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
                             {drift > 0 ? '+' : ''}{drift.toFixed(3)}σ
                         </span>
@@ -182,6 +187,13 @@ export const AdminPanel = memo<AdminPanelProps>(({ t, onExit, history, onSetView
       PlatformBridge.haptic.notification('success');
   };
 
+  const TAB_LABELS: Record<string, string> = {
+      core: 'ЯДРО',
+      lab: 'ЛАБОРАТОРИЯ',
+      registry: 'РЕЕСТР',
+      logs: 'ЛОГИ'
+  };
+
   return (
     <div className="flex flex-col h-full bg-[#020617] text-slate-300 font-mono select-none overflow-hidden">
       
@@ -189,16 +201,16 @@ export const AdminPanel = memo<AdminPanelProps>(({ t, onExit, history, onSetView
       <header className="shrink-0 p-5 pb-2 border-b border-white/5 bg-[#020617]/95 backdrop-blur z-20">
           <div className="flex justify-between items-start mb-4">
               <div className="space-y-1">
-                  <h2 className="text-sm font-black uppercase tracking-[0.2em] text-white">GENESIS_OVERSIGHT</h2>
+                  <h2 className="text-sm font-black uppercase tracking-[0.2em] text-white">СИСТЕМА НАДЗОРА GENESIS</h2>
                   <p className="text-[7px] font-mono text-slate-600 uppercase tracking-widest">
-                      Protocol v{SYSTEM_METADATA.VERSION} // {t.admin.oversight_layer}
+                      Протокол v{SYSTEM_METADATA.VERSION} // {t.admin.oversight_layer}
                   </p>
               </div>
               <button 
                   onClick={() => { PlatformBridge.haptic.impact('medium'); onExit(); }}
                   className="bg-red-950/20 text-red-500 border border-red-900/30 px-3 py-2 rounded-lg text-[8px] font-black uppercase tracking-widest hover:bg-red-900/30 transition-all active:scale-95"
               >
-                  SECURE_EXIT
+                  БЕЗОПАСНЫЙ ВЫХОД
               </button>
           </div>
           
@@ -211,7 +223,7 @@ export const AdminPanel = memo<AdminPanelProps>(({ t, onExit, history, onSetView
                           onClick={() => { setActiveTab(tab); PlatformBridge.haptic.selection(); }}
                           className={`px-3 py-2 rounded-lg text-[8px] font-black uppercase transition-all ${activeTab === tab ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
                       >
-                          {tab}
+                          {TAB_LABELS[tab]}
                       </button>
                   ))}
               </div>
@@ -225,38 +237,38 @@ export const AdminPanel = memo<AdminPanelProps>(({ t, onExit, history, onSetView
         {activeTab === 'core' && (
             <div className="space-y-6 animate-in">
                 <section className="space-y-3">
-                    <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest pl-2">System_Directives</span>
-                    <HysteresisToggle active={isSafeDevMode} onToggle={() => setSafeDevMode(!isSafeDevMode)} label="SAFETY_SANCTUARY_PROTOCOL" />
+                    <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest pl-2">Системные Директивы</span>
+                    <HysteresisToggle active={isSafeDevMode} onToggle={() => setSafeDevMode(!isSafeDevMode)} label="ПРОТОКОЛ 'УБЕЖИЩЕ'" />
                 </section>
 
                 <section className="grid grid-cols-2 gap-3">
                     <button onClick={() => onSetView('system_simulation')} className="p-4 bg-slate-900/40 border border-white/5 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-indigo-900/20 hover:border-indigo-500/30 transition-all group active:scale-95">
                         <span className="text-2xl group-hover:scale-110 transition-transform">🔮</span>
-                        <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 group-hover:text-indigo-300">ORACLE_SIM</span>
+                        <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 group-hover:text-indigo-300">СИМУЛЯЦИЯ ОРАКУЛА</span>
                     </button>
                     <button onClick={() => onSetView('pro_terminal')} className="p-4 bg-slate-900/40 border border-white/5 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-emerald-900/20 hover:border-emerald-500/30 transition-all group active:scale-95">
                         <span className="text-2xl group-hover:scale-110 transition-transform">📟</span>
-                        <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 group-hover:text-emerald-300">CLINICAL_TERM</span>
+                        <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 group-hover:text-emerald-300">КЛИНИЧЕСКИЙ ТЕРМИНАЛ</span>
                     </button>
                     <button onClick={() => onSetView('dev_sanctuary')} className="p-4 bg-slate-900/40 border border-white/5 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-teal-900/20 hover:border-teal-500/30 transition-all group active:scale-95">
                         <span className="text-2xl group-hover:scale-110 transition-transform">🌊</span>
-                        <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 group-hover:text-teal-300">DECOMPRESSION</span>
+                        <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 group-hover:text-teal-300">ДЕКОМПРЕССИЯ</span>
                     </button>
                     <button onClick={() => onSetView('academy')} className="p-4 bg-slate-900/40 border border-white/5 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-amber-900/20 hover:border-amber-500/30 transition-all group active:scale-95">
                         <span className="text-2xl group-hover:scale-110 transition-transform">🎓</span>
-                        <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 group-hover:text-amber-300">KNOWLEDGE_BASE</span>
+                        <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 group-hover:text-amber-300">БАЗА ЗНАНИЙ</span>
                     </button>
                 </section>
 
                 <div className="p-4 rounded-xl border border-white/5 bg-black/20 flex justify-between items-center">
-                    <span className="text-[8px] text-slate-500 uppercase tracking-widest">Active_Nodes_Memory</span>
+                    <span className="text-[8px] text-slate-500 uppercase tracking-widest">Память Активных Узлов</span>
                     <span className="text-xs font-mono font-black text-white">{history.length}</span>
                 </div>
             </div>
         )}
 
         {/* TAB: LAB (Alpha) */}
-        {activeTab === 'lab' && <EvolutionarySandbox history={history} />}
+        {activeTab === 'lab' && <EvolutionarySandbox />}
 
         {/* TAB: REGISTRY */}
         {activeTab === 'registry' && (
@@ -268,10 +280,10 @@ export const AdminPanel = memo<AdminPanelProps>(({ t, onExit, history, onSetView
                             type="text" 
                             value={clientName}
                             onChange={(e) => setClientName(e.target.value)}
-                            placeholder="CLIENT_ID" 
+                            placeholder="ID КЛИЕНТА" 
                             className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-[10px] text-white font-mono uppercase focus:border-indigo-500 outline-none"
                         />
-                        <button onClick={handleGenerate} className="bg-indigo-600 text-white px-6 rounded-xl font-black text-[9px] uppercase tracking-widest shadow-lg active:scale-95 transition-all">MINT</button>
+                        <button onClick={handleGenerate} className="bg-indigo-600 text-white px-6 rounded-xl font-black text-[9px] uppercase tracking-widest shadow-lg active:scale-95 transition-all">СОЗДАТЬ</button>
                     </div>
                     {lastKey && (
                         <div 
@@ -284,7 +296,7 @@ export const AdminPanel = memo<AdminPanelProps>(({ t, onExit, history, onSetView
                 </div>
 
                 <div className="space-y-2">
-                    <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest pl-2">Local_Ledger</span>
+                    <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest pl-2">Локальный Реестр</span>
                     {registry.map((rec) => (
                         <div key={rec.id} className="bg-slate-900/40 border border-white/5 p-3 rounded-xl flex justify-between items-center">
                             <div className="flex flex-col">
@@ -319,7 +331,7 @@ export const AdminPanel = memo<AdminPanelProps>(({ t, onExit, history, onSetView
       </div>
 
       <footer className="shrink-0 p-4 border-t border-white/5 text-center bg-[#020617]">
-          <p className="text-[7px] text-slate-700 uppercase tracking-[0.4em]">Restricted Access Area // Art. 26</p>
+          <p className="text-[7px] text-slate-700 uppercase tracking-[0.4em]">Зона Ограниченного Доступа // Ст. 26</p>
       </footer>
     </div>
   );

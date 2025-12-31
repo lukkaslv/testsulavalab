@@ -1,6 +1,5 @@
 
 import React, { useRef, useEffect, memo } from 'react';
-import { Translations } from '../types';
 import { AttractorMetrics } from '../services/teleologyEngine';
 
 interface TeleologicalAttractorProps {

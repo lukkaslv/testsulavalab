@@ -1,7 +1,6 @@
 
 import React, { memo, useState } from 'react';
 import { SessionPulseNode, Translations, DomainType } from '../types';
-import { DOMAIN_SETTINGS } from '../constants';
 
 interface SessionEKGProps {
   pulse: SessionPulseNode[];

@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { AnalysisResult, Translations } from '../../types';
 import { CompatibilityEngine } from '../../services/compatibilityEngine';
 import { ClinicalDecoder } from '../../services/clinicalDecoder';

@@ -28,7 +28,7 @@ export const SpecialistOathView: React.FC<SpecialistOathViewProps> = ({ t, onCom
     };
   }, []);
 
-  const handleStartSeal = useCallback((e?: React.MouseEvent | React.TouchEvent) => {
+  const handleStartSeal = useCallback(() => {
       if (step < oath.oath_articles.length || progressRef.current >= 100) return;
       
       setIsSealing(true);
@@ -117,10 +117,10 @@ export const SpecialistOathView: React.FC<SpecialistOathViewProps> = ({ t, onCom
                         
                         {/* The Seal Button - Абсолютное центрирование в родителе */}
                         <button 
-                            onMouseDown={(e) => handleStartSeal(e)}
+                            onMouseDown={handleStartSeal}
                             onMouseUp={handleEndSeal}
                             onMouseLeave={handleEndSeal}
-                            onTouchStart={(e) => handleStartSeal(e)}
+                            onTouchStart={handleStartSeal}
                             onTouchEnd={handleEndSeal}
                             onTouchCancel={handleEndSeal}
                             style={{ touchAction: 'none' }}
