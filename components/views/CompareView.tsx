@@ -120,7 +120,6 @@ export const CompareView: React.FC<CompareViewProps> = ({ scanA, scanB, t, onBac
               <RadarChart 
                   points={pointsB} 
                   secondaryPoints={pointsA} 
-                  t={t} 
                   onLabelClick={() => {}} 
                   className="scale-90"
               />

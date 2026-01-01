@@ -1,6 +1,5 @@
 
 import React, { memo } from 'react';
-import { Translations } from '../types';
 import { PlatformBridge } from '../utils/helpers';
 
 interface RadarChartProps {
@@ -10,7 +9,6 @@ interface RadarChartProps {
   showShadow?: boolean;
   onLabelClick: (metric: string) => void;
   className?: string;
-  t: Translations;
 }
 
 /**

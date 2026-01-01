@@ -59,7 +59,6 @@ export const ScanDetailView: React.FC<ScanDetailViewProps> = memo(({ scan, t, on
                 <RadarChart 
                     points={scan.graphPoints} 
                     shadowPoints={scan.shadowPoints} 
-                    t={t} 
                     onLabelClick={() => {}} 
                     className="scale-95"
                 />
