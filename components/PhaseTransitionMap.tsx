@@ -13,7 +13,7 @@ interface PhaseTransitionMapProps {
  * КАРТА ТЕКУЧЕСТИ (Ст. 7)
  * Показывает "агрегатное состояние" психики и энергию перехода.
  */
-export const PhaseTransitionMap: React.FC<PhaseTransitionMapProps> = memo(({ report, t, className }) => {
+export const PhaseTransitionMap: React.FC<PhaseTransitionMapProps> = memo(({ report, className }) => {
     const stateColors = {
         'КРИСТАЛЛ': 'text-cyan-400 border-cyan-500/30 bg-cyan-950/20',
         'ТЕКУЧЕСТЬ': 'text-emerald-400 border-emerald-500/30 bg-emerald-950/20',

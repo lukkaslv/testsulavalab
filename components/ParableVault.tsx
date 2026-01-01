@@ -1,6 +1,6 @@
 
 import React, { memo, useState, useMemo, useEffect } from 'react';
-import { ParableRegistry, Притча } from '../services/parableEngine';
+import { ParableRegistry } from '../services/parableEngine';
 import { PlatformBridge } from '../utils/helpers';
 
 type Category = 'ВСЕ' | 'ИС' | 'НЧ' | 'ТН' | 'ЗК' | 'ПЛ' | 'ТР' | 'СН' | 'ЦЛ' | 'СВ' | 'МС';

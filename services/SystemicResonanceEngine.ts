@@ -1,3 +1,4 @@
+
 import { AnalysisResult, DomainType } from '../types';
 
 export interface ПараметрыРезонанса {
@@ -14,7 +15,7 @@ export interface ПараметрыРезонанса {
  */
 export const SystemicResonanceEngine = {
     рассчитать(результат: AnalysisResult): ПараметрыРезонанса {
-        const { state, domainProfile, activePatterns } = результат;
+        const { state, domainProfile } = результат;
         const { foundation: опора, agency: воля, entropy: хаос } = state;
 
         // Расчет лояльности: Опора + Наследие против Воли

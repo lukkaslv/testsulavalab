@@ -1,5 +1,5 @@
 
-import { RawAnalysisResult, AnalysisResult, ArchetypeKey, VerdictKey, PhaseType, TaskKey, PatternFlags, DomainType, EntropyFluxVector, StructuralFracture, SystemicMetrics } from '../types';
+import { RawAnalysisResult, AnalysisResult, ArchetypeKey, VerdictKey, PhaseType, TaskKey, PatternFlags, DomainType, EntropyFluxVector, StructuralFracture } from '../types';
 import { SecurityCore } from '../utils/crypto';
 import { SYSTEM_METADATA } from '../constants';
 import { calculateForecast, WEIGHTS } from './psychologyService';

@@ -1,6 +1,6 @@
 
 import React, { memo } from 'react';
-import { ОтчетПроводимости, ДанныеШлюза } from '../services/ConductivityEngine';
+import { ОтчетПроводимости } from '../services/ConductivityEngine';
 import { Translations } from '../types';
 
 interface props {

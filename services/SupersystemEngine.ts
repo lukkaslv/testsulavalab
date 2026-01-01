@@ -1,5 +1,5 @@
 
-import { AnalysisResult, DomainType } from '../types';
+import { AnalysisResult } from '../types';
 
 export interface ОтчетСверхсистемы {
     типВклада: string;

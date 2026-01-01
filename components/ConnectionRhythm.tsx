@@ -17,7 +17,7 @@ const ЦВЕТА: Record<string, string> = {
     legacy: '#ec4899'
 };
 
-export const ConnectionRhythm: React.FC<props> = memo(({ отчет, т, className }) => {
+export const ConnectionRhythm: React.FC<props> = memo(({ отчет, className }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {

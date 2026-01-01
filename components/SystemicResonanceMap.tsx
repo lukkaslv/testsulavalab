@@ -1,6 +1,7 @@
+
 import React, { useRef, useEffect, memo } from 'react';
 import { ПараметрыРезонанса } from '../services/SystemicResonanceEngine';
-import { DomainType, Translations } from '../types';
+import { Translations } from '../types';
 
 interface props {
     данные: ПараметрыРезонанса;

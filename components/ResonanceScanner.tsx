@@ -1,7 +1,7 @@
 
 import React, { memo } from 'react';
 import { ResonancePoint } from '../services/psychologyService';
-import { Translations, BeliefKey } from '../types';
+import { Translations } from '../types';
 
 interface ResonanceScannerProps {
     points: ResonancePoint[];

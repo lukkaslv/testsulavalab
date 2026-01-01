@@ -1,5 +1,5 @@
-import { AnalysisResult, Translations, DomainType, BeliefKey } from "../types";
-import { WEIGHTS } from "../services/psychologyService";
+
+import { AnalysisResult, Translations, BeliefKey } from "../types";
 
 /**
  * ГЕНЕЗИС: Клинический Супервизор v2.5
@@ -8,7 +8,7 @@ import { WEIGHTS } from "../services/psychologyService";
  */
 export const DossierService = {
   generateDossier(result: AnalysisResult, t: Translations): string {
-    const { history, shareCode, state, neuroSync, archetypeKey } = result;
+    const { history, shareCode, state, neuroSync } = result;
     const { foundation: f, agency: a, resource: r, entropy: e } = state;
 
     let d = "";

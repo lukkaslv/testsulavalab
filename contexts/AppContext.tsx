@@ -1,7 +1,7 @@
 
 import React, { createContext, useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { translations } from '@/translations';
-import { Translations, GameHistoryItem, ScanHistory, SubscriptionTier, DataCorruptionError, AppContextType, NetworkAuditReport, IntegrityReport, LifeContext, AnalysisResult } from '../types';
+import { Translations, GameHistoryItem, ScanHistory, SubscriptionTier, DataCorruptionError, AppContextType, NetworkAuditReport, IntegrityReport, LifeContext } from '../types';
 import { StorageService, STORAGE_KEYS, SessionState } from '../services/storageService';
 import { PlatformBridge } from '../utils/helpers';
 import { SUBSCRIPTION_LIMITS } from '../constants';

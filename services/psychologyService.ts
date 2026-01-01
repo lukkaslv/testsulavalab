@@ -1,5 +1,5 @@
 
-import { BeliefKey, GameHistoryItem, RawAnalysisResult, SessionPulseNode, DomainType, AutopoiesisMetrics, ForecastMetrics, LifeContext, EntropyFluxVector, ViscosityReport } from '../types';
+import { BeliefKey, GameHistoryItem, RawAnalysisResult, DomainType, AutopoiesisMetrics, ForecastMetrics, LifeContext, EntropyFluxVector, ViscosityReport } from '../types';
 import { StorageService, STORAGE_KEYS } from './storageService';
 
 export interface FeedbackLoopNode {
@@ -301,9 +301,8 @@ export const calculateRawMetrics = (history: GameHistoryItem[]): RawAnalysisResu
   const context = StorageService.load<LifeContext>(STORAGE_KEYS.SESSION_CONTEXT, 'NORMAL');
   let f = 50, a = 50, r = 50, e = 15, s = 50, l = 50, syncScore = 100;
   if (!history || history.length === 0) return { ...createEmptyResult(), isCrisis: false, systemicWear: 0 };
-  const latencies = history.map(h => h.latency).filter(val => val > 300);
-  const mean = latencies.reduce((sum, v) => sum + v, 0) / latencies.length;
-  history.forEach((h, idx) => {
+  
+  history.forEach((h) => {
     const beliefKey = (h.beliefKey as BeliefKey) || 'default'; const w = (WEIGHTS as any)[beliefKey] || WEIGHTS.default;
     f = Math.max(5, Math.min(95, f + w.f)); a = Math.max(5, Math.min(95, a + w.a));
     r = Math.max(5, Math.min(95, r + w.r)); e = Math.max(5, Math.min(95, e + w.e));

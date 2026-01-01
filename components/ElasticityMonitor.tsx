@@ -9,7 +9,7 @@ interface props {
     className?: string;
 }
 
-export const ElasticityMonitor: React.FC<props> = memo(({ отчет, т, className }) => {
+export const ElasticityMonitor: React.FC<props> = memo(({ отчет, className }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {

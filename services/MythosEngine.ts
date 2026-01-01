@@ -14,9 +14,8 @@ export interface Миф {
  */
 export const MythosEngine = {
     собрать(результат: AnalysisResult): Миф {
-        const { foundation: f, agency: a, resource: r, entropy: e } = результат.state;
+        const { foundation: f, agency: a, entropy: e } = результат.state;
         const связь = результат.neuroSync;
-        const тень = результат.shadowArchetype?.key || 'THE_DRIFTER';
 
         // 1. Корень (Основано на Опоре)
         let корень = "Ваш сад зарос терновником, скрывающим старые камни.";

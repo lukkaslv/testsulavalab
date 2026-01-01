@@ -1,6 +1,6 @@
 
 import { useState, memo, useMemo } from 'react';
-import { AnalysisResult, Translations, DomainType } from '../../types';
+import { AnalysisResult, Translations } from '../../types';
 import { PlatformBridge } from '../../utils/helpers';
 import { RadarChart } from '../RadarChart';
 import { ClinicalSynthesisView } from './ClinicalSynthesisView';
@@ -28,7 +28,6 @@ import { ReliefMap } from '../ReliefMap';
 import { StrangeAttractor } from '../StrangeAttractor';
 import { KineticFluxMap } from '../KineticFluxMap';
 import { AutopoiesisNucleus } from '../AutopoiesisNucleus';
-import { TensegrityStructure } from '../TensegrityStructure';
 import { InterferenceMoire } from '../InterferenceMoire';
 import { CoherenceHelix } from '../CoherenceHelix';
 import { HysteresisLoop } from '../HysteresisLoop';
@@ -58,7 +57,6 @@ import { MythosEngine } from '../../services/MythosEngine';
 import { SystemicSimulator } from '../SystemicSimulator';
 import { SynthesisService } from '../../services/synthesisService';
 import { ButterflyEngine } from '../../services/butterflyEngine';
-import { ParableEngine } from '../../services/parableEngine';
 import { EmergenceEngine } from '../../services/emergenceEngine';
 import { TeleologyEngine } from '../../services/teleologyEngine';
 import { ShadowEngine } from '../../services/shadowEngine';
@@ -229,7 +227,7 @@ export const ResultsView = memo<ResultsViewProps>(({
             {activeMode === 'сводка' && (
                 <div className="p-6 space-y-6 overflow-y-auto no-scrollbar max-h-[500px]">
                     <div className="flex justify-center">
-                        <RadarChart points={result.graphPoints} shadowPoints={result.shadowPoints} showShadow={true} t={t} onLabelClick={() => {}} className="scale-90" />
+                        <RadarChart points={result.graphPoints} shadowPoints={result.shadowPoints} showShadow={true} onLabelClick={() => {}} className="scale-90" />
                     </div>
                     <div className="p-5 bg-indigo-600/10 border border-indigo-500/20 rounded-2xl space-y-2">
                          <span className="text-[8px] font-black text-indigo-400 uppercase tracking-widest">Приоритет проработки:</span>
@@ -377,7 +375,7 @@ export const ResultsView = memo<ResultsViewProps>(({
             )}
             {activeMode === 'слепок' && (
                 <div className="aspect-square flex items-center justify-center">
-                    <RadarChart points={result.graphPoints} shadowPoints={result.shadowPoints} showShadow={true} t={t} onLabelClick={() => {}} className="scale-110" />
+                    <RadarChart points={result.graphPoints} shadowPoints={result.shadowPoints} showShadow={true} onLabelClick={() => {}} className="scale-110" />
                 </div>
             )}
             {activeMode === 'тело' && (

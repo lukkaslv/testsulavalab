@@ -1,3 +1,4 @@
+
 import React, { memo } from 'react';
 import { Translations } from '../types';
 import { PlatformBridge } from '../utils/helpers';
@@ -16,7 +17,7 @@ interface RadarChartProps {
  * Радарная Диаграмма v21.0
  * Соответствие: Ст. 12 (Языковой Суверенитет)
  */
-export const RadarChart: React.FC<RadarChartProps> = memo(({ points, secondaryPoints, shadowPoints, showShadow = true, onLabelClick, className = "", t }) => {
+export const RadarChart: React.FC<RadarChartProps> = memo(({ points, secondaryPoints, shadowPoints, showShadow = true, onLabelClick, className = "" }) => {
   
   const handleInteraction = (metric: string) => {
     PlatformBridge.haptic.selection();
