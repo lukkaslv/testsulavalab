@@ -1,5 +1,5 @@
 
-import { RawAnalysisResult, AnalysisResult, ArchetypeKey, VerdictKey, PhaseType, TaskKey, PatternFlags, DomainType, EntropyFluxVector, StructuralFracture } from '../types';
+import { RawAnalysisResult, AnalysisResult, ArchetypeKey, VerdictKey, PhaseType, TaskKey, PatternFlags, DomainType, EntropyFluxVector, StructuralFracture, SystemicMetrics } from '../types';
 import { SecurityCore } from '../utils/crypto';
 import { SYSTEM_METADATA } from '../constants';
 import { calculateForecast, WEIGHTS } from './psychologyService';
@@ -108,7 +108,10 @@ export const DiagnosticEngine = {
     else if (a > 75 && f < 45) verdictKey = 'BRILLIANT_SABOTAGE';
 
     const recommendedPhase: PhaseType = f < 35 ? 'SANITATION' : 'STABILIZATION';
-    const headerData = `${SYSTEM_METADATA.LOGIC_VERSION}::СКРЫТО`;
+    
+    // ПРОВЕРКА ЦЕЛОСТНОСТИ ДАННЫХ ПЕРЕД ГЕНЕРАЦИЕЙ КОДА
+    const logicVersion = SYSTEM_METADATA.LOGIC_VERSION || '22.5-РУС';
+    const headerData = `${logicVersion}::GNS_FINAL`;
     const sig = SecurityCore.generateChecksum(headerData);
 
     return {
@@ -129,7 +132,7 @@ export const DiagnosticEngine = {
       interventionStrategy: f < 35 ? 'STABILIZATION' : 'GROWTH',
       coreConflict: e > 50 ? 'IDENTITY_DIFFUSION' : 'STRUCTURAL_RESISTANCE',
       shadowDirective: 'INTEGRATE_SHADOW',
-      // FIX: Use SecurityCore.toBase64 to handle Cyrillic characters in headerData
+      // FIX: Используем безопасное Unicode-кодирование для shareCode
       shareCode: SecurityCore.toBase64(`${headerData}#${sig}`),
       archetypeKey: spectrum[0].key,
       secondaryArchetypeKey: spectrum[1]?.key,
@@ -140,7 +143,14 @@ export const DiagnosticEngine = {
       patternFlags: patternFlagsOverride || { isMonotonic: false, isHighSkipRate: false, isFlatline: false, isRoboticTiming: false, isSomaticMonotony: false, isEarlyTermination: false, dominantPosition: null },
       entropyFlux,
       fractures,
-      // Pass the crisis flag from raw to final result
+      extra: { 
+          systemicMetrics: {
+              loyaltyIndex: Math.round(((domainProfile?.legacy || 50) * 0.6) + (raw.activePatterns.includes('family_loyalty') ? 40 : 0)),
+              differentiationLevel: 100 - Math.round(((domainProfile?.legacy || 50) * 0.6) + (raw.activePatterns.includes('family_loyalty') ? 40 : 0)),
+              ancestralPressure: Math.round((Math.round(((domainProfile?.legacy || 50) * 0.6) + (raw.activePatterns.includes('family_loyalty') ? 40 : 0)) * 0.7) + (e * 0.3)),
+              fieldTension: Math.round((Math.round(((domainProfile?.legacy || 50) * 0.6) + (raw.activePatterns.includes('family_loyalty') ? 40 : 0)) + e) / 2)
+          }
+      },
       isCrisis: raw.isCrisis
     };
   }

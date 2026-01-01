@@ -1,4 +1,3 @@
-
 import React, { memo, useEffect, useRef, useState } from 'react';
 import { useAppContext } from '../hooks/useAppContext';
 import { SYSTEM_METADATA } from '../constants';
@@ -9,21 +8,17 @@ interface LayoutProps {
 }
 
 /**
- * Genesis OS Sovereign Layout v12.2
- * Соответствие: Ст. 4.3 (Эстетика), Ст. 12 (Языковой Суверенитет), Ст. 11.3 (Аудит)
+ * Генезис: Суверенная Оболочка v19.0
+ * Соответствие: Ст. 12 (Языковой Суверенитет)
  */
 export const Layout = memo<LayoutProps>(({ children }) => {
-  const { handleReset, t, history, view, networkReport } = useAppContext();
+  const { handleReset, t, view, networkReport } = useAppContext();
   const mainRef = useRef<HTMLElement>(null);
   const [showNetworkStatus, setShowNetworkStatus] = useState(false);
 
-  // ИСПРАВЛЕНИЕ: Убрали 'children' из зависимостей. 
-  // Теперь скролл сбрасывается только при смене View, а не при каждом ререндере (например, при открытии аккордеона).
   useEffect(() => {
     if (mainRef.current) { mainRef.current.scrollTop = 0; }
   }, [view]);
-  
-  const canReset = history && history.length > 0;
 
   return (
     <div className="flex-1 flex flex-col max-w-md mx-auto w-full relative h-full bg-transparent text-slate-100 overflow-hidden">
@@ -32,11 +27,11 @@ export const Layout = memo<LayoutProps>(({ children }) => {
           <Logo size="sm" animate={false} />
           <div className="flex flex-col">
             <h1 className="font-black text-lg tracking-tight leading-none text-white">
-              Genesis <span className="text-indigo-500">OS</span>
+              ГЕНЕЗИС <span className="text-indigo-500">СИСТЕМА</span>
             </h1>
-            <span className="text-[8px] font-black text-slate-500 uppercase tracking-[0.4em] mt-1">
+            <h2 className="text-[8px] font-black text-slate-500 uppercase tracking-[0.4em] mt-1">
               {SYSTEM_METADATA.CODENAME}
-            </span>
+            </h2>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -59,7 +54,7 @@ export const Layout = memo<LayoutProps>(({ children }) => {
                     <span className="text-[10px] font-mono text-emerald-400">0 БАЙТ УТЕЧКИ</span>
                 </div>
                 <p className="text-[9px] text-slate-400 italic leading-snug">
-                    Все вычисления производятся локально. Входящие запросы ограничены доверенными доменами (CDN, Telegram).
+                    Все вычисления производятся локально. Входящие запросы ограничены доверенными доменами.
                 </p>
             </div>
         )}
@@ -78,8 +73,7 @@ export const Layout = memo<LayoutProps>(({ children }) => {
         </div>
         <button 
           onClick={() => handleReset(false)} 
-          disabled={!canReset}
-          className="text-[9px] font-black uppercase tracking-[0.2em] bg-slate-900 px-4 py-2 rounded-xl border border-white/5 transition-all disabled:opacity-20 text-slate-400 hover:text-white active:scale-95"
+          className="text-[9px] font-black uppercase tracking-[0.2em] bg-slate-900 px-4 py-2 rounded-xl border border-white/5 transition-all text-slate-400 hover:text-white active:scale-95"
         >
           {t.ui.reset_session_btn}
         </button>

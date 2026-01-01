@@ -27,12 +27,10 @@ interface DashboardViewProps {
   onResume?: () => void;
 }
 
-// Integrated Mini Context Switcher
 const CompactContextControl = () => {
     const { sessionContext, setSessionContext, history } = useAppContext();
     const isLocked = history.length > 0;
     
-    // Localized labels for UI compactness (Art. 12)
     const contexts: Array<{ key: LifeContext, icon: string, label: string }> = [
         { key: 'NORMAL', icon: '🍃', label: 'НОРМА' },
         { key: 'HIGH_LOAD', icon: '🔥', label: 'НАГР' },
@@ -70,6 +68,8 @@ const ProtocolWidget = memo(({ result, t, onOpen }: { result: AnalysisResult, t:
     const roadmapProgress = StorageService.load<string[]>(`roadmap_progress_${result.shareCode}`, []);
     const progressCount = roadmapProgress.length;
     const phase = result.roadmap[0]?.phase || 'STABILIZATION';
+    // @ts-ignore - эмерджентное свойство из психометрии
+    const wear = result.systemicWear || 0;
     
     const theme = phase === 'SANITATION' ? 'from-amber-900/40 border-amber-500/30' : 
                   phase === 'EXPANSION' ? 'from-emerald-900/40 border-emerald-500/30' : 
@@ -84,8 +84,9 @@ const ProtocolWidget = memo(({ result, t, onOpen }: { result: AnalysisResult, t:
                       {t.roadmap.phases[phase as keyof typeof t.roadmap.phases]}
                    </div>
                 </div>
-                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-xl border border-white/10">
-                    {phase === 'SANITATION' ? '🧹' : phase === 'STABILIZATION' ? '⚓' : '🚀'}
+                <div className="text-right">
+                    <span className="text-[7px] font-black text-red-400 uppercase tracking-widest">ИЗНОС</span>
+                    <div className="text-lg font-mono font-black text-red-500">{wear}%</div>
                 </div>
              </div>
              <div className="space-y-2 relative z-10">
@@ -107,7 +108,6 @@ export const DashboardView = memo<DashboardViewProps>((props) => {
 
     const isTestComplete = globalProgress >= 100;
     
-    // Theme logic based on Context (Art. 11.7)
     const contextTheme = useMemo(() => {
         switch(sessionContext) {
             case 'CRISIS': return { bg: 'from-red-900/40 to-slate-900', border: 'border-red-500/30', accent: 'bg-red-500' };
@@ -117,7 +117,6 @@ export const DashboardView = memo<DashboardViewProps>((props) => {
         }
     }, [sessionContext]);
 
-    // Knowledge Base Items
     const knowledgeItems = [
         { id: 'brief_explainer', icon: '🧬', label: 'Экскурс', color: 'emerald' },
         { id: 'archetypes', icon: '🏆', label: 'Атлас', color: 'amber' },
@@ -128,7 +127,6 @@ export const DashboardView = memo<DashboardViewProps>((props) => {
     return (
         <div className="space-y-5 animate-in flex flex-col relative text-slate-100 pb-24">
           
-          {/* Main Action Area (Integrated) */}
           <div className="space-y-3">
               {result && isTestComplete ? (
                   <ProtocolWidget result={result} t={t} onOpen={() => onSetView('protocol')} />
@@ -140,11 +138,9 @@ export const DashboardView = memo<DashboardViewProps>((props) => {
                         bg-gradient-to-br ${contextTheme.bg} ${contextTheme.border} border-white/10
                     `}
                   >
-                     {/* Living Pulse Effect */}
                      {!isTestComplete && <div className={`absolute inset-0 opacity-10 blur-3xl animate-pulse-slow ${contextTheme.accent}`}></div>}
                      
                      <div className="relative z-10 flex flex-col space-y-4">
-                        {/* Top Control Bar */}
                         <div className="flex justify-between items-start">
                             <CompactContextControl />
                             <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-lg shadow-lg bg-white/10 border border-white/10 backdrop-blur-sm`}>
@@ -152,7 +148,6 @@ export const DashboardView = memo<DashboardViewProps>((props) => {
                             </div>
                         </div>
 
-                        {/* Title Block */}
                         <div className="space-y-0.5">
                             <span className={`text-[9px] font-black uppercase tracking-[0.3em] text-white/50`}>
                                 {isTestComplete ? 'АНАЛИЗ ЗАВЕРШЕН' : 'СИСТЕМА ГОТОВА'}
@@ -162,7 +157,6 @@ export const DashboardView = memo<DashboardViewProps>((props) => {
                             </div>
                         </div>
 
-                        {/* Progress Bar */}
                         <div className="space-y-1.5 pt-1">
                             <div className="flex justify-between text-[8px] font-black uppercase tracking-[0.2em] text-white/40">
                                 <span>{t.ui.progress_label}</span>
@@ -177,12 +171,10 @@ export const DashboardView = memo<DashboardViewProps>((props) => {
               )}
           </div>
 
-          {/* Domain Map - Restricted Height */}
           <div className="mx-auto w-full max-w-[320px]">
              <DomainNavigator nodes={nodes} onStartNode={onStartNode} t={t} />
           </div>
 
-          {/* Knowledge Grid */}
           <div className="space-y-2">
               <span className="text-[8px] font-black uppercase text-slate-500 tracking-[0.3em] pl-2 border-l-2 border-slate-700 ml-1">
                   БАЗА ЗНАНИЙ
@@ -207,7 +199,7 @@ export const DashboardView = memo<DashboardViewProps>((props) => {
           </div>
 
           <footer className="pt-2 text-center opacity-30">
-              <p className="text-[7px] font-black uppercase tracking-[0.5em] text-slate-500">Genesis OS // Sovereign Logic</p>
+              <p className="text-[7px] font-black uppercase tracking-[0.5em] text-slate-500">ГЕНЕЗИС // СУВЕРЕННАЯ ЛОГИКА</p>
           </footer>
         </div>
     );

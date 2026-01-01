@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, memo } from 'react';
 import { AttractorMetrics } from '../services/teleologyEngine';
 
@@ -7,6 +6,10 @@ interface TeleologicalAttractorProps {
     className?: string;
 }
 
+/**
+ * ГЕНЕЗИС: Горизонт Событий (Art. 7.2)
+ * Визуализирует Аттрактор — детерминированную точку схождения судьбы.
+ */
 export const TeleologicalAttractor: React.FC<TeleologicalAttractorProps> = memo(({ metrics, className }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -26,7 +29,7 @@ export const TeleologicalAttractor: React.FC<TeleologicalAttractorProps> = memo(
 
             const { convergenceRate, isDegenerative } = metrics;
             
-            // 1. Отрисовка сетки искривления (Space-Time Warp)
+            // 1. Отрисовка сетки искривления (Пространство-Время)
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
             ctx.lineWidth = 0.5;
             const gridSize = 20;
@@ -43,7 +46,7 @@ export const TeleologicalAttractor: React.FC<TeleologicalAttractorProps> = memo(
                 ctx.stroke();
             }
 
-            // 2. Частицы-события (Event Horizon)
+            // 2. Частицы-события (Событийный горизонт)
             const particles = 40;
             for (let i = 0; i < particles; i++) {
                 const angle = (i * Math.PI * 2 / particles) + time * (0.5 + convergenceRate / 200);
@@ -58,7 +61,7 @@ export const TeleologicalAttractor: React.FC<TeleologicalAttractorProps> = memo(
                 ctx.fill();
             }
 
-            // 3. Сингулярность (The Attractor)
+            // 3. Сингулярность
             const corePulse = 2 + Math.sin(time * 5) * 1;
             ctx.beginPath();
             ctx.arc(cx, cy, corePulse, 0, Math.PI * 2);
@@ -79,7 +82,7 @@ export const TeleologicalAttractor: React.FC<TeleologicalAttractorProps> = memo(
     return (
         <div className={`relative bg-black rounded-[3rem] border border-white/10 overflow-hidden ${className}`}>
             <div className="absolute top-6 left-8 z-10 space-y-1">
-                <span className="text-[8px] font-black text-slate-500 uppercase tracking-[0.4em]">Сканер Горизонта Событий</span>
+                <span className="text-[8px] font-black text-slate-500 uppercase tracking-[0.4em]">СКАНЕР ГОРИЗОНТА СОБЫТИЙ</span>
                 <p className="text-[7px] text-white font-mono uppercase">СХОЖДЕНИЕ_{metrics.convergenceRate}%</p>
             </div>
             <canvas ref={canvasRef} width={350} height={350} className="w-full h-full object-contain scale-110" />
@@ -87,7 +90,7 @@ export const TeleologicalAttractor: React.FC<TeleologicalAttractorProps> = memo(
                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-relaxed">
                     {metrics.fateDescription}
                 </p>
-                <span className="text-[6px] text-slate-600 uppercase tracking-[0.3em] block mt-2">Анализ Финальной Причины (Ст. 7.2)</span>
+                <span className="text-[6px] text-slate-600 uppercase tracking-[0.3em] block mt-2">АНАЛИЗ ФИНАЛЬНОЙ ПРИЧИНЫ (Ст. 7.2)</span>
             </div>
         </div>
     );

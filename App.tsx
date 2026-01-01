@@ -10,6 +10,7 @@ import { useTestEngine } from './hooks/useTestEngine';
 import { AdaptiveQuestionEngine, getDomainForNodeId } from './services/adaptiveQuestionEngine';
 import { PatternDetector } from './services/PatternDetector';
 import { useAppContext } from './hooks/useAppContext';
+import { StorageService } from './services/storageService';
 import { generateShareImage } from './utils/shareGenerator';
 
 // View Imports
@@ -72,10 +73,27 @@ const App: React.FC = () => {
 
   const result = useMemo(() => {
     if (history.length < 5) return null;
-    const rawResult = calculateRawMetrics(history);
-    const patternFlags = PatternDetector.analyze(history);
-    return DiagnosticEngine.interpret(rawResult, patternFlags);
+    try {
+        const rawResult = calculateRawMetrics(history);
+        const patternFlags = PatternDetector.analyze(history);
+        return DiagnosticEngine.interpret(rawResult, patternFlags);
+    } catch (e) {
+        console.error("Critical Analysis Failure:", e);
+        return null;
+    }
   }, [history]);
+
+  const handleFinalizeSession = useCallback(async () => {
+    if (result && result.validity === 'VALID') {
+        try {
+            await StorageService.saveScan(result);
+            console.log("🧬 ГЕНЕЗИС: Результат сессии зафиксирован в истории.");
+        } catch (e) {
+            console.warn("Ошибка фиксации истории:", e);
+        }
+    }
+    setViewAndPersist('results');
+  }, [result, setViewAndPersist]);
 
   const handleContinue = useCallback((historyOverride?: GameHistoryItem[]) => {
     const currentHistory = historyOverride || history;
@@ -127,7 +145,6 @@ const App: React.FC = () => {
   const renderView = () => {
     if (dataStatus === 'corrupted') return <DataCorruptionView t={t} onReset={() => handleReset(true)} />;
     
-    // UPDATED: Pass shareCode to CrisisView
     if (view === 'results' && result?.isCrisis) {
         return <CrisisView t={t} onExit={() => handleReset(true)} shareCode={result.shareCode} />;
     }
@@ -143,9 +160,9 @@ const App: React.FC = () => {
       case 'test': return <TestView t={t} activeModule={activeTest.domain!} currentId={activeTest.id} scene={MODULE_REGISTRY[activeTest.domain!]![activeTest.id]} onChoice={engineInstance.handleChoice} onExit={() => setViewAndPersist(backTo)} getSceneText={(path) => resolvePath(t, path)} adaptiveState={adaptiveState} />;
       case 'body_sync': return <BodySyncView t={t} onSync={engineInstance.syncBodySensation} />;
       case 'stabilization': return <StabilizationView t={t} onComplete={() => handleContinue()} />;
-      case 'processing': return <ProcessingView onComplete={() => setViewAndPersist('results')} />;
+      case 'processing': return <ProcessingView onComplete={handleFinalizeSession} />;
       case 'results':
-        if (!result) return <div/>;
+        if (!result) return <DashboardView nodes={nodes} result={result} onStartNode={engineInstance.startNode} onResume={() => handleContinue()} globalProgress={Math.round(adaptiveState.clarity)} t={t} isDemo={isDemo} completedNodeIds={completedNodeIds} onSetView={setViewAndPersist} scanHistory={scanHistory} onSetCurrentDomain={() => {}} currentDomain={null} />;
         return result.validity === 'INVALID' 
             ? <InvalidResultsView t={t} onReset={() => handleReset(true)} patternFlags={result.patternFlags} /> 
             : <ResultsView t={t} result={result} isGlitchMode={false} onContinue={() => handleContinue()} onShare={async () => {

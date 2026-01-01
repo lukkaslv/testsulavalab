@@ -1,4 +1,3 @@
-
 import { Scene, BeliefKey, DomainType, DomainConfig, SubscriptionTier } from './types';
 
 export const STORAGE_KEYS = {
@@ -13,15 +12,15 @@ export const STORAGE_KEYS = {
   SESSION_CONTEXT: 'genesis_session_context'
 } as const;
 
-// ВЕРСИОНИРОВАНИЕ И НАДЗОР СИСТЕМЫ
+// ВЕРСИОНИРОВАНИЕ И НАДЗОР СИСТЕМЫ (Ст. 23)
 export const SYSTEM_METADATA = {
-    VERSION: '16.0.0-EMERGENCE', 
+    VERSION: '27.5.0-РУС', 
     CONSTITUTION: '2.0',
-    LOGIC_VERSION: '11.0-EMG',
-    LAST_UPDATED: '2026-01-05',
-    CODENAME: 'Матрица Эмерджентности', // Переведено
+    LOGIC_VERSION: '22.5-РУС',
+    LAST_UPDATED: '2026-04-05',
+    CODENAME: 'Телеологический Горизонт',
     GITHUB_LEDGER_URL: 'https://raw.githubusercontent.com/genesis-os/ledger/main/ledger.json',
-    CORE_LOGIC_ANCHOR: 'E1M_EFF_V16_PRO'
+    CORE_LOGIC_ANCHOR: 'R1M_RU_V27_ПРО'
 };
 
 export const SYSTEM_LINKS = {

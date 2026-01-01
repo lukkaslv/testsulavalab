@@ -50,10 +50,7 @@ const BiofeedbackLayer = memo(({ state }: { state: AtmosphereState }) => {
 
     return (
         <div className={`absolute inset-0 z-0 transition-all duration-1000 bg-gradient-to-b ${config.bg}`}>
-            {/* Grain Texture */}
             <div className="absolute inset-0 opacity-[0.04] bg-[url('https://grainy-gradients.vercel.app/noise.svg')] pointer-events-none mix-blend-overlay"></div>
-            
-            {/* The Core Breath - Subtle */}
             <div className={`absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-white/5 blur-[120px] pointer-events-none transition-all duration-1000 ${config.pulse}`}></div>
         </div>
     );
@@ -145,7 +142,6 @@ export const TestView = memo<TestViewProps>(({ t, activeModule, currentId, scene
     if (selectedChoiceId || isPacingLocked || showIntervention) return; 
     setSelectedChoiceId(c.id);
     
-    // SEMANTIC HAPTICS (Art. 4.3)
     const w = (WEIGHTS as any)[c.beliefKey as BeliefKey] || WEIGHTS.default;
     if (Math.abs(w.e) >= 3) PlatformBridge.haptic.notification('warning');
     else if (w.f >= 2) PlatformBridge.haptic.impact('heavy');
@@ -163,16 +159,13 @@ export const TestView = memo<TestViewProps>(({ t, activeModule, currentId, scene
     <div className="h-full relative overflow-hidden flex flex-col font-sans select-none">
       <BiofeedbackLayer state={atmosphere} />
 
-      {/* TOP NAVIGATION & STATUS */}
       <div className="relative z-10 px-6 pt-4 pb-2 shrink-0 flex flex-col gap-2">
-         {/* Adaptive Progress - Simplified */}
          <AdaptiveProgressBar 
             clarity={adaptiveState.clarity} 
             isAdaptive={isAdaptive} 
             contradictionsCount={adaptiveState.contradictions.length} 
          />
          
-         {/* Context Tag */}
          <div className="flex justify-between items-center opacity-60">
              <div className="flex items-center gap-2">
                  <span className="text-[8px] font-black tracking-[0.2em] text-slate-400 uppercase">
@@ -185,8 +178,8 @@ export const TestView = memo<TestViewProps>(({ t, activeModule, currentId, scene
          </div>
       </div>
 
-      {/* QUESTION SPACE (The Void) */}
-      <div className="flex-1 flex flex-col justify-center px-6 relative z-10 overflow-y-auto custom-scrollbar min-h-0">
+      {/* QUESTION SPACE - Moved higher and adjusted padding */}
+      <div className="flex-1 flex flex-col justify-start pt-12 px-6 relative z-10 overflow-y-auto no-scrollbar min-h-0">
         <div className="space-y-4 py-2">
             <h3 className="text-2xl sm:text-3xl font-black uppercase text-slate-100 leading-tight tracking-tight drop-shadow-lg">
                 {getSceneText(scene.titleKey)}
@@ -200,14 +193,13 @@ export const TestView = memo<TestViewProps>(({ t, activeModule, currentId, scene
         </div>
       </div>
 
-      {/* CHOICE TRIGGERS (Thumb Zone) */}
-      <div className="px-4 pb-10 pt-4 space-y-3 relative z-20 shrink-0">
-        {/* Gradient Fade for visual separation */}
-        <div className="absolute -top-12 left-0 right-0 h-12 bg-gradient-to-t from-[#020617] to-transparent pointer-events-none"></div>
-        <div className="absolute inset-0 bg-[#020617]/80 backdrop-blur-sm -z-10"></div>
+      {/* CHOICE TRIGGERS - Raised and bottom safe area expanded */}
+      <div className="px-4 pb-24 pt-4 space-y-3 relative z-20 shrink-0">
+        <div className="absolute -top-16 left-0 right-0 h-16 bg-gradient-to-t from-[#020617] to-transparent pointer-events-none"></div>
+        <div className="absolute inset-0 bg-[#020617]/90 backdrop-blur-md -z-10"></div>
 
         {isPacingLocked ? (
-            <div className="h-[200px] flex flex-col items-center justify-center space-y-6 animate-in rounded-2xl bg-slate-900/30 border border-white/5">
+            <div className="h-[220px] flex flex-col items-center justify-center space-y-6 animate-in rounded-2xl bg-slate-900/30 border border-white/5">
                 <div className="relative w-12 h-12 flex items-center justify-center">
                     <div className="absolute inset-0 bg-teal-500/20 rounded-full animate-ping"></div>
                     <span className="text-xl animate-pulse">🌬️</span>
@@ -231,24 +223,12 @@ export const TestView = memo<TestViewProps>(({ t, activeModule, currentId, scene
                         ${isSelected ? 'opacity-100 ring-2 ring-indigo-500 ring-offset-2 ring-offset-black' : 'opacity-100'}`}
                     style={{ animation: `fadeInUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards ${i * 0.05}s` }}
                 >
-                    <div className={`
-                        absolute inset-0 transition-all duration-300
-                        ${isSelected ? 'bg-indigo-600' : 'bg-slate-800/80 group-hover:bg-slate-800'}
-                    `}></div>
-                    
-                    <div className="relative flex items-center p-4 gap-4 min-h-[64px]">
-                        <span className={`
-                            w-6 h-6 shrink-0 rounded flex items-center justify-center text-[10px] font-black border transition-colors
-                            ${isSelected 
-                                ? 'bg-white/20 border-white/20 text-white' 
-                                : 'bg-black/30 border-white/10 text-slate-500 group-hover:text-slate-300'}
-                        `}>
+                    <div className={`absolute inset-0 transition-all duration-300 ${isSelected ? 'bg-indigo-600' : 'bg-slate-800/90 group-hover:bg-slate-800'}`}></div>
+                    <div className="relative flex items-center p-4 gap-4 min-h-[68px]">
+                        <span className={`w-6 h-6 shrink-0 rounded flex items-center justify-center text-[10px] font-black border transition-colors ${isSelected ? 'bg-white/20 border-white/20 text-white' : 'bg-black/30 border-white/10 text-slate-500 group-hover:text-slate-300'}`}>
                             {['A', 'B', 'C'][i]}
                         </span>
-                        <span className={`
-                            text-sm font-bold tracking-wide transition-colors text-left leading-tight
-                            ${isSelected ? 'text-white' : 'text-slate-200 group-hover:text-white'}
-                        `}>
+                        <span className={`text-sm font-bold tracking-wide transition-colors text-left leading-tight ${isSelected ? 'text-white' : 'text-slate-200 group-hover:text-white'}`}>
                             {getSceneText(c.textKey)}
                         </span>
                     </div>

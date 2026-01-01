@@ -1,6 +1,14 @@
+
 import React from 'react';
 
 export type DomainType = 'foundation' | 'agency' | 'money' | 'social' | 'legacy';
+
+export interface SystemPrinciple {
+    id: string;
+    title: string;
+    content: string;
+    type: 'principle';
+}
 
 export type BeliefKey = 
   | 'family_loyalty' | 'scarcity_mindset' | 'fear_of_punishment' | 'imposter_syndrome' 
@@ -33,6 +41,16 @@ export enum LogLevel {
     ERROR = 'ERROR'
 }
 
+export interface EmergentPattern {
+    id: string;
+    label: string;
+    description: string;
+    intensity: number;
+    impact: 'PROTECTION' | 'DECAY' | 'EVOLUTION';
+    clinicalNote: string;
+    indicators: DomainType[];
+}
+
 export interface StructuralFracture {
     nodeId: string;
     domain: DomainType;
@@ -48,6 +66,13 @@ export interface BifurcationNode {
     shadowArchetype: ArchetypeKey;
     sensitivity: number;
     delta: number;
+}
+
+export interface ViscosityReport {
+    perDomain: Record<DomainType, number>;
+    overall: number;
+    leverageDomain: DomainType;
+    barrierDescription: string;
 }
 
 export class DataCorruptionError extends Error {
@@ -215,6 +240,7 @@ export interface AnalysisResult extends RawAnalysisResult {
   bifurcationHistory?: any[];
   entropyFlux: EntropyFluxVector[];
   fractures: StructuralFracture[];
+  extra?: any;
 }
 
 export interface ScanHistory {
@@ -697,6 +723,11 @@ export interface Translations {
     clinical_decoder: any;
     admin: any;
     pro_headers: any;
+    changelog_title: string;
+    changelog_subtitle: string;
+    changelog_types: Record<string, string>;
+    legal_compliance_label: string;
+    genetic_memory_label: string;
 }
 
 export type NeuralCorrelation = any;

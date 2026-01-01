@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Translations } from '../../types';
 import { SYSTEM_METADATA } from '../../constants';
@@ -43,7 +42,7 @@ export const BootView: React.FC<BootViewProps> = ({ onComplete, t }) => {
       
       <div className="space-y-2 relative z-0">
           <div className="mb-8 border-b border-emerald-900/50 pb-2">
-              <h1 className="text-xl font-black text-emerald-600 tracking-tighter">GENESIS_OS <span className="text-xs align-top opacity-50">BIOS</span></h1>
+              <h1 className="text-xl font-black text-emerald-600 tracking-tighter">ГЕНЕЗИС_СИСТЕМА <span className="text-xs align-top opacity-50">ЯДРО</span></h1>
               <p className="text-[9px] text-emerald-800 uppercase tracking-widest">{bs.copyright}</p>
           </div>
 

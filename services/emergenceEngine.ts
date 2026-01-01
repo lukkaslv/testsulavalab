@@ -1,15 +1,5 @@
 
-import { AnalysisResult, DomainType } from '../types';
-
-export interface EmergentPattern {
-    id: string;
-    label: string;
-    description: string;
-    intensity: number; // 0-100
-    impact: 'PROTECTION' | 'DECAY' | 'EVOLUTION';
-    clinicalNote: string;
-    indicators: DomainType[];
-}
+import { AnalysisResult, EmergentPattern, DomainType } from '../types';
 
 /**
  * Emergence Engine v1.0
@@ -19,7 +9,7 @@ export interface EmergentPattern {
 export const EmergenceEngine = {
     detectPatterns(result: AnalysisResult): EmergentPattern[] {
         const { state, domainProfile, neuroSync: sync } = result;
-        const { foundation: f, agency: a, entropy: e } = state;
+        const { foundation: f, agency: a, resource: r, entropy: e } = state;
         const patterns: EmergentPattern[] = [];
 
         // 1. "Стеклянная Колонна" (The Glass Pillar)

@@ -1,7 +1,5 @@
-
 import { Translations } from './types';
 import { generateScenes } from './translations/scenes';
-import { interfaceTranslations } from './translations/interface';
 import { clinicalTranslations } from './translations/clinical';
 import { uiTranslations } from './translations/ui';
 import { resultsTranslations } from './translations/results';
@@ -9,18 +7,31 @@ import { proTranslations } from './translations/pro';
 import { systemTranslations } from './translations/system';
 import { modulesTranslations } from './translations/modules';
 
-// Ст. 21 Оптимизация: Использование консолидированных пакетов с фоллбеками
+/**
+ * Genesis OS Unified Localization Hub
+ * Compliance: Art. 12 (Russian Sovereignty), Art. 21 (Simplicity)
+ */
 export const translations = {
   ru: {
-    ...interfaceTranslations,
+    // 1. Clinical Data & Typology
     ...clinicalTranslations,
-    // Поддержка устаревших ключей на этапе миграции
+    
+    // 2. Core UI & Logic (Consolidated uiTranslations handles interface needs)
     ...uiTranslations,
+    
+    // 3. Results & Roadmaps (Consolidated resultsTranslations)
     ...resultsTranslations,
+    
+    // 4. Specialist Tools & Hubs
     ...proTranslations,
+    
+    // 5. System Meta & Legal
     ...systemTranslations,
+    
+    // 6. Component-specific Modules
     ...modulesTranslations,
+    
+    // 7. Dynamic Content
     scenes: generateScenes(),
-    // Исправление: Двойное приведение типов для удовлетворения интерфейса Translations (Соответствие Ст. 28)
   } as unknown as Translations
 };

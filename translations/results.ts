@@ -1,4 +1,3 @@
-
 export const resultsTranslations = {
     results: { 
         integrity: "Целостность", neuro_sync: "Нейросинк", blueprint: "Слепок", confidence: "Достоверность", session_prep: "Подготовка", 
@@ -6,6 +5,8 @@ export const resultsTranslations = {
         active_patterns_title: "Паттерны", methodology_title: "Методология", methodology_desc: "Как система анализирует ваши ответы", 
         share_button: "Поделиться", back: "Назад", disclaimer_title: "Дисклеймер", disclaimer_body: "Данный отчет сформирован алгоритмом на основе ваших реакций. Не является медицинской рекомендацией.", 
         encrypted_overlay: "Зашифровано", footer_disclaimer: "Genesis OS v2.0", share_code_help: "Скопируйте этот код для специалиста", 
+        maintenance_cost: "Цена Удержания", systemic_leaks: "Утечки энергии", homeostasis_status: "Статус Гомеостаза",
+        systemic_wear_label: "Износ системы",
         signal_decoder_label: "Декодер", pro_locked_desc: "Требуется Pro", deep_signal_title: "Нейрослед", deep_signal_desc: "Точки максимального сопротивления", 
         cognitive_friction: "Трение", somatic_barrier: "Барьер", signal_decoder: { title: "ЛОГ", subtitle: "Ядро", evidence_label: "Улики", 
         high_latency_friction: "Задержка + Соматика", cognitive_somatic_dissonance: "Смысловой диссонанс", high_latency: "Задержка отклика", 

@@ -1,20 +1,16 @@
-
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import { AppProvider } from './contexts/AppContext';
 
-console.log("🚀 Genesis OS: Ядро индекса инициализировано");
+console.log("🚀 СИСТЕМА ГЕНЕЗИС: Ядро индекса инициализировано");
 
-// Глобальная сеть безопасности (Global Safety Net)
+// Глобальная сеть безопасности
 window.addEventListener('unhandledrejection', (event) => {
-  console.error('🔥 КРИТИЧЕСКАЯ_АСИНХ_ОШИБКА:', event.reason);
-  // Тихий режим восстановления - предотвращение падения приложения
+  console.error('🔥 КРИТИЧЕСКАЯ_ОШИБКА_ЯДРА:', event.reason);
   event.preventDefault();
 });
 
-// Обеспечение полного экрана в Telegram
-// ИСПРАВЛЕНИЕ: Приведение window к any для доступа к Telegram WebApp
 const tg = (window as any).Telegram?.WebApp;
 if (tg) {
   tg.ready();

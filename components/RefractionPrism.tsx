@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, memo } from 'react';
 import { Translations, ArchetypeKey } from '../types';
 import { RefractionVector } from '../services/refractionEngine';
@@ -36,7 +35,7 @@ export const RefractionPrism: React.FC<RefractionPrismProps> = memo(({ vectors, 
             const cx = w / 2, cy = h / 2;
             ctx.clearRect(0, 0, w, h);
 
-            // 1. Отрисовка центрального ядра (Current Identity)
+            // 1. Центральное ядро
             const coreRadius = 40 + Math.sin(time * 2) * 2;
             const coreColor = ARCH_COLORS[currentArchetype] || '#6366f1';
 
@@ -48,7 +47,7 @@ export const RefractionPrism: React.FC<RefractionPrismProps> = memo(({ vectors, 
             ctx.lineWidth = 2;
             ctx.stroke();
 
-            // 2. Отрисовка векторов преломления (Art. 5.1)
+            // 2. Векторы преломления
             vectors.forEach((v, i) => {
                 const angle = (i * (Math.PI * 2 / vectors.length)) - Math.PI / 2 + (time * 0.2);
                 const distance = 100 + (v.tension * 0.5);
@@ -56,7 +55,6 @@ export const RefractionPrism: React.FC<RefractionPrismProps> = memo(({ vectors, 
                 const vy = cy + Math.sin(angle) * distance;
                 const targetColor = ARCH_COLORS[v.target] || '#fff';
 
-                // Луч
                 ctx.beginPath();
                 ctx.moveTo(cx, cy);
                 ctx.lineTo(vx, vy);
@@ -66,7 +64,6 @@ export const RefractionPrism: React.FC<RefractionPrismProps> = memo(({ vectors, 
                 ctx.stroke();
                 ctx.setLineDash([]);
 
-                // Узел архетипа
                 ctx.beginPath();
                 ctx.arc(vx, vy, 4 + (v.weight / 15), 0, Math.PI * 2);
                 ctx.fillStyle = v.isShadow ? '#fff' : targetColor;
@@ -77,7 +74,6 @@ export const RefractionPrism: React.FC<RefractionPrismProps> = memo(({ vectors, 
                 ctx.fill();
                 ctx.shadowBlur = 0;
 
-                // Подпись
                 ctx.font = 'bold 8px Inter, sans-serif';
                 ctx.fillStyle = 'rgba(255,255,255,0.5)';
                 ctx.textAlign = 'center';
@@ -85,22 +81,6 @@ export const RefractionPrism: React.FC<RefractionPrismProps> = memo(({ vectors, 
                 ctx.fillText(label, vx, vy + 20);
                 ctx.fillText(`${v.weight}%`, vx, vy + 30);
             });
-
-            // 3. Соединительная "паутина" (Art. 4.1)
-            if (vectors.length > 1) {
-                ctx.beginPath();
-                vectors.forEach((v, i) => {
-                    const angle = (i * (Math.PI * 2 / vectors.length)) - Math.PI / 2 + (time * 0.2);
-                    const distance = 100 + (v.tension * 0.5);
-                    const vx = cx + Math.cos(angle) * distance;
-                    const vy = cy + Math.sin(angle) * distance;
-                    if (i === 0) ctx.moveTo(vx, vy); else ctx.lineTo(vx, vy);
-                });
-                ctx.closePath();
-                ctx.strokeStyle = 'rgba(99, 102, 241, 0.1)';
-                ctx.lineWidth = 1;
-                ctx.stroke();
-            }
 
             time += 0.01;
             frame = requestAnimationFrame(draw);
@@ -113,14 +93,14 @@ export const RefractionPrism: React.FC<RefractionPrismProps> = memo(({ vectors, 
     return (
         <div className={`relative bg-black/20 rounded-[3rem] border border-white/5 overflow-hidden ${className}`}>
             <div className="absolute top-6 left-8 pointer-events-none z-10">
-                <span className="text-[8px] font-black text-indigo-400 uppercase tracking-[0.4em]">Topological_Refraction_V1</span>
+                <span className="text-[8px] font-black text-indigo-400 uppercase tracking-[0.4em]">Топологическое_Преломление</span>
             </div>
             <canvas ref={canvasRef} width={350} height={350} className="w-full h-full object-contain" />
             <div className="absolute bottom-6 left-8 right-8 flex justify-between items-end pointer-events-none opacity-40">
                 <p className="text-[7px] text-slate-500 uppercase italic max-w-[150px]">
-                    Линии показывают "тягу" системы к альтернативным состояниям (Art. 5).
+                    Линии показывают "тягу" системы к альтернативным состояниям (Ст. 5).
                 </p>
-                <span className="text-[8px] font-mono text-white/20">Butterfly_Risk: DETECTED</span>
+                <span className="text-[8px] font-mono text-white/20">РИСК_БАБОЧКИ: АКТИВЕН</span>
             </div>
         </div>
     );

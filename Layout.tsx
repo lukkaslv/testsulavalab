@@ -1,14 +1,16 @@
-
 import React, { memo, useEffect, useRef } from 'react';
 import { useAppContext } from './hooks/useAppContext';
 import { SYSTEM_METADATA } from './constants';
-import { PlatformBridge } from './utils/helpers';
 import { Logo } from './components/Logo';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
+/**
+ * ГЕНЕЗИС: Суверенная Оболочка
+ * Соответствие: Ст. 12 (Языковой Суверенитет)
+ */
 export const Layout = memo<LayoutProps>(({ children }) => {
   const { handleReset, t, history } = useAppContext();
   const mainRef = useRef<HTMLElement>(null);
@@ -26,16 +28,16 @@ export const Layout = memo<LayoutProps>(({ children }) => {
           <Logo size="md" animate={false} />
           <div className="flex flex-col">
             <h1 className="font-black text-lg tracking-tight leading-none text-slate-900">
-              Genesis <span className="text-indigo-600">OS</span>
+              ГЕНЕЗИС <span className="text-indigo-600">СИСТЕМА</span>
             </h1>
             <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
-              {t.subtitle.split('//')[0]}
+              ПСИХОМЕТРИЯ СОПРОТИВЛЕНИЯ
             </span>
           </div>
         </div>
         <div className="flex gap-2">
           <div className="px-3 h-9 flex items-center justify-center rounded-xl bg-slate-50 border border-slate-100 font-black text-[10px] text-slate-800">
-            RU
+            РУ
           </div>
         </div>
       </header>
@@ -48,7 +50,7 @@ export const Layout = memo<LayoutProps>(({ children }) => {
       
       <footer className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md px-6 py-4 glass-card border-t border-slate-100 z-[70] flex justify-between items-center rounded-t-3xl shadow-2xl">
         <div className="flex flex-col">
-            <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest">{t.ui.system_build}</span>
+            <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest">СБОРКА СИСТЕМЫ</span>
             <span className="text-[9px] font-mono font-bold text-slate-400">v{SYSTEM_METADATA.VERSION}</span>
         </div>
         <button 

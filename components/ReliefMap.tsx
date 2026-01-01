@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, memo, useState } from 'react';
 import { AnalysisResult, DomainType } from '../types';
 
@@ -8,7 +7,7 @@ interface ReliefMapProps {
 }
 
 const DOMAIN_COORDS: Record<DomainType, {x: number, y: number}> = {
-    foundation: { x: 0.5, y: 0.5 }, // Center anchor
+    foundation: { x: 0.5, y: 0.5 }, // Центр - якорь безопасности
     agency: { x: 0.2, y: 0.2 },
     money: { x: 0.8, y: 0.2 },
     social: { x: 0.2, y: 0.8 },
@@ -22,7 +21,7 @@ export const ReliefMap: React.FC<ReliefMapProps> = memo(({ result, className }) 
   const { domainProfile, state } = result;
 
   useEffect(() => {
-      // Calculate Ruggedness (Variance in heights)
+      // Расчет индекса изрезанности (вариативность высот)
       const values = Object.values(domainProfile) as number[];
       const min = Math.min(...values);
       const max = Math.max(...values);
@@ -42,10 +41,8 @@ export const ReliefMap: React.FC<ReliefMapProps> = memo(({ result, className }) 
     const gridSize = 24;
     const gridPoints: {x: number, y: number, z: number}[][] = [];
 
-    // Initialize Grid Logic
     const calculateHeight = (gx: number, gy: number, t: number) => {
         let z = 0;
-        // Inverse Distance Weighting from Domains
         (Object.keys(DOMAIN_COORDS) as DomainType[]).forEach(d => {
             const pos = DOMAIN_COORDS[d];
             const val = domainProfile[d];
@@ -54,16 +51,12 @@ export const ReliefMap: React.FC<ReliefMapProps> = memo(({ result, className }) 
             const dy = gy - pos.y;
             const dist = Math.sqrt(dx*dx + dy*dy);
             
-            // Physics: High Score = Valley (Low Z), Low Score = Peak (High Z)
-            // Gaussian influence
             const influence = Math.exp(-dist * 4); 
-            // Invert value: 100 -> 0 (Valley), 0 -> 100 (Peak)
             const heightContribution = (100 - val) * influence;
             
             z += heightContribution;
         });
 
-        // Entropy Noise
         const noise = Math.sin(gx * 10 + t) * Math.cos(gy * 10 + t) * (state.entropy / 5);
         
         return Math.max(0, (z / 2) + noise);
@@ -74,7 +67,6 @@ export const ReliefMap: React.FC<ReliefMapProps> = memo(({ result, className }) 
         const h = canvas.height;
         ctx.clearRect(0, 0, w, h);
 
-        // Isometric Projection Setup
         const isoX = w / 2;
         const isoY = h / 3;
         const scaleX = w / 1.5;
@@ -87,7 +79,6 @@ export const ReliefMap: React.FC<ReliefMapProps> = memo(({ result, className }) 
             };
         };
 
-        // Generate Grid Frame
         for (let i = 0; i <= gridSize; i++) {
             gridPoints[i] = [];
             for (let j = 0; j <= gridSize; j++) {
@@ -100,7 +91,6 @@ export const ReliefMap: React.FC<ReliefMapProps> = memo(({ result, className }) 
 
         ctx.lineWidth = 1;
 
-        // Draw Terrain
         for (let i = 0; i < gridSize; i++) {
             for (let j = 0; j < gridSize; j++) {
                 const p1 = gridPoints[i][j];
@@ -113,19 +103,18 @@ export const ReliefMap: React.FC<ReliefMapProps> = memo(({ result, className }) 
                 const isoP3 = toIso(p3.x, p3.y, p3.z);
                 const isoP4 = toIso(p4.x, p4.y, p4.z);
 
-                // Color based on height (Z)
                 const avgZ = (p1.z + p2.z + p3.z + p4.z) / 4;
                 let fillStyle = '';
                 let strokeStyle = '';
 
-                if (avgZ > 60) { // Peak (Resistance)
-                    fillStyle = `rgba(239, 68, 68, ${0.1 + avgZ/200})`; // Red
+                if (avgZ > 60) { // Пик Сопротивления
+                    fillStyle = `rgba(239, 68, 68, ${0.1 + avgZ/200})`; 
                     strokeStyle = `rgba(239, 68, 68, 0.4)`;
-                } else if (avgZ < 20) { // Valley (Resource)
-                    fillStyle = `rgba(16, 185, 129, ${0.1 + (20-avgZ)/100})`; // Emerald
+                } else if (avgZ < 20) { // Долина Ресурса
+                    fillStyle = `rgba(16, 185, 129, ${0.1 + (20-avgZ)/100})`; 
                     strokeStyle = `rgba(16, 185, 129, 0.3)`;
-                } else { // Plateau
-                    fillStyle = `rgba(99, 102, 241, 0.05)`; // Indigo
+                } else { // Плато Адаптации
+                    fillStyle = `rgba(99, 102, 241, 0.05)`; 
                     strokeStyle = `rgba(99, 102, 241, 0.2)`;
                 }
 
@@ -143,18 +132,12 @@ export const ReliefMap: React.FC<ReliefMapProps> = memo(({ result, className }) 
             }
         }
 
-        // Draw Flow Particles (Gradient Descent simulation)
-        // Simplified: Particles move towards lower Z
         const particleCount = 15;
         for (let k = 0; k < particleCount; k++) {
-            // Deterministic pseudo-random paths
             const tOffset = time * 0.5 + k;
             let px = (Math.sin(tOffset * 0.3) + 1) / 2;
             let py = (Math.cos(tOffset * 0.2) + 1) / 2;
-            
-            // Sample height
             const z = calculateHeight(px, py, time);
-            
             const isoP = toIso(px, py, z);
             
             ctx.beginPath();
@@ -177,34 +160,33 @@ export const ReliefMap: React.FC<ReliefMapProps> = memo(({ result, className }) 
   return (
     <div className={`relative bg-[#020617] rounded-[3rem] border border-white/5 overflow-hidden ${className}`}>
         <div className="absolute top-6 left-8 z-10 space-y-1 pointer-events-none">
-            <h4 className="text-[10px] font-black uppercase text-indigo-400 tracking-[0.3em]">Relief_Map_v1</h4>
-            <p className="text-[7px] text-slate-500 font-mono uppercase">PSYCHIC_TOPOGRAPHY</p>
+            <h4 className="text-[10px] font-black uppercase text-indigo-400 tracking-[0.3em]">Рельеф_Сопротивления_V1</h4>
+            <p className="text-[7px] text-slate-500 font-mono uppercase">ТОПОГРАФИЯ ПСИХИКИ</p>
         </div>
 
         <canvas ref={canvasRef} width={350} height={350} className="w-full h-full object-contain" />
 
         <div className="absolute bottom-6 left-8 right-8 flex justify-between items-end pointer-events-none">
             <div className="space-y-1">
-                <span className="text-[6px] text-slate-500 uppercase tracking-widest block">Ruggedness_Index</span>
+                <span className="text-[6px] text-slate-500 uppercase tracking-widest block">Индекс Изрезанности</span>
                 <span className={`text-xl font-black ${ruggedness > 50 ? 'text-amber-400' : 'text-emerald-400'}`}>
                     {ruggedness}%
                 </span>
             </div>
             <div className="text-right space-y-1">
-                <span className="text-[6px] text-slate-500 uppercase tracking-widest block">Terrain</span>
+                <span className="text-[6px] text-slate-500 uppercase tracking-widest block">Ландшафт</span>
                 <span className={`text-[8px] font-black uppercase ${ruggedness > 50 ? 'text-amber-400' : 'text-emerald-400'}`}>
-                    {ruggedness > 50 ? 'HIGH_RESISTANCE' : 'SMOOTH_FLOW'}
+                    {ruggedness > 50 ? 'ВЫСОКОЕ_ТРЕНИЕ' : 'СВОБОДНЫЙ_ПОТОК'}
                 </span>
             </div>
         </div>
         
-        {/* Legend Overlay */}
         <div className="absolute top-20 right-6 text-right pointer-events-none opacity-60 font-mono text-[7px] space-y-1">
              <div className="flex items-center justify-end gap-1">
-                 <span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span> <span className="text-slate-400">PEAK (BLOCK)</span>
+                 <span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span> <span className="text-slate-400">ПИК (БЛОК)</span>
              </div>
              <div className="flex items-center justify-end gap-1">
-                 <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span> <span className="text-slate-400">VALLEY (FLOW)</span>
+                 <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span> <span className="text-slate-400">ДОЛИНА (ПОТОК)</span>
              </div>
         </div>
     </div>

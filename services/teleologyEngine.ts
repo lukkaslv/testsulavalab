@@ -1,4 +1,3 @@
-
 import { AnalysisResult, DomainType } from '../types';
 
 export interface AttractorMetrics {
@@ -10,7 +9,7 @@ export interface AttractorMetrics {
 }
 
 /**
- * Genesis OS Teleology Engine v1.0
+ * ГЕНЕЗИС: Ядро Телеологии v1.0
  * Анализ финальных причин и аттракторов (Art. 3.1)
  */
 export const TeleologyEngine = {
@@ -18,7 +17,6 @@ export const TeleologyEngine = {
         const { foundation: f, agency: a, resource: r, entropy: e } = result.state;
         const sync = result.neuroSync;
 
-        // Расчет точки схождения в 2D проекции
         // Инерция тянет систему в сторону максимального дефицита или хаоса
         const x = (a - f) * (1 + e / 100);
         const y = (r - sync) * (1 - f / 200);

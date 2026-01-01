@@ -1,11 +1,10 @@
-
 export const proTranslations = {
     pro_hub: { 
         title: "ЦЕНТР СПЕЦИАЛИСТА", risk_level_critical: "КРИТ", risk_level_high: "ВЫС", risk_level_nominal: "НОМ", system_status: "СТАТУС", 
         license_expires: "ИСТЕКАЕТ", days_left: "ДНЕЙ", remaining_sessions: "СЕССИИ", access_terminal: "ТЕРМИНАЛ", terminal_desc: "Клинический доступ", 
         recent_activity: "ИСТОРИЯ", session_id: "ID", no_sessions_found: "Пусто", tools_panel: "ИНСТРУМЕНТЫ", calibrate_instrument: "Калибр", 
         pro_guide: "Атлас", data_vault: "Хранилище", compare_mode: "СРАВНЕНИЕ", compare_btn: "СРАВНИТЬ", compare_hint: "Выберите 2 сессии", 
-        academy_btn: "Академия", oath_btn: "Клятва", cohort_analytics: "Когортный Анализ", cohort_entropy: "Средняя Энтропия", 
+        academy_btn: "Академия", oath_btn: "Клятва", cohort_analytics: "Когортный Анализ", cohort_entropy: "Средний Хаос", 
         cohort_dominant: "Доминантный Тип", cohort_critical: "Критических Случаев", search_placeholder: "Поиск: ID, Архетип, Паттерн...", matches_found: "Найдено",
         cohort_topology: "Топология Поля", divergence_index: "Индекс Дивергенции",
         ethical_gate_title: "ЭТИЧЕСКИЙ ПРОТОКОЛ",
@@ -55,11 +54,11 @@ export const proTranslations = {
       priority_critical_deficit: "КРИТ. ДЕФИЦИТ",
       priority_manic_defense: "МАНИАК. ЗАЩИТА"
     },
-    pro_guide: { title: "Атлас Специалиста", subtitle: "Клиническое Руководство", sections: [{ title: "Принципы", content: ["Латентность, Нейросинк."] }, { title: "Интерпретация", content: ["Латентность + Блок = Травма."] }], closing: "Точность - Вежливость Королей" },
+    pro_guide: { title: "Атлас Специалиста", subtitle: "Клиническое Руководство", sections: [{ title: "Принципы", content: ["Латентность, Нейросинк."] }, { title: "Интерпретация", content: ["Латентность + Блок = Травма."] }], closing: "Точность — Вежливость Королей" },
     academy: { title: "АКАДЕМИЯ ЭКСПЕРТОВ", subtitle: "База Знаний", protection_label: "ЗАЩИТА", cost_label: "ЦЕНА", antidote_label: "АНТИДОТ", codex_visualizer: "ВИЗУАЛИЗАТОР КОДЕКСА" },
     comparison: { 
         title: "ДИФФЕРЕНЦИАЛ", subtitle: "Сравнение сессий", evolution_vector: "Вектор Эволюции", vector_crystallization: "Кристаллизация", 
         vector_decay: "Распад", vector_stagnation: "Стагнация", vector_mobilization: "Мобилизация", vector_drift: "Дрейф" 
     },
-    specialist_oath: { title: "Клятва Специалиста", subtitle: "Этический Протокол", pledge_label: "Я ОБЯЗУЮСЬ", oath_articles: ["Использовать инструмент только во благо клиента.", "Не подменять живую терапию алгоритмом.", "Хранить тайну исповеди и данных.", "Соблюдать границы компетенции."], completion_msg: "ПРИСЯГА ПРИНЯТА", seal_instruction: "Удерживайте для печати" },
+    specialist_oath: { title: "Клятва Специалиста", subtitle: "Этический Протокол", pledge_label: "Я ОБЯЗУЮСЬ", oath_articles: ["Использовать инструмент только во благо клиента.", "Не подменять живую терапию алгоритмом.", "Хранить тайну данных.", "Соблюдать границы компетенции."], completion_msg: "ПРИСЯГА ПРИНЯТА", seal_instruction: "Удерживайте для печати" },
 };

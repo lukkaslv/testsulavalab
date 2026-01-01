@@ -1,7 +1,7 @@
 
 import React, { createContext, useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { translations } from '@/translations';
-import { Translations, GameHistoryItem, ScanHistory, SubscriptionTier, DataCorruptionError, AppContextType, NetworkAuditReport, IntegrityReport, LifeContext } from '../types';
+import { Translations, GameHistoryItem, ScanHistory, SubscriptionTier, DataCorruptionError, AppContextType, NetworkAuditReport, IntegrityReport, LifeContext, AnalysisResult } from '../types';
 import { StorageService, STORAGE_KEYS, SessionState } from '../services/storageService';
 import { PlatformBridge } from '../utils/helpers';
 import { SUBSCRIPTION_LIMITS } from '../constants';
@@ -138,16 +138,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     const sessionAuth = localStorage.getItem(STORAGE_KEYS.SESSION);
+    const lastView = sessionStorage.getItem('genesis_last_view');
+    const isLastViewValid = VALID_VIEWS.includes(lastView || '');
+
     if (sessionAuth === 'true') { 
         setIsPro(true);
         setLicenseTier((localStorage.getItem('genesis_tier') as SubscriptionTier) || 'FREE');
         setIsMaster(localStorage.getItem('genesis_master') === 'true');
-        const lastView = sessionStorage.getItem('genesis_last_view');
-        setView(VALID_VIEWS.includes(lastView || '') ? lastView! : 'pro_hub');
+        setView(isLastViewValid ? lastView! : 'pro_hub');
     } else if (sessionAuth === 'client') {
-        setIsPro(false); // Explicit reset for safety
+        setIsPro(false); 
         setIsMaster(false);
-        setView('dashboard');
+        // FIX: Теперь сессия клиента восстанавливает последнее сохраненное состояние, 
+        // предотвращая сброс на dashboard при обновлении на странице результатов.
+        setView(isLastViewValid ? lastView! : 'dashboard');
     }
     isInitialized.current = true;
   }, []);
@@ -160,7 +164,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         localStorage.setItem(STORAGE_KEYS.SESSION, 'true');
         localStorage.setItem('genesis_tier', 'LAB');
         localStorage.setItem('genesis_master', 'true');
-        // Авто-верификация для Админа, чтобы не вводить PIN в Pro Hub
         sessionStorage.setItem('pro_pin_verified', 'true');
         setLicenseTier('LAB'); setIsPro(true); setIsMaster(true);
         setViewAndPersist('admin'); 
@@ -169,7 +172,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (pwd === "genesis_client" || demo) {
         localStorage.setItem(STORAGE_KEYS.SESSION, 'client');
         setIsDemo(demo); 
-        // CRITICAL FIX: Reset Pro flags to prevent route bleeding
         setIsPro(false); 
         setIsMaster(false);
         setLicenseTier('FREE');
@@ -188,7 +190,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const handleLogout = useCallback(() => { 
       sanitizeMemory();
-      // Preserve persistent convenience keys
       const oath = localStorage.getItem('genesis_oath_signed');
       const licenseCache = localStorage.getItem('genesis_license_cache');
       
@@ -199,7 +200,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       
       sessionStorage.clear();
       
-      // CRITICAL FIX: Reset state flags
       setIsPro(false);
       setIsMaster(false);
       setLicenseTier('FREE');
@@ -211,7 +211,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const action = () => {
       const isProSession = isPro;
       const tier = licenseTier;
-      // Preserve persistent keys
       const oath = localStorage.getItem('genesis_oath_signed');
       const licenseCache = localStorage.getItem('genesis_license_cache');
       

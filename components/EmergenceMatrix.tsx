@@ -1,6 +1,6 @@
-
 import React, { memo } from 'react';
-import { EmergentPattern } from '../services/emergenceEngine';
+// Corrected import from '../types' as it is not exported from the service
+import { EmergentPattern } from '../types';
 
 interface EmergenceMatrixProps {
     patterns: EmergentPattern[];
@@ -21,7 +21,7 @@ export const EmergenceMatrix: React.FC<EmergenceMatrixProps> = memo(({ patterns,
 
     return (
         <div className={`space-y-6 animate-in ${className}`}>
-            <header className="px-2 space-y-1">
+            <header className="px-2 space-y-1 text-center">
                 <span className="text-[8px] font-black text-indigo-400 uppercase tracking-[0.4em]">Emergence_Map_Topology</span>
                 <h3 className="text-sm font-black text-white uppercase tracking-widest italic">Синтез Состояний</h3>
             </header>

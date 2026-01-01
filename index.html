@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="ru">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>Genesis OS | Personality Blueprint</title>
+    <title>ГЕНЕЗИС | Слепок Личности</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
@@ -32,7 +31,6 @@
         font-size: 16px;
       }
 
-      /* CRT Scanlines Overlay - Optimized per Art. 4.3 (Reduced Opacity) */
       body::before {
         content: " ";
         display: block;
@@ -42,10 +40,9 @@
         z-index: 9998;
         background-size: 100% 3px, 4px 100%;
         pointer-events: none;
-        opacity: 0.03; /* Reduced from 0.08 for cleaner look */
+        opacity: 0.03;
       }
 
-      /* Signal Noise - Refined for Clarity per Art. 4.3 */
       body::after {
         content: "";
         position: fixed;
@@ -55,17 +52,6 @@
         z-index: 9999;
         opacity: 0.015;
         mix-blend-mode: overlay;
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        *, ::before, ::after {
-          animation-delay: -1ms !important;
-          animation-duration: 1ms !important;
-          animation-iteration-count: 1 !important;
-          background-attachment: initial !important;
-          scroll-behavior: auto !important;
-          transition-duration: 0s !important;
-        }
       }
 
       #root { height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
@@ -82,7 +68,6 @@
       .no-scrollbar::-webkit-scrollbar { display: none; }
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-      /* Clinical Grade Typography */
       h1, h2, h3, h4 { letter-spacing: -0.015em; }
       
       button { 

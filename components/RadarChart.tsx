@@ -1,4 +1,3 @@
-
 import React, { memo } from 'react';
 import { Translations } from '../types';
 import { PlatformBridge } from '../utils/helpers';
@@ -13,6 +12,10 @@ interface RadarChartProps {
   t: Translations;
 }
 
+/**
+ * Радарная Диаграмма v21.0
+ * Соответствие: Ст. 12 (Языковой Суверенитет)
+ */
 export const RadarChart: React.FC<RadarChartProps> = memo(({ points, secondaryPoints, shadowPoints, showShadow = true, onLabelClick, className = "", t }) => {
   
   const handleInteraction = (metric: string) => {
@@ -21,11 +24,19 @@ export const RadarChart: React.FC<RadarChartProps> = memo(({ points, secondaryPo
   };
 
   const polyPoints = points.map(p => `${p.x},${p.y}`).join(' ');
-  // Removed unused ghostPoints
   const shadowPolyPoints = shadowPoints ? shadowPoints.map(p => `${p.x},${p.y}`).join(' ') : null;
 
   const center = 50;
   const levels = [20, 35, 48]; 
+
+  // Словарь суверенных сокращений
+  const RU_LABELS: Record<string, string> = {
+      foundation: 'ОПР',
+      agency: 'ВЛЯ',
+      money: 'РЕС',
+      social: 'СОЦ',
+      legacy: 'НАС'
+  };
 
   return (
     <div className={`relative w-72 h-72 mx-auto ${className}`}>
@@ -51,7 +62,7 @@ export const RadarChart: React.FC<RadarChartProps> = memo(({ points, secondaryPo
             />
         ))}
 
-        {/* Shadow Area (SRP Art 7.3) */}
+        {/* Shadow Area */}
         {shadowPolyPoints && showShadow && (
             <polygon 
                 points={shadowPolyPoints} 
@@ -95,7 +106,7 @@ export const RadarChart: React.FC<RadarChartProps> = memo(({ points, secondaryPo
                 <g key={i} className="cursor-pointer" onClick={() => handleInteraction(key)}>
                     <circle cx={p.x} cy={p.y} r="1.5" fill="#6366f1" />
                     <text textAnchor="middle" dy="0.3em" className="text-[4px] fill-slate-500 font-black uppercase tracking-widest" x={lx} y={ly}>
-                        {t.domains[key]?.substring(0, 3)}
+                        {RU_LABELS[key] || '???'}
                     </text>
                 </g>
             );
